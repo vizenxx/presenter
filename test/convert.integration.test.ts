@@ -10,7 +10,8 @@ import { convertSlides, installedConverters, prepareDeck, type Converter, type D
  * PowerPoint runs invisibly, but do not run it while a class is on the projector.
  */
 const wanted = process.env['PRESENTER_CONVERT_IT'] as Converter | undefined
-const SAMPLE = process.env['PRESENTER_SAMPLE_PPTX'] ?? 'C:/Users/vizen/Desktop/GCIT Tasks/Teach/Curriculum/2026-Autumn/UXD202/Original Slides/UXD202 Lecture n7.pptx'
+// Tests run from the project folder; the sample deck sits next to it on the maintainer's computer.
+const SAMPLE = process.env['PRESENTER_SAMPLE_PPTX'] ?? path.resolve('../2026-Autumn/UXD202/Original Slides/UXD202 Lecture n7.pptx')
 
 async function pdfPages(file: string): Promise<number> {
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs')

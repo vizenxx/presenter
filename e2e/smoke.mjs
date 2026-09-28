@@ -8,7 +8,8 @@ import { _electron as electron } from 'playwright-core'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const root = path.resolve(here, '..')
-const UXD_DECK = process.env.DECK ?? 'C:/Users/vizen/Desktop/GCIT Tasks/Teach/Curriculum/2026-Autumn/UXD202/Final Slides/Week-08-Unit 3 Interaction Design and Prototyping.html'
+// Real decks next to this project on the maintainer's computer (read only); override with DECK / PPTX.
+const UXD_DECK = process.env.DECK ?? path.resolve(root, '../2026-Autumn/UXD202/Final Slides/Week-08-Unit 3 Interaction Design and Prototyping.html')
 const PLAIN_DECK = path.join(here, 'fixtures', 'plain-deck.html')
 const OUT = path.join(here, 'out')
 fs.mkdirSync(OUT, { recursive: true })
@@ -259,7 +260,7 @@ try {
 
     // 14. A PowerPoint file: converted, shown page by page, titles and notes from the PPTX,
     // the preview follows, and the projector overlay shows the timer (no deck timer).
-    const PPTX = process.env.PPTX ?? 'C:/Users/vizen/Desktop/GCIT Tasks/Teach/Curriculum/2026-Autumn/UXD202/Original Slides/UXD202 Lecture n1.pptx'
+    const PPTX = process.env.PPTX ?? path.resolve(root, '../2026-Autumn/UXD202/Original Slides/UXD202 Lecture n1.pptx')
     await call((_e, p) => globalThis.__presenter.openMainDeck(p), PPTX)
     s = await waitFor('pptx shown', (s) => out(s, 'projector').deckKind === 'slides' && out(s, 'projector').total > 0 && out(s, 'next').shownIndex === 1, 90000)
     assert.equal(s.slides.length, out(s, 'projector').total, 'titles for every page')

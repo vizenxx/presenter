@@ -70,8 +70,8 @@ interface Case {
   native?: boolean
 }
 
-const BNLI = 'C:/Users/vizen/Desktop/GCIT Tasks/Teach/Workshop/BNLI/1_必要保留_KEEP/18_Learner_First_Package'
-const UXD_W8 = 'C:/Users/vizen/Desktop/GCIT Tasks/Teach/Curriculum/2026-Autumn/UXD202/Final Slides'
+const BNLI = path.resolve(ROOT, '../../Workshop/BNLI/1_必要保留_KEEP/18_Learner_First_Package')
+const UXD_W8 = path.resolve(ROOT, '../2026-Autumn/UXD202/Final Slides')
 
 const CASES: Case[] = [
   { name: 'Reveal.js', folder: path.join(FIXTURES, 'reveal'), file: 'index.html', total: 4, firstTitle: 'Reveal opening', note: 'Reveal note one' },

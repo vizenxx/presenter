@@ -2695,7 +2695,7 @@ import { _electron as electron } from 'playwright-core'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const root = path.resolve(here, '..')
-const UXD_DECK = process.env.DECK ?? 'C:/Users/vizen/Desktop/GCIT Tasks/Teach/Curriculum/2026-Autumn/UXD202/Final Slides/Week-08-Unit 3 Interaction Design and Prototyping.html'
+const UXD_DECK = process.env.DECK ?? '<Curriculum>/2026-Autumn/UXD202/Final Slides/Week-08-Unit 3 Interaction Design and Prototyping.html'
 const PLAIN_DECK = path.join(here, 'fixtures', 'plain-deck.html')
 const OUT = path.join(here, 'out')
 fs.mkdirSync(OUT, { recursive: true })

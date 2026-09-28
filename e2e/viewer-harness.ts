@@ -14,7 +14,7 @@ import { installDeckProtocol, registerDeckFolder, registerDeckScheme, setViewerR
 // Bundled to e2e/out/harness/, three levels below the project root.
 const ROOT = path.resolve(__dirname, '..', '..', '..')
 const OUT = path.join(ROOT, 'e2e', 'out')
-const SAMPLE = process.env['PRESENTER_SAMPLE_PPTX'] ?? 'C:/Users/vizen/Desktop/GCIT Tasks/Teach/Curriculum/2026-Autumn/UXD202/Original Slides/UXD202 Lecture n1.pptx'
+const SAMPLE = process.env['PRESENTER_SAMPLE_PPTX'] ?? path.resolve(ROOT, '../2026-Autumn/UXD202/Original Slides/UXD202 Lecture n1.pptx')
 const converters = process.env['PRESENTER_CONVERTER'] ? [process.env['PRESENTER_CONVERTER'] as Converter] : ['libreoffice' as Converter]
 
 registerDeckScheme()
