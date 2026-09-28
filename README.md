@@ -16,7 +16,7 @@ Presenter is a folder you unzip; there is no installer and no administrator pass
 4. The app is not signed yet. When the zip came from the internet, Windows may show "Windows protected your PC": click **More info → Run anyway** once.
 - On this computer the desktop icon can also start the source copy (`Start Presenter.bat`).
 
-**Mac** (macOS 12 or later, Intel or Apple silicon)
+**Mac** (macOS 13 Ventura or later, Intel or Apple silicon)
 
 1. Double-click `Presenter-0.1.0-mac.zip`. It becomes **Presenter**. Double-click it to open (moving it to **Applications** is optional).
 2. The first time, macOS may say it cannot check the app. Open **System Settings → Privacy & Security**, scroll down and click **Open Anyway**. This is needed once, until the app is signed with an Apple Developer ID.

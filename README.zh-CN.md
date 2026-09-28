@@ -16,7 +16,7 @@ Presenter 是一个解压即用的文件夹。没有安装程序，也不需要�
 4. 程序还没有签名。压缩包从网上下载时，Windows 可能显示“Windows 已保护你的电脑”：点 **更多信息 → 仍要运行**，只需要一次。
 - 在这台电脑上，桌面图标也可以启动源码版（`Start Presenter.bat`）。
 
-**Mac**（macOS 12 或更新版本，Intel 或 Apple 芯片都可以）
+**Mac**（macOS 13 Ventura 或更新版本，Intel 或 Apple 芯片都可以）
 
 1. 双击 `Presenter-0.1.0-mac.zip`，得到 **Presenter**。双击它打开（放进“应用程序”不是必须的）。
 2. 第一次打开时，macOS 可能提示无法检查这个 App。打开 **系统设置 → 隐私与安全性**，向下滚动，点 **仍要打开**。App 用 Apple 开发者证书签名之前，需要做这一步，只做一次。
