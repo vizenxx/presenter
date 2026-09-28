@@ -6,7 +6,7 @@ Presenter 是一个桌面放映工具。它把课件全屏放在投影屏上，�
 
 ## 下载
 
-最新的压缩包在 **[Releases 页面](https://github.com/vizenxx/presenter/releases/latest)** 的 **Assets** 里：Windows 用 `…-win.zip`，Mac 用 `…-mac.zip`。这个仓库是私有的，只有有权限的人能打开这个页面；给其他老师时，直接发 zip 文件（例如通过 Google Drive）。
+最新的压缩包在 **[Releases 页面](https://github.com/vizenxx/presenter/releases/latest)** 的 **Assets** 里：Windows 用 `…-win.zip`，Mac 用 `…-mac.zip`。任何人都能打开这个页面：把链接发给其他老师即可。
 
 ## 打开（不需要安装）
 

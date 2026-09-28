@@ -6,7 +6,7 @@ Presenter shows a deck full screen on the projector and gives the teacher a cons
 
 ## Download
 
-The newest zips are on the **[Releases page](https://github.com/vizenxx/presenter/releases/latest)**, under **Assets**: `…-win.zip` for Windows, `…-mac.zip` for a Mac. The repository is private, so only people with access can open that page; give other teachers the zip file itself (for example through Google Drive).
+The newest zips are on the **[Releases page](https://github.com/vizenxx/presenter/releases/latest)**, under **Assets**: `…-win.zip` for Windows, `…-mac.zip` for a Mac. Anyone can open that page: send other teachers the link.
 
 ## Open (nothing to install)
 
