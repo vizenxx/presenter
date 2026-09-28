@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Presenter: a projection screen showing a slide (orange = app accent); green dot = "students see it" (as in the console). -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1f2937"/>
+      <stop offset="1" stop-color="#0b0f17"/>
+    </linearGradient>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#bg)"/>
+  <rect x="212" y="262" width="600" height="388" rx="30" fill="#f8fafc"/>
+  <rect x="264" y="324" width="300" height="46" rx="12" fill="#f59e0b"/>
+  <rect x="264" y="408" width="444" height="30" rx="10" fill="#cbd5e1"/>
+  <rect x="264" y="462" width="384" height="30" rx="10" fill="#cbd5e1"/>
+  <rect x="264" y="516" width="414" height="30" rx="10" fill="#cbd5e1"/>
+  <circle cx="752" cy="347" r="26" fill="#34d399"/>
+  <rect x="496" y="650" width="32" height="108" fill="#94a3b8"/>
+  <rect x="392" y="750" width="240" height="32" rx="16" fill="#94a3b8"/>
+</svg>

@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>timer</title>
+    <style>
+      html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; }
+      body { display: flex; align-items: flex-end; justify-content: flex-end; font-family: "Cascadia Mono", Consolas, monospace; }
+      #pill { padding: 10px 24px; border-radius: 9999px; background: rgba(17, 24, 39, 0.88); color: #f9fafb; font-size: 52px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); }
+      #pill[data-state="paused"] { color: #fbbf24; }
+      #pill[data-state="alarm"] { background: #dc2626; animation: blink 1s steps(2, start) infinite; }
+      @keyframes blink { to { opacity: 0.55; } }
+    </style>
+  </head>
+  <body>
+    <div id="pill">00:00</div>
+    <script type="module" src="./src/overlay/main.ts"></script>
+  </body>
+</html>

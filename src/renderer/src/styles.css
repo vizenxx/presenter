@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif;
+  --font-mono: "Cascadia Mono", Consolas, ui-monospace, monospace;
+  /* accent = the selected screen and primary actions */
+  --color-accent: #f59e0b;
+  --color-accent-strong: #d97706;
+  /* link = a screen that turns pages together with the selected one */
+  --color-link: #34d399;
+  /* gold = a student picked more than once (抽人, same as Lucky Roller) */
+  --color-gold: #eab308;
+  /* alarm = the timer reached zero */
+  --color-alarm: #ef4444;
+  --color-panel: #111827;
+  --color-panel-2: #1f2937;
+  --color-line: #374151;
+  --color-ink: #f3f4f6;
+  --color-muted: #9ca3af;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #0b0f17;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  user-select: none;
+}

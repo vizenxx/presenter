@@ -1,0 +1,35 @@
+# Builds the app zips (nothing to install): Presenter-<version>-mac.zip (Intel and Apple silicon)
+# and Presenter-<version>-win.zip.
+# Run it from the Actions tab ("Run workflow"); the files appear under the run's Artifacts.
+# A Mac app can only be built on a Mac, which is why this runs on GitHub's Mac machines.
+name: Build app zips
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Mac app
+        if: runner.os == 'macOS'
+        # Ad-hoc signed only (no paid Apple Developer ID): the first open needs
+        # System Settings -> Privacy & Security -> Open Anyway, once.
+        run: npm run dist:mac -- --publish never
+      - name: Windows app
+        if: runner.os == 'Windows'
+        run: npm run dist:win -- --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: presenter-${{ runner.os }}
+          path: dist/*.zip
+          if-no-files-found: error

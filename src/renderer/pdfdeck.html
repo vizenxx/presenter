@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; worker-src 'self' blob:; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self'" />
+    <title>Slides</title>
+    <style>
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
+      body { display: flex; align-items: center; justify-content: center; }
+      canvas { display: block; }
+      #message { position: fixed; inset: 0; display: grid; place-items: center; color: #9ca3af; font: 600 2vw "Segoe UI", "Microsoft YaHei UI", sans-serif; }
+      #message[hidden] { display: none; }
+    </style>
+  </head>
+  <body>
+    <canvas id="page"></canvas>
+    <div id="message" hidden></div>
+    <script type="module" src="./src/pdfdeck/main.ts"></script>
+  </body>
+</html>

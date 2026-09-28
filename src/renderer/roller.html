@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Lucky Roller</title>
+    <style>
+      /* amber = the moving highlight · green = picked once · gold = picked more than once (Lucky Roller's colours) */
+      :root { --amber: #f59e0b; --green: #22c55e; --gold: #eab308; --muted: #94a3b8; }
+      html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; font-family: "Segoe UI", system-ui, sans-serif; user-select: none; }
+      #stage { position: fixed; inset: 0; box-sizing: border-box; display: flex; flex-direction: column; gap: 2.2vh; padding: 4vh 4vw; background: rgba(9, 12, 20, 0.93); color: #f8fafc; animation: fade 0.25s ease-out; }
+      #stage[hidden] { display: none; }
+      header { display: flex; align-items: flex-end; justify-content: space-between; }
+      .eyebrow { font-size: 0.9vw; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: var(--amber); }
+      h1 { margin: 0.4vh 0 0; font-size: 2.4vw; font-weight: 800; }
+      #count { font-size: 1.1vw; color: var(--muted); }
+      #banner { min-height: 17vh; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 1.2vw; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); }
+      #bName { font-size: 3.4vw; font-weight: 800; line-height: 1.1; color: var(--amber); text-align: center; }
+      #bId { margin-top: 0.6vh; font-family: "Cascadia Mono", Consolas, monospace; font-size: 1.3vw; color: var(--muted); }
+      #bBadge { display: none; margin-top: 1.2vh; padding: 0.3vh 1.1vw; border-radius: 999px; font-size: 1.1vw; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; background: var(--green); color: #052e16; }
+      #bBadge[data-kind="multi"] { background: var(--gold); color: #422006; }
+      [data-phase="landed"] #bName { font-size: 5.2vw; color: #fff; animation: pop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1); }
+      [data-phase="landed"] #bBadge { display: inline-block; }
+      #grid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(var(--cols, 6), minmax(0, 1fr)); grid-auto-rows: minmax(7vh, 13vh); align-content: center; gap: 1.2vh 0.8vw; }
+      .card { position: relative; display: flex; flex-direction: column; justify-content: center; min-width: 0; padding: 1vh 1vw; border-radius: 0.8vw; background: rgba(255, 255, 255, 0.06); border: 0.18vw solid rgba(255, 255, 255, 0.08); transition: transform 0.12s, background 0.12s, border-color 0.12s, box-shadow 0.12s, opacity 0.3s; }
+      .name { font-size: var(--name-size, 1.35vw); font-weight: 700; line-height: 1.15; overflow: hidden; text-overflow: ellipsis; }
+      .id { margin-top: 0.3vh; font-family: "Cascadia Mono", Consolas, monospace; font-size: 1vw; color: var(--muted); }
+      .badge { display: none; position: absolute; top: 0.6vh; right: 0.5vw; padding: 0.1vh 0.4vw; border-radius: 0.3vw; font-size: 0.85vw; font-weight: 800; text-transform: uppercase; }
+      .card[data-wins="once"] .badge { display: block; background: var(--green); color: #052e16; }
+      .card[data-wins="multi"] .badge { display: block; background: var(--gold); color: #422006; }
+      .card.hl { border-color: var(--amber); background: rgba(245, 158, 11, 0.22); transform: scale(1.06); box-shadow: 0 0 2vw rgba(245, 158, 11, 0.45); }
+      [data-phase="landed"] .card:not(.winner) { opacity: 0.35; }
+      .card.winner { border-color: var(--green); background: rgba(34, 197, 94, 0.25); transform: scale(1.08); box-shadow: 0 0 2.4vw rgba(34, 197, 94, 0.5); }
+      .card.winner[data-wins="multi"] { border-color: var(--gold); background: rgba(234, 179, 8, 0.25); box-shadow: 0 0 2.4vw rgba(234, 179, 8, 0.5); }
+      #hint { visibility: hidden; text-align: center; font-size: 1vw; color: #64748b; }
+      [data-phase="landed"] #hint { visibility: visible; }
+      @keyframes pop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+      @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+  </head>
+  <body>
+    <div id="stage" hidden>
+      <header>
+        <div>
+          <div class="eyebrow">Lucky Roller</div>
+          <h1>Who's the Lucky One?</h1>
+        </div>
+        <div id="count"></div>
+      </header>
+      <div id="banner">
+        <div id="bName"></div>
+        <div id="bId"></div>
+        <div id="bBadge"></div>
+      </div>
+      <main id="grid"></main>
+      <div id="hint">Press any key or click to continue</div>
+    </div>
+    <script type="module" src="./src/roller/main.ts"></script>
+  </body>
+</html>

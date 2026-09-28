@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Minimal Presenter deck</title>
+    <style>
+      html, body { margin: 0; height: 100%; font-family: system-ui, "Segoe UI", sans-serif; background: #fff; color: #111; }
+      .slide { display: none; box-sizing: border-box; height: 100vh; padding: 8vh 8vw; flex-direction: column; justify-content: center; }
+      .slide.active { display: flex; }
+      h1 { margin: 0 0 3vh; font-size: 7vh; }
+      p { margin: 0; font-size: 3.2vh; line-height: 1.5; }
+      .notes { display: none; }
+    </style>
+  </head>
+  <body>
+    <!--
+      A complete deck that works fully with Presenter: page count, slide list, notes,
+      planned minutes and exact jumps. Presenter reads:
+        data-title    the slide's name in the slide list (else its first heading)
+        data-minutes  planned minutes for the timer (optional)
+        .notes        speaker notes, never shown to students (optional)
+    -->
+    <section class="slide" data-title="Welcome" data-minutes="2">
+      <h1>Welcome</h1>
+      <p>This deck turns its pages with the arrow keys and tells Presenter where it is.</p>
+      <div class="notes">Greet the class and state today's goal.</div>
+    </section>
+    <section class="slide" data-title="Activity" data-minutes="8">
+      <h1>Pair activity</h1>
+      <p>Presenter shows an 8-minute timer suggestion on this slide.</p>
+      <div class="notes">Walk around; listen for two good examples.</div>
+    </section>
+    <section class="slide" data-title="Share back" data-minutes="5">
+      <h1>Share back</h1>
+      <p>Two pairs share what they found.</p>
+    </section>
+    <section class="slide" data-title="Wrap-up">
+      <h1>Wrap-up</h1>
+      <p>One sentence: what will you try next week?</p>
+    </section>
+
+    <script>
+      /* --- Presenter bridge v1: begin (copy of sdk/presenter-bridge.js) --- */
+      /*!
+       * Presenter bridge v1 — lets an HTML slide deck work fully with Presenter
+       * (page count, slide list, notes, planned minutes, exact page jumps).
+       * Protocol: docs/protocol.md. MIT licence. No dependencies; safe in any browser:
+       * outside Presenter nothing listens, so the deck works as before.
+       *
+       * Usage:
+       *   PresenterBridge.connect({
+       *     total: () => slides.length,
+       *     index: () => current,
+       *     goto: (i) => show(i),
+       *     slides: () => slides.map((s) => ({ title: s.title, notes: s.notes, minutes: s.minutes })),
+       *     onChange: (report) => { onSlideChange = report }
+       *   })
+       */
+      ;(function (global) {
+        var CHANNEL = 'presenter-sync-v1'
+
+        function connect(deck) {
+          if (typeof BroadcastChannel === 'undefined') return { report: function () {}, close: function () {} }
+          var params = new URLSearchParams((global.location && global.location.search) || '')
+          var tabId = params.get('tabId') || ''
+          var channel = new BroadcastChannel(CHANNEL)
+
+          function report() {
+            channel.postMessage({
+              type: 'SLIDE_STATE',
+              protocol: 1,
+              tabId: tabId,
+              currentSlide: deck.index(),
+              totalSlides: deck.total(),
+              metadata: deck.slides ? deck.slides() : [],
+              milestones: deck.milestones ? deck.milestones() : [],
+              ownTimer: !!deck.showsTimer
+            })
+          }
+
+          channel.onmessage = function (event) {
+            var msg = event.data
+            if (!msg || (msg.targetTabId && msg.targetTabId !== tabId)) return
+            if (msg.type === 'PING') report()
+            else if (msg.type === 'GOTO' && typeof msg.slideIndex === 'number') {
+              deck.goto(msg.slideIndex)
+              report()
+            }
+          }
+
+          if (deck.onChange) deck.onChange(report)
+          report()
+          return {
+            report: report,
+            close: function () {
+              channel.close()
+            }
+          }
+        }
+
+        global.PresenterBridge = { connect: connect, version: 1 }
+      })(typeof window !== 'undefined' ? window : globalThis)
+      /* --- Presenter bridge v1: end --- */
+
+      const slides = Array.from(document.querySelectorAll('.slide'))
+      let current = 0
+      let onSlideChange = null
+
+      function show(i) {
+        current = Math.max(0, Math.min(slides.length - 1, i))
+        slides.forEach((s, k) => s.classList.toggle('active', k === current))
+        if (onSlideChange) onSlideChange()
+      }
+
+      addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') show(current + 1)
+        if (e.key === 'ArrowLeft' || e.key === 'PageUp') show(current - 1)
+      })
+      show(0)
+
+      PresenterBridge.connect({
+        total: () => slides.length,
+        index: () => current,
+        goto: show,
+        slides: () =>
+          slides.map((s) => ({
+            title: s.dataset.title || (s.querySelector('h1, h2') || {}).textContent || '',
+            minutes: Number(s.dataset.minutes) || undefined,
+            notes: ((s.querySelector('.notes') || {}).textContent || '').trim()
+          })),
+        onChange: (report) => {
+          onSlideChange = report
+        }
+      })
+    </script>
+  </body>
+</html>

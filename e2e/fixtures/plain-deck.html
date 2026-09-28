@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Plain deck</title>
+    <style>
+      body { margin: 0; font-family: sans-serif; background: #fff; }
+      section { display: none; height: 100vh; place-items: center; font-size: 64px; }
+      section.active { display: grid; }
+    </style>
+  </head>
+  <body>
+    <section class="active"><h1>Page 1</h1></section>
+    <section><h1>Page 2</h1></section>
+    <section><h1>Page 3</h1></section>
+    <section><h1>Page 4</h1></section>
+    <section><h1>Page 5</h1></section>
+    <script>
+      const pages = [...document.querySelectorAll('section')]
+      window.__index = 0
+      const show = (i) => {
+        window.__index = Math.max(0, Math.min(pages.length - 1, i))
+        pages.forEach((p, k) => p.classList.toggle('active', k === window.__index))
+      }
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') show(window.__index + 1)
+        if (e.key === 'ArrowLeft') show(window.__index - 1)
+      })
+    </script>
+  </body>
+</html>

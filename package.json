@@ -1,0 +1,82 @@
+{
+  "name": "presenter",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Dual-screen presenter for HTML / PDF / PPT slide decks",
+  "main": "out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "start": "electron-vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "e2e": "electron-vite build && node e2e/smoke.mjs",
+    "check:viewer": "esbuild e2e/viewer-harness.ts --bundle --platform=node --format=cjs --external:electron --outfile=e2e/out/harness/viewer-harness.cjs --log-level=warning && electron e2e/out/harness/viewer-harness.cjs",
+    "check:ink": "esbuild e2e/ink-harness.ts --bundle --platform=node --format=cjs --external:electron --outfile=e2e/out/harness/ink-harness.cjs --log-level=warning && electron e2e/out/harness/ink-harness.cjs",
+    "check:console": "esbuild e2e/console-harness.ts --bundle --platform=node --format=cjs --external:electron --outfile=e2e/out/harness/console-harness.cjs --log-level=warning && electron e2e/out/harness/console-harness.cjs",
+    "check:frameworks": "esbuild e2e/frameworks-harness.ts --bundle --platform=node --format=cjs --external:electron --outfile=e2e/out/harness/frameworks-harness.cjs --log-level=warning && electron e2e/out/harness/frameworks-harness.cjs",
+    "dist:win": "electron-vite build && electron-builder --win",
+    "dist:mac": "electron-vite build && electron-builder --mac"
+  },
+  "devDependencies": {
+    "@marp-team/marp-cli": "^4.5.1",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^26.6.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^5.2.0",
+    "electron": "^44.4.5",
+    "electron-builder": "^26.15.3",
+    "electron-vite": "^5.0.0",
+    "fflate": "^0.8.3",
+    "impress.js": "^1.1.0",
+    "pdfjs-dist": "^6.3.289",
+    "playwright-core": "^1.63.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "remark-slide": "^0.14.0",
+    "reveal.js": "^6.0.2",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vite": "^7.3.6",
+    "vitest": "^5.0.2"
+  },
+  "productName": "Presenter",
+  "author": "GCIT",
+  "build": {
+    "appId": "bt.edu.gcit.presenter",
+    "productName": "Presenter",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.education",
+      "target": [
+        {
+          "target": "zip",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
+      "hardenedRuntime": false,
+      "extendInfo": {
+        "NSAppleEventsUsageDescription": "Presenter asks Keynote to turn PowerPoint and Keynote files into pages it can show.",
+        "NSScreenCaptureUsageDescription": "Presenter shows a live copy of the projector in the console."
+      },
+      "artifactName": "Presenter-${version}-mac.zip",
+      "identity": "-"
+    },
+    "win": {
+      "target": [
+        "zip"
+      ],
+      "artifactName": "Presenter-${version}-win.zip"
+    }
+  }
+}

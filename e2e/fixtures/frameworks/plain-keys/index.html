@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Plain slides, keys only</title>
+    <style>.slide { display: none; height: 100vh; } .slide.active { display: block; }</style>
+  </head>
+  <body>
+    <section class="slide active" data-notes="Keys note one"><h1>Keys opening</h1></section>
+    <section class="slide"><h2>Keys second</h2><aside class="notes">Aside note two</aside></section>
+    <section class="slide"><h2>Keys third</h2><div class="slide-duration">10:00 – 10:08 (8 Mins)</div></section>
+    <section class="slide"><h2>Keys closing</h2></section>
+    <script>
+      const slides = [...document.querySelectorAll('.slide')]
+      let i = 0
+      const show = (n) => { i = Math.max(0, Math.min(slides.length - 1, n)); slides.forEach((s, k) => s.classList.toggle('active', k === i)) }
+      window.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight') show(i + 1); if (e.key === 'ArrowLeft') show(i - 1) })
+    </script>
+  </body>
+</html>

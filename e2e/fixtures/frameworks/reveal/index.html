@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Reveal fixture</title>
+    <link rel="stylesheet" href="reveal.css" />
+    <link rel="stylesheet" href="white.css" />
+  </head>
+  <body>
+    <div class="reveal">
+      <div class="slides">
+        <section><h1>Reveal opening</h1><aside class="notes">Reveal note one</aside></section>
+        <section>
+          <section><h2>Vertical A</h2></section>
+          <section><h2>Vertical B</h2><p class="fragment">Fragment step</p></section>
+        </section>
+        <section><h2>Reveal closing</h2></section>
+      </div>
+    </div>
+    <script src="reveal.js"></script>
+    <script>Reveal.initialize({ hash: false, transition: 'none' })</script>
+  </body>
+</html>

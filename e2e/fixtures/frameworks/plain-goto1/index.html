@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Plain slides, 1-based goToSlide</title>
+    <style>.slide { display: none; height: 100vh; } .slide.current { display: block; }</style>
+  </head>
+  <body>
+    <div class="slide current" data-slide="1" data-speaker-script="Script one EN" data-speaker-script-zh="脚本一"><div class="slide-title"><span class="text-en">One based opening</span><span class="text-zh">从一开始</span></div></div>
+    <div class="slide" data-slide="2"><div class="slide-title">One based second</div></div>
+    <div class="slide" data-slide="3" data-minutes="6"><div class="slide-title">One based third</div></div>
+    <div class="slide" data-slide="4"><div class="slide-title">One based closing</div></div>
+    <script>
+      const slides = [...document.querySelectorAll('.slide')]
+      // Counts from 1, like many hand-made decks.
+      window.goToSlide = (n) => { const k = Math.max(1, Math.min(slides.length, n)); slides.forEach((s, j) => s.classList.toggle('current', j === k - 1)) }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,11 @@
+node_modules/
+out/
+dist/
+e2e/out/
+spike/out/
+# Framework files copied next to the test fixtures by npm run check:frameworks
+e2e/fixtures/frameworks/reveal/reveal.js
+e2e/fixtures/frameworks/reveal/reveal.css
+e2e/fixtures/frameworks/reveal/white.css
+e2e/fixtures/frameworks/impress/impress.js
+e2e/fixtures/frameworks/remark/remark.min.js
