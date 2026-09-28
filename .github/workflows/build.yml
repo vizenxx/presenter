@@ -1,10 +1,12 @@
 # Builds the app zips (nothing to install): Presenter-<version>-mac.zip (Intel and Apple silicon)
-# and Presenter-<version>-win.zip.
-# Run it from the Actions tab ("Run workflow"); the files appear under the run's Artifacts.
+# and Presenter-<version>-win.zip, then publishes them on the Releases page ("Latest") with the
+# download steps from .github/release-notes.md. Run it from the Actions tab ("Run workflow").
 # A Mac app can only be built on a Mac, which is why this runs on GitHub's Mac machines.
 name: Build app zips
 on:
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   build:
     strategy:
@@ -33,3 +35,23 @@ jobs:
           name: presenter-${{ runner.os }}
           path: dist/*.zip
           if-no-files-found: error
+
+  # One download page per version. A rebuild of the same version replaces it, so the page
+  # and its tag always match the newest build.
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Publish the download page
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(node -p "require('./package.json').version")
+          tag="v$version"
+          gh release delete "$tag" --cleanup-tag --yes || true
+          gh release create "$tag" artifacts/*.zip --target "$GITHUB_SHA" --title "Presenter $version" --notes-file .github/release-notes.md --latest

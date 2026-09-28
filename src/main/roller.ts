@@ -20,7 +20,7 @@ interface Saved {
  * A sample list for the first start; the teacher replaces it with a class (Edit).
  * No real names here: the app is shared with other teachers.
  */
-const SEED_TEXT = Array.from({ length: 12 }, (_, i) => `S${String(i + 1).padStart(2, '0')} Student ${i + 1}`).join('\n')
+const SEED_TEXT = Array.from({ length: 12 }, (_, i) => `P${String(i + 1).padStart(2, '0')} Person ${i + 1}`).join('\n')
 
 /** Pause after the highlight lands before a key or click may close the picture. */
 const LANDING_GUARD_MS = 400

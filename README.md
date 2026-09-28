@@ -4,6 +4,10 @@ Presenter shows a deck full screen on the projector and gives the teacher a cons
 
 中文说明：[README.zh-CN.md](README.zh-CN.md). The console has a **🌐 中文** button to switch the interface to Chinese.
 
+## Download
+
+The newest zips are on the **[Releases page](https://github.com/vizenxx/presenter/releases/latest)**, under **Assets**: `…-win.zip` for Windows, `…-mac.zip` for a Mac. The repository is private, so only people with access can open that page; give other teachers the zip file itself (for example through Google Drive).
+
 ## Open (nothing to install)
 
 Presenter is a folder you unzip; there is no installer and no administrator password.
@@ -73,12 +77,12 @@ The bar above the current slide: **Pointer, Pen, Highlighter, Box, Laser, Eraser
 - At zero the alarm rings until you press any key or click. That key does not turn the page.
 - UXD202 decks show the countdown in their own bar; other decks show it at the bottom right of the projector.
 
-## Random student
+## Name picker
 
-Click **🎲 Random student**. Choose a list and click **🎲 Pick a student**: the class list rolls on the students' screens, slows down and stops on one person. After it stops, any key or click hides it; that key does not turn the page. The rules are those of the earlier Lucky Roller page.
+Click **🎲 Name picker**. Choose a list and click **🎲 Pick a name**: the list rolls on the projector and the extra screens, slows down and stops on one person. After it stops, any key or click hides it; that key does not turn the page. The rules are those of the earlier Lucky Roller page.
 
 - Under the button, **Picked so far: X of Y** counts the picks. **↺ Reset** (after a confirmation) makes everyone in the list unpicked again.
-- The first start has a sample list: click **Edit** and paste your class (one "ID Name" per line).
+- The first start has a sample list: click **Edit** and paste your own (one person per line; a number in front is optional).
 - Lists are saved; picks last while the app is open.
 
 ## Extra screens and text size
@@ -92,6 +96,6 @@ Click **🎲 Random student**. Choose a list and click **🎲 Pick a student**: 
 - `npm run build` (build), `npm test` (unit tests), `npm run e2e` (end-to-end). With a second display connected (a class may be on the projector) it runs hidden and muted, without the projecting steps.
 - Off-screen checks that open no window: `npm run check:viewer` (PPT/PDF), `npm run check:ink` (marks), `npm run check:frameworks` (Reveal.js, remark, impress.js, Marp, protocol example), `npm run check:console` (console layout, English and Chinese).
 - Real conversions: `PRESENTER_CONVERT_IT=libreoffice npm test` (or `powerpoint`, `keynote` on a Mac).
-- Zips: `npm run dist:win` (Windows) and `npm run dist:mac` (only on a Mac). Without a Mac, run the **Build app zips** workflow on GitHub (`.github/workflows/build.yml`); it builds both. (A single-file portable exe was tried: it unpacks into %TEMP% at every start, and on some PCs Chromium's sandbox cannot start from there.) Icon source: `build/icon.svg` (`npx electron tools/make-icon.cjs build`).
+- Zips: `npm run dist:win` (Windows) and `npm run dist:mac` (only on a Mac). Without a Mac, run the **Build app zips** workflow on GitHub (`.github/workflows/build.yml`): it builds both and replaces the Releases page of this version (text: `.github/release-notes.md`). Raise `version` in `package.json` for a new version. (A single-file portable exe was tried: it unpacks into %TEMP% at every start, and on some PCs Chromium's sandbox cannot start from there.) Icon source: `build/icon.svg` (`npx electron tools/make-icon.cjs build`).
 - `PRESENTER_EXE=<unzipped folder>/Presenter.exe node e2e/smoke.mjs` runs the end-to-end test on a packaged app.
 - After any source change run `npm run build`, or the desktop icon still opens the old version.

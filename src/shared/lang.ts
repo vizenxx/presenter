@@ -26,7 +26,7 @@ export const MAIN_STRINGS = {
     openDeck: '打开课件',
     pickScreenDeck: '选择新屏幕要显示的课件',
     deckFilter: '课件（PPT、Keynote、PDF、HTML）',
-    defaultList: '示例名单（点“编辑”换成你的班级）',
+    defaultList: '示例名单（点“编辑”换成你的名单）',
     untitledList: '未命名名单',
     saveCopy: '另存一份'
   }

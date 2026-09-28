@@ -55,7 +55,7 @@ window.roller.onPlay((play: RollerPlay) => {
   // The winner's count already includes this roll; show it only after the landing.
   const cards = play.people.map((p, i) => card(p.name, p.id, i === play.winner ? p.wins - 1 : p.wins))
   grid.replaceChildren(...cards)
-  count.textContent = `${play.people.length} students`
+  count.textContent = `${play.people.length} people`
   bName.textContent = ''
   bId.textContent = ''
   stage.dataset['phase'] = 'rolling'
