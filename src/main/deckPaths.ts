@@ -17,7 +17,9 @@ export function deckUrl(folder: string, entry: string, outputId: string): { host
 export function resolveDeckRequest(folder: string, pathname: string): string | null {
   let rel: string
   try {
-    rel = decodeURIComponent(pathname).replace(/^[/\\]+/, '')
+    // A backslash is a folder separator on every system here (on a Mac it would otherwise be
+    // part of a file name), so "..\" can never step out of the deck folder.
+    rel = decodeURIComponent(pathname).replace(/\\/g, '/').replace(/^\/+/, '')
   } catch {
     return null
   }
