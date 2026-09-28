@@ -42,7 +42,7 @@ Presenter is a folder you unzip; there is no installer and no administrator pass
 - Any other HTML deck still works in *key mode*: pages turn with arrow keys; the page count is unknown.
 - **Slides** and **Notes** show the deck of the selected screen, so an extra screen with another deck shows its own list and notes.
 - To make a new deck work fully, follow [docs/protocol.md](docs/protocol.md), start from [examples/minimal-deck.html](examples/minimal-deck.html), or — when an AI assistant builds the deck — paste the block in [docs/ai-integration.md](docs/ai-integration.md) into your request.
-- In the app, **📘 Guide** (top bar, or the link on the start screen) has all of this in one place: copy the AI request with one click, save the example deck or the protocol.
+- In the app, **📘 Guide** (top bar, or the link on the start screen) has two parts: **1 · Use Presenter** ("I want to … → do this") and **2 · Prepare decks** (which decks need nothing, the AI request to copy, the example deck and the protocol to save).
 
 ### PPT and PDF
 

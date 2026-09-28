@@ -71,10 +71,11 @@ contextBridge.exposeInMainWorld('presenter', api)
   )
 }
 
-type Open = 'guide' | 'screen-menu' | 'add-menu' | 'crowd' | 'roller' | null
+type Open = 'guide' | 'guide-prepare' | 'screen-menu' | 'add-menu' | 'crowd' | 'roller' | null
 /** Clicks the button that opens each pop-up. */
 const OPENERS: Record<string, string> = {
   guide: `[...document.querySelectorAll('header button')].find((x) => x.textContent.includes('📘'))`,
+  'guide-prepare': `(() => { [...document.querySelectorAll('header button')].find((x) => x.textContent.includes('📘')).click(); return new Promise((r) => setTimeout(() => r([...document.querySelectorAll('[role=dialog] button')].find((x) => x.textContent.startsWith('2'))), 300)) })()`,
   'screen-menu': `[...document.querySelectorAll('footer button')].find((x) => x.textContent.trim() === '⋯')`,
   'add-menu': `[...document.querySelectorAll('footer button')].find((x) => x.textContent.includes('＋'))`,
   roller: `[...document.querySelectorAll('header button')].find((x) => x.textContent.includes('🎲'))`
@@ -90,7 +91,7 @@ async function shot(language: 'en' | 'zh', projecting: boolean, open: Open = nul
   })
   await wait(1200)
   if (open && OPENERS[open]) {
-    const opened = await win.webContents.executeJavaScript(`(() => { const b = ${OPENERS[open]}; if (b) b.click(); return !!b })()`)
+    const opened = await win.webContents.executeJavaScript(`(async () => { const b = await ${OPENERS[open]}; if (b) b.click(); return !!b })()`)
     if (!opened) throw new Error(`${open} button not found`)
     await wait(600)
   }
@@ -98,6 +99,9 @@ async function shot(language: 'en' | 'zh', projecting: boolean, open: Open = nul
   const name = `console-${language}${projecting ? '-projecting' : ''}${open ? `-${open}` : ''}.png`
   fs.writeFileSync(path.join(OUT, name), image.toPNG())
   const overflow = await win.webContents.executeJavaScript('document.documentElement.scrollWidth > innerWidth || document.documentElement.scrollHeight > innerHeight')
+  // A dialog must fit inside the window (its body scrolls instead).
+  const dialogCut = await win.webContents.executeJavaScript(`(() => { const d = document.querySelector('[role=dialog]'); if (!d) return false; const r = d.getBoundingClientRect(); return r.top < 0 || r.bottom > innerHeight })()`)
+  if (dialogCut) throw new Error(`${language} ${open}: the dialog runs off the window`)
   console.log(`ok ${name}${overflow ? ' (page scrolls!)' : ''}`)
   win.destroy()
   await wait(300)
@@ -111,6 +115,8 @@ app.whenReady().then(async () => {
     await shot('en', true)
     await shot('en', false, 'guide')
     await shot('zh', false, 'guide')
+    await shot('en', false, 'guide-prepare')
+    await shot('zh', false, 'guide-prepare')
     await shot('en', false, 'screen-menu')
     await shot('zh', false, 'add-menu')
     await shot('en', false, 'crowd')
