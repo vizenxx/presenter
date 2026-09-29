@@ -1,6 +1,7 @@
 import { BrowserWindow } from 'electron'
 import { consoleDisplay } from './displays'
 import { HEADLESS } from './headless'
+import { startupLog } from './startupLog'
 
 /** The teacher's control window on the laptop display. */
 export class ConsoleWindow {
@@ -22,6 +23,7 @@ export class ConsoleWindow {
     // The title follows the chosen language (set by the store), not the page's <title>.
     this.win.on('page-title-updated', (event) => event.preventDefault())
     this.win.once('ready-to-show', () => {
+      startupLog('console ready to show')
       if (HEADLESS) return
       this.win.maximize()
       this.win.show()

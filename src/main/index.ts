@@ -10,6 +10,7 @@ import { AI_REQUEST, copyText } from './guide'
 import { Output, type DeckStateMsg } from './output'
 import { HEADLESS } from './headless'
 import { IS_MAC } from './platform'
+import { startupLog } from './startupLog'
 import { Store } from './store'
 
 registerDeckScheme()
@@ -27,6 +28,11 @@ function loadPage(wc: WebContents, name: string): void {
 
 function wireIpc(store: Store): void {
   const outputOf = (wc: WebContents): Output | undefined => Output.byContents.get(wc.id)
+  ipcMain.handle('console:get-state', () => {
+    startupLog('console asked for its state')
+    return store.getState()
+  })
+  ipcMain.on('console:got-state', () => startupLog('console received its state (the app is ready)'))
   ipcMain.on('deck:state', (e, msg: DeckStateMsg) => outputOf(e.sender)?.receiveState(msg))
   ipcMain.on('deck:editing', (e, editing: boolean) => {
     const o = outputOf(e.sender)
@@ -86,6 +92,7 @@ function wireIpc(store: Store): void {
 }
 
 app.whenReady().then(() => {
+  startupLog('app ready')
   // macOS needs an app menu for ⌘Q, ⌘C, ⌘V in text fields. No Undo item: ⌘Z undoes a mark.
   Menu.setApplicationMenu(
     IS_MAC
@@ -111,6 +118,7 @@ app.whenReady().then(() => {
   })
   store.start()
   wireIpc(store)
+  startupLog('windows created')
   if (process.env['PRESENTER_TEST'] === '1') (globalThis as Record<string, unknown>)['__presenter'] = store
   const initial = process.env['PRESENTER_OPEN'] ?? process.argv.find((a) => /\.html?$/i.test(a))
   if (initial) void store.openMainDeck(initial)

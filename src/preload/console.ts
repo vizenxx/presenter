@@ -4,7 +4,22 @@ import type { AppState, ConsoleApi } from '../shared/types'
 
 const api: ConsoleApi = {
   onState: (cb) => {
-    ipcRenderer.on('state', (_e, state: AppState) => cb(state))
+    let pushed = false
+    let first = true
+    const take = (state: AppState): void => {
+      if (first) ipcRenderer.send('console:got-state')
+      first = false
+      cb(state)
+    }
+    ipcRenderer.on('state', (_e, state: AppState) => {
+      pushed = true
+      take(state)
+    })
+    // The page subscribes only after React's first render, which can be after the main process
+    // sent its first state; so ask for the current state once (a newer push wins).
+    void ipcRenderer.invoke('console:get-state').then((state: AppState) => {
+      if (!pushed) take(state)
+    })
   },
   onMirror: (cb) => {
     ipcRenderer.on('mirror', (_e, jpeg: Uint8Array) => cb(jpeg))

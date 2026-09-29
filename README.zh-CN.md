@@ -137,6 +137,7 @@ UXD202 的课件已经接入同步协议。程序能读到总页数、每页标�
 
 - 源码：`src/`。设计文档：`docs/specs/`。实施计划：`docs/superpowers/plans/`。
 - 常用命令：`npm run build`（构建）、`npm test`（单元测试）、`npm run e2e`（端到端测试；接着第二块屏幕时，它隐藏运行、静音，并跳过投影步骤）、`npm run dev`（开发模式；PPT/PDF 查看页需要先 build）。
+- `npm run check:start`：隐藏、静音地启动程序（接着投影仪也安全），先逐个启动，再 8 个同时启动，检查控制台都拿到了状态。每次启动都会在程序数据文件夹（Windows：`%APPDATA%\presenter`；Mac：`~/Library/Application Support/Presenter`）写 `startup-log.txt`：如果控制台一直停在 “Starting…”，这个文件会显示停在哪一步。
 - 不开窗口的离屏检查：`npm run check:viewer`（PPT/PDF）、`npm run check:ink`（标注）、`npm run check:frameworks`（Reveal.js、remark、impress.js、Marp、协议示例）、`npm run check:console`（控制台排版，中英文）。
 - 真实转换测试：`PRESENTER_CONVERT_IT=libreoffice npm test`（或 `powerpoint`；Mac 上用 `keynote`）。
 - 压缩包：`npm run dist:win`（Windows）、`npm run dist:mac`（只能在 Mac 上运行）。没有 Mac 时，在 GitHub 上运行 **Build app zips** 工作流（`.github/workflows/build.yml`），它同时生成两个压缩包。图标源文件：`build/icon.svg`。

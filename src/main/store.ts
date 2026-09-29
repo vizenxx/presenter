@@ -23,6 +23,7 @@ import { loadSettings, saveSettings } from './settings'
 import { RollerController } from './roller'
 import { RollerOverlay } from './rollerOverlay'
 import { ScreenWindow } from './screenWindow'
+import { startupLog } from './startupLog'
 import { rememberZoom, zoomFor } from './zoomMemory'
 
 export interface StorePaths {
@@ -96,7 +97,10 @@ export class Store {
       this.consoleWin.win.contentView.addChildView(view)
       view.setVisible(false)
     }
-    this.consoleWin.win.webContents.on('did-finish-load', () => this.emitNow())
+    this.consoleWin.win.webContents.on('did-finish-load', () => {
+      startupLog('console page loaded; state sent')
+      this.emitNow()
+    })
 
     const overlay = this.projectorWin.overlay.webContents
     overlay.on('did-finish-load', () => this.syncTimer(true))
