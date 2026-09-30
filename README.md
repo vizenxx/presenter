@@ -2,7 +2,7 @@
 
 Presenter shows a deck full screen on the projector and gives the teacher a console on the laptop screen.
 
-中文说明：[README.zh-CN.md](README.zh-CN.md). The console has a **🌐 中文** button to switch the interface to Chinese.
+中文说明：[README.zh-CN.md](README.zh-CN.md). The interface is English only.
 
 ## Download
 

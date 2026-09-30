@@ -7,10 +7,11 @@ import { useAppState, useConsoleKeys, useFileDrop, useMirror } from './hooks'
 import { NextPane } from './NextPane'
 import { ScreensBar } from './ScreensBar'
 import { TimerPanel } from './TimerPanel'
-import { LangContext, STRINGS } from './i18n'
+import { useT } from './i18n'
 import { DeckStatusBar, type ConsoleMenu } from './ui'
 
 export function App() {
+  const t = useT()
   const state = useAppState()
   const mirror = useMirror()
   const [drawer, setDrawer] = useState<DrawerTab | null>(null)
@@ -19,7 +20,7 @@ export function App() {
   const closeGuide = useCallback(() => setGuide(false), [])
   useConsoleKeys(state?.timer.alarming ?? false, state?.ink.tool ?? 'pointer')
   useFileDrop()
-  if (!state) return <div className="grid h-full place-items-center text-base text-muted">{STRINGS.en.starting}</div>
+  if (!state) return <div className="grid h-full place-items-center text-base text-muted">{t.starting}</div>
   const projector = state.outputs.find((o) => o.id === 'projector')
   const next = state.outputs.find((o) => o.id === 'next')
   if (!projector || !next) return null
@@ -27,7 +28,6 @@ export function App() {
   const suspended = menu !== null || guide
   const cols = drawer ? 'grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_20rem]' : 'grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]'
   return (
-    <LangContext.Provider value={STRINGS[state.language]}>
     <div
       className="flex h-full flex-col"
       onPointerDownCapture={() => {
@@ -47,6 +47,5 @@ export function App() {
       <ScreensBar state={state} menu={menu} onMenu={setMenu} />
       {guide && <GuideDialog onClose={closeGuide} />}
     </div>
-    </LangContext.Provider>
   )
 }

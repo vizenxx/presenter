@@ -55,9 +55,6 @@ export function Header(props: {
         {t.guideButton}
       </Btn>
       <ProjectStatus state={state} />
-      <Btn title={t.langButtonTitle} onClick={() => window.presenter.setLanguage(state.language === 'en' ? 'zh' : 'en')}>
-        🌐 {t.langButton}
-      </Btn>
       {state.projecting ? (
         <Btn title={t.stopProjectingTitle} onClick={() => window.presenter.stopProjecting()}>
           {t.stopProjecting}

@@ -52,7 +52,6 @@ const api: ConsoleApi = {
   rollerSaveList: (id, name, text) => ipcRenderer.send('console:roller-save-list', id, name, text),
   rollerDeleteList: (id) => ipcRenderer.send('console:roller-delete-list', id),
   dismissDeckStatus: () => ipcRenderer.send('console:dismiss-deck-status'),
-  setLanguage: (lang) => ipcRenderer.send('console:set-language', lang),
   setInkTool: (tool) => ipcRenderer.send('console:ink-tool', tool),
   setInkColor: (color) => ipcRenderer.send('console:ink-color', color),
   inkOp: (op, fromCanvas) => ipcRenderer.send('console:ink-op', op, fromCanvas),

@@ -21,7 +21,7 @@ app.on('window-all-closed', () => undefined)
 const wait = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
 
 /** crowd = six extra screens and the next preview selected (checks that the screens bar stays in view). */
-function sampleState(language: 'en' | 'zh', projecting: boolean, crowd = false): AppState {
+function sampleState(projecting: boolean, crowd = false): AppState {
   const deck = { path: 'C:/decks/UXD202 Lecture n1.pptx', name: 'UXD202 Lecture n1' }
   const base = { deck, adapter: 'uxd202' as const, total: 18, linked: true, fullscreen: false, zoomPercent: 100, deckKind: 'slides' as const }
   return {
@@ -46,7 +46,6 @@ function sampleState(language: 'en' | 'zh', projecting: boolean, crowd = false):
     previewSize: { width: 1920, height: 1080 },
     roller: { lists: [{ id: 'l', name: 'Class list', count: 6 }], activeListId: 'l', activeText: '', people: ['Ann Lee', 'Bo Chen', 'Cai Dorji', 'Dema Wangmo', 'Eli Tashi', 'Fay Zangpo'].map((name, i) => ({ id: `1225010${i}`, name, wins: [1, 0, 2, 0, 0, 0][i] })), superLucky: true, roll: null, showing: false },
     deckStatus: { state: 'ready' },
-    language,
     ink: { tool: 'pen', color: '#ef4444' }
   }
 }
@@ -81,8 +80,8 @@ const OPENERS: Record<string, string> = {
   roller: `[...document.querySelectorAll('header button')].find((x) => x.textContent.includes('🎲'))`
 }
 
-async function shot(language: 'en' | 'zh', projecting: boolean, open: Open = null): Promise<void> {
-  writeStub(sampleState(language, projecting, open === 'crowd'))
+async function shot(projecting: boolean, open: Open = null): Promise<void> {
+  writeStub(sampleState(projecting, open === 'crowd'))
   const win = new BrowserWindow({ show: false, width: 1536, height: 864, useContentSize: true, webPreferences: { preload: STUB, contextIsolation: true, sandbox: true, offscreen: true } })
   // A page load can be refused while the previous window is still closing; retry once.
   await win.loadFile(path.join(ROOT, 'out', 'renderer', 'console.html')).catch(async () => {
@@ -96,12 +95,12 @@ async function shot(language: 'en' | 'zh', projecting: boolean, open: Open = nul
     await wait(600)
   }
   const image = await win.webContents.capturePage()
-  const name = `console-${language}${projecting ? '-projecting' : ''}${open ? `-${open}` : ''}.png`
+  const name = `console${projecting ? '-projecting' : ''}${open ? `-${open}` : ''}.png`
   fs.writeFileSync(path.join(OUT, name), image.toPNG())
   const overflow = await win.webContents.executeJavaScript('document.documentElement.scrollWidth > innerWidth || document.documentElement.scrollHeight > innerHeight')
   // A dialog must fit inside the window (its body scrolls instead).
   const dialogCut = await win.webContents.executeJavaScript(`(() => { const d = document.querySelector('[role=dialog]'); if (!d) return false; const r = d.getBoundingClientRect(); return r.top < 0 || r.bottom > innerHeight })()`)
-  if (dialogCut) throw new Error(`${language} ${open}: the dialog runs off the window`)
+  if (dialogCut) throw new Error(`${open}: the dialog runs off the window`)
   console.log(`ok ${name}${overflow ? ' (page scrolls!)' : ''}`)
   win.destroy()
   await wait(300)
@@ -110,18 +109,13 @@ async function shot(language: 'en' | 'zh', projecting: boolean, open: Open = nul
 app.whenReady().then(async () => {
   let code = 0
   try {
-    await shot('en', false)
-    await shot('zh', false)
-    await shot('en', true)
-    await shot('en', false, 'guide')
-    await shot('zh', false, 'guide')
-    await shot('en', false, 'guide-prepare')
-    await shot('zh', false, 'guide-prepare')
-    await shot('en', false, 'screen-menu')
-    await shot('zh', false, 'add-menu')
-    await shot('en', false, 'crowd')
-    await shot('en', false, 'roller')
-    await shot('zh', false, 'roller')
+    await shot(false)
+    await shot(true)
+    await shot(false, 'guide')
+    await shot(false, 'guide-prepare')
+    await shot(false, 'screen-menu')
+    await shot(false, 'crowd')
+    await shot(false, 'roller')
     console.log('CONSOLE OK')
   } catch (error) {
     console.error(String(error))

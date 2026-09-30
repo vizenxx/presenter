@@ -1,7 +1,6 @@
 import { app, ipcMain, Menu, type WebContents } from 'electron'
 import path from 'node:path'
 import type { InkOp, InkTool } from '../shared/ink'
-import type { Lang } from '../shared/lang'
 import type { KeyIntent, NavAction, OutputId, PreviewRect } from '../shared/types'
 import type { ZoomDirection } from '../shared/zoom'
 import type { GuideFile } from '../shared/guide'
@@ -63,7 +62,6 @@ function wireIpc(store: Store): void {
   ipcMain.on('console:open-dialog', () => void store.openDialog())
   ipcMain.on('console:open-path', (_e, p: string) => void store.openMainDeck(p))
   ipcMain.on('console:dismiss-deck-status', () => store.dismissDeckStatus())
-  ipcMain.on('console:set-language', (_e, lang: Lang) => store.setLanguage(lang === 'zh' ? 'zh' : 'en'))
   ipcMain.on('console:navigate', (_e, action: NavAction) => store.navigate(action))
   ipcMain.on('console:key', (_e, intent: KeyIntent) => store.onKey(intent, null))
   ipcMain.on('console:select', (_e, id: OutputId) => store.select(id))

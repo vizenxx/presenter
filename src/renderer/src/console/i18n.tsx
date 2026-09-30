@@ -1,9 +1,8 @@
-import { createContext, useContext } from 'react'
-import type { DeckErrorCode, Lang } from '../../../shared/lang'
+import type { DeckErrorCode } from '../../../shared/lang'
 import type { OutputView } from '../../../shared/types'
 import { IS_MAC, KEYS } from './platform'
 
-/** Console wording. English is the default language; Chinese mirrors every key. */
+/** Console wording. The interface is English only. */
 
 const en = {
   starting: 'Starting…',
@@ -23,8 +22,6 @@ const en = {
   startProjectingTitle: 'Show the deck full screen on the projector',
   stopProjecting: '■ Stop projecting (Esc)',
   stopProjectingTitle: 'Stop projecting; the deck comes back to the console',
-  langButton: '中文',
-  langButtonTitle: '切换到中文界面',
 
   dropHere: 'Drop a deck file here',
   supported: 'PPT, PPTX, PDF and HTML decks are supported.',
@@ -191,199 +188,12 @@ const en = {
 
 export type Strings = typeof en
 
-const zh: Strings = {
-  starting: '正在启动…',
-  noDeck: '未打开课件',
-  openDeck: '打开课件',
-  recent: '最近 ▾',
-  addScreen: '添加屏幕',
-  sameDeckWindow: '同一份课件（新窗口）',
-  otherDeckWindow: '另一份课件（新窗口）…',
-  rollerButton: '🎲 随机点名',
-  rollerButtonTitle: '从名单里随机点一个人；名单在投影屏上滚动显示',
-  projectingExternal: '正在投影到第二块屏幕',
-  projectingWindow: '正在投影（窗口模式）',
-  externalFound: '已检测到第二块屏幕',
-  noExternal: '未检测到第二块屏幕：投影会以窗口显示',
-  startProjecting: `▶ 开始投影（${KEYS.project}）`,
-  startProjectingTitle: '把课件全屏显示到投影屏',
-  stopProjecting: '■ 停止投影（Esc）',
-  stopProjectingTitle: '停止投影，课件回到控制台',
-  langButton: 'English',
-  langButtonTitle: 'Switch to the English interface',
-
-  dropHere: '把课件文件拖到这里',
-  supported: '支持 PPT、PPTX、PDF 和 HTML 课件。',
-  recentlyOpened: '最近打开',
-  paneProjecting: '投影屏 · 学生看到的画面',
-  paneNotProjecting: '当前页 · 还没有投影',
-  slides: '目录',
-  notes: '备注',
-  pick: '随机点名',
-  pickTab: '🎲 点名',
-  hide: '收起',
-  selectProjector: '点击选中投影屏',
-  waitingPicture: '等待画面…',
-  loadingDeck: '课件加载中…',
-  nextSlide: '下一页预览',
-  loadingPreview: '预览加载中…',
-  lastSlide: '最后一页',
-  nothingAfter: '这是最后一页，后面没有了。',
-  nextSelectTitle: '点击选中：翻页键只翻这个预览。点击当前页回到投影屏。',
-  previewBrowsing: '翻页键只翻预览',
-
-  timer: '计时器',
-  planned: (m) => `本页计划 ${m} 分钟`,
-  stopAlarm: '停止铃声',
-  pause: '暂停',
-  resume: '继续',
-  start: '开始',
-  reset: '重置',
-  alarmHint: '时间到。按任意键或点击任意处停止铃声。',
-  presetMinutes: (m) => `${m} 分`,
-  minutes: '分钟',
-  startCustom: '按此时长开始',
-
-  projector: '投影屏',
-  screenN: (n) => `屏幕 ${n}`,
-  screens: '屏幕',
-  notProjecting: '未投影',
-  linked: '联动',
-  linkedTitle: '勾选后，选中任一联动屏幕翻页时，这个屏幕会一起翻',
-  pageBackTitle: '只让这个屏幕后退一页',
-  pageNextTitle: '只让这个屏幕前进一页',
-  fullScreen: '全屏',
-  exitFullScreen: '退出全屏',
-  close: '关闭',
-  closeScreen: '关闭这个屏幕',
-  screenMoreTitle: '字号、全屏、关闭',
-  screensHint: '选中的屏幕会翻页；它勾选了“联动”时，所有联动屏幕一起翻。',
-
-  noDeckShort: '未打开课件',
-  connecting: '正在连接课件…',
-  slideOf: (n, total) => `第 ${n} / ${total} 页`,
-  slideN: (n) => `第 ${n} 页`,
-  keyMode: '按键模式',
-  keyModeTitle: '这份课件没有接入同步协议。程序用方向键翻页，所以不知道总页数。',
-  goTo: (label) => `跳到 ${label}`,
-  textSize: '字号',
-  textSizeTitle: `放大或缩小这个屏幕上的课件。快捷键：${KEYS.mod} + / ${KEYS.mod} − / ${KEYS.mod} 0`,
-  textSizeWholePage: 'PPT 和 PDF 课件按整页显示，字号不能调整。',
-  backTo100: '恢复 100%',
-
-  converting: '正在把 PPT 转成放映格式。第一次打开一份 PPT 需要十几秒，之后会直接打开。',
-  deckErrors: {
-    unsupported: '这种文件不能放映。请选择 PPT、PPTX、PDF 或 HTML 文件。',
-    missing: '找不到这个文件。它可能已经被移动或删除。',
-    'no-converter': IS_MAC
-      ? '这台 Mac 没有 Keynote，也没有 LibreOffice，所以不能打开 PPT 文件。请安装 Keynote（App Store 免费），或者先把 PPT 另存为 PDF。'
-      : '这台电脑没有 PowerPoint，也没有 LibreOffice，所以不能打开 PPT 文件。请安装其中一个，或者先把 PPT 另存为 PDF。',
-    'convert-failed': '这份 PPT 转换失败。文件可能已损坏，或者正被其他程序占用。',
-    'automation-denied': 'Presenter 没有使用 Keynote 的权限。请打开“系统设置 → 隐私与安全性 → 自动化”，在 Presenter 下打开 Keynote，然后重新打开文件。',
-    'open-failed': '这份课件打不开。'
-  },
-
-  noSlideList: '这份课件没有提供目录。',
-  noNotes: '这一页没有备注。',
-
-  chooseList: '选择名单',
-  edit: '编辑',
-  newList: '新建',
-  ready: '准备好了吗？',
-  pressToPick: '点下面的“点一个人”开始',
-  picked: '点到',
-  pickedTimes: (n) => `第 ${n} 次点到`,
-  pickOne: '🎲 点一个人',
-  hideRoller: '收起投影屏上的点名画面',
-  noAudience: '现在没有投影。开始投影后，大家才能看到点名画面。',
-  superLucky: '点到过的人还能再被点到（概率很低）',
-  listCount: (n) => `名单 · ${n} 人`,
-  resetPicks: '↺ 重置',
-  resetPicksTitle: '重新开始：这份名单里所有人都算“没点到”',
-  confirmResetPicks: '确定重置这份名单的点名记录吗？所有人都会变回“没点到”。',
-  pickedCount: (n, total) => `已点到 ${n} / ${total} 人`,
-  timesShort: (n) => `${n} 次`,
-  listOption: (name, n) => `${name}（${n} 人）`,
-  editList: '编辑名单',
-  createList: '新建名单',
-  listNamePlaceholder: '名单名称，例如 UXD202',
-  listPlaceholder: '每行一个人；前面的编号可以不写\n例如：1001 王小明',
-  listSummary: (n) => `共 ${n} 人。保存后，这份名单的点名记录会清除。`,
-  save: '保存',
-  cancel: '取消',
-  deleteList: '删除名单',
-  confirmDelete: (name) => `删除名单“${name}”？删除后不能恢复。`,
-
-  inkTitle: '在课件上标注',
-  inkPointer: '鼠标',
-  inkPointerTitle: '普通鼠标：可以点击和操作课件（Esc）',
-  inkPen: '画笔',
-  inkHighlighter: '荧光笔',
-  inkRect: '框选',
-  inkLaser: '红点',
-  inkEraser: '橡皮擦',
-  inkUndo: '撤销',
-  inkClear: '清空',
-  inkToolTitle: (name, key) => `${name}（${key}）`,
-  inkUndoTitle: `撤销最后一笔（${KEYS.mod}+Z）`,
-  inkClearTitle: '清除这一页上的全部标注（Delete）',
-  inkColor: '颜色',
-  inkHint: '标注会立即出现在投影屏上，翻页时自动清除。',
-
-  guideButton: '📘 指引',
-  guideButtonTitle: '怎样使用 Presenter，以及课件要不要准备',
-  guideLink: '第一次用？打开指引 →',
-  guideTitle: '指引',
-  guidePurpose: '这份指引回答两个问题：上课时怎样使用 Presenter？我的课件需要准备吗？',
-  guideTabUse: '1 · 使用 Presenter',
-  guideTabPrepare: '2 · 准备课件',
-  guideWant: '我想……',
-  guideDo: '这样做',
-  guideUseRows: [
-    ['打开课件', '把文件拖进这个窗口，或点“打开课件”。'],
-    ['给全班放映', `点“▶ 开始投影”，或按 ${KEYS.project}。按 Esc 停止。`],
-    ['翻页', '翻页笔、方向键、PageUp / PageDown 或空格。Home 和 End 跳到第一页和最后一页。'],
-    ['看后面的内容', '右侧的“下一页预览”。点它可以继续往后看，学生看到的画面不变。点当前页回来。'],
-    ['在课件上标注', '课件上方的工具条：画笔 (P)、荧光笔 (H)、框选 (R)、红点 (L)、橡皮擦 (E)。翻页后标注自动清除。'],
-    ['看备注或跳到某一页', '课件上方的“目录”和“备注”。'],
-    ['给活动计时', '计时器：点 1 分、5 分……，或输入分钟数再点开始。时间到会响铃，按任意键停止。'],
-    ['随机点一个人', '顶部的“🎲 随机点名”。'],
-    ['用更多屏幕', '底部栏的“＋ 添加屏幕”。勾选了“联动”的屏幕一起翻页。'],
-    ['把字放大', `“字号”按钮，或 ${KEYS.mod} + / ${KEYS.mod} −（HTML 课件）。`]
-  ],
-  guidePrepareIntro: '大多数课件不需要准备。找到你的课件类型：',
-  guideKind: '我的课件是……',
-  guideTodo: '要做什么',
-  guideResult: '能用哪些功能',
-  guidePrepareRows: [
-    ['PPT、PPTX 或 Keynote', '不用做什么，直接打开。', '全部页面、每页标题和讲者备注。动画和视频不会播放。'],
-    ['PDF', '不用做什么，直接打开。', '全部页面。标题取自页面文字。'],
-    ['用 Reveal.js、remark、impress.js 或 Marp 做的 HTML，或每页一个 "slide" 元素的 HTML', '不用做什么，直接打开。', '总页数、目录、备注、准确跳页。'],
-    ['其他 HTML', '直接打开也能用。想要全部功能，用下面两种方法之一重新制作。', '用方向键翻页，不知道总页数（“按键模式”）。']
-  ],
-  guideAiTitle: '用 AI 做 HTML 课件（ChatGPT、Claude、Gemini 等）',
-  guideAiSteps: ['先写你要这份课件教什么。', '点“复制给 AI 的要求”，贴在你的文字后面。', '保存 AI 给你的 HTML 文件，然后在这里打开。'],
-  guideAiNote: '这段要求保持英文即可：所有 AI 都能读懂；课件用什么语言，由你自己的文字决定。',
-  showRequest: '查看要求原文',
-  copyRequest: '复制给 AI 的要求',
-  copied: '已复制 ✓',
-  saveRequest: '另存为文本文件…',
-  guideSelfTitle: '自己动手做 HTML 课件',
-  guideSelfText: '从示例课件改起。每一页有标题，可以写计划分钟数和隐藏的讲者备注；一小段接入脚本告诉 Presenter 现在是哪一页。',
-  saveExample: '保存示例课件…',
-  saveProtocol: '保存协议说明…',
-  savedTo: (p) => `已保存：${p}`
-}
-
-export const STRINGS: Record<Lang, Strings> = { en, zh }
-
-export const LangContext = createContext<Strings>(en)
-
+/** The console wording (English only). */
 export function useT(): Strings {
-  return useContext(LangContext)
+  return en
 }
 
-/** Screen names are built here, so they follow the chosen language. */
+/** Screen names are built in one place. */
 export function screenLabel(t: Strings, o: OutputView): string {
   if (o.kind === 'projector') return t.projector
   if (o.kind === 'preview') return t.nextSlide

@@ -5,7 +5,7 @@ import { commandKey, intentToAction, keyIntent, type CommandKey } from '../share
 import { planMove, type NavOutput } from '../shared/nav'
 import { DECK_EXTENSIONS, deckKind, deckTitle } from '../shared/deckKinds'
 import { INK_COLORS, INK_TOOLS, InkScene, type InkOp, type InkSettings, type InkStroke, type InkTool } from '../shared/ink'
-import { MAIN_STRINGS, type Lang } from '../shared/lang'
+import { MAIN_STRINGS } from '../shared/lang'
 import { mergeRecent } from '../shared/recentList'
 import * as T from '../shared/timer'
 import { stepZoom, zoomKey, type ZoomDirection } from '../shared/zoom'
@@ -19,7 +19,6 @@ import { Output, type DeckStateMsg, type OutputEvent } from './output'
 import { IS_MAC } from './platform'
 import { ProjectorWindow, WINDOWED } from './projectorWindow'
 import { loadRecent, saveRecent } from './recent'
-import { loadSettings, saveSettings } from './settings'
 import { RollerController } from './roller'
 import { RollerOverlay } from './rollerOverlay'
 import { ScreenWindow } from './screenWindow'
@@ -53,7 +52,6 @@ export class Store {
   private mainDeck: DeckRef | null = null
   private mainPrepared: PreparedDeck | null = null
   private deckStatus: DeckStatus = { state: 'ready' }
-  private language: Lang = 'en'
   private inkSettings: InkSettings = { tool: 'pointer', color: INK_COLORS[0] }
   private readonly inkScene = new InkScene()
   /** Projector page the marks belong to; marks clear when it changes. */
@@ -84,7 +82,6 @@ export class Store {
 
   start(): void {
     this.recent = loadRecent()
-    this.language = loadSettings().language
     const projector = this.createOutput('projector', 1, 'projector', 0)
     // The next preview is not a screen: it shows the slide after the selected screen's slide.
     const next = this.createOutput('next', 0, 'preview', 1)
@@ -167,18 +164,11 @@ export class Store {
     this.emit()
   }
 
-  setLanguage(lang: Lang): void {
-    this.language = lang
-    saveSettings({ language: lang })
-    this.applyTitles()
-    this.emit()
+  private strings(): typeof MAIN_STRINGS {
+    return MAIN_STRINGS
   }
 
-  private strings(): (typeof MAIN_STRINGS)[Lang] {
-    return MAIN_STRINGS[this.language]
-  }
-
-  /** Window titles follow the chosen language. */
+  /** Window titles. */
   private applyTitles(): void {
     const s = this.strings()
     this.consoleWin.win.setTitle(s.consoleTitle)
@@ -555,7 +545,6 @@ export class Store {
       projectorSize: this.targetSize(),
       roller: this.roller.view(),
       deckStatus: this.deckStatus,
-      language: this.language,
       ink: this.inkSettings
     }
   }

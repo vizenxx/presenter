@@ -1,7 +1,7 @@
 import type { DeckKind } from './deckKinds'
 import type { GuideFile } from './guide'
 import type { InkOp, InkSettings, InkStroke, InkTool } from './ink'
-import type { DeckErrorCode, Lang } from './lang'
+import type { DeckErrorCode } from './lang'
 import type { RollStep } from './roller'
 import type { ZoomDirection } from './zoom'
 
@@ -133,7 +133,6 @@ export interface AppState {
   projectorSize: { width: number; height: number }
   roller: RollerView
   deckStatus: DeckStatus
-  language: Lang
   /** Marking tool and colour, shared by the console toolbar and the projector palette. */
   ink: InkSettings
 }
@@ -187,7 +186,6 @@ export interface ConsoleApi {
   rollerSaveList(id: string | null, name: string, text: string): void
   rollerDeleteList(id: string): void
   dismissDeckStatus(): void
-  setLanguage(lang: Lang): void
   setInkTool(tool: InkTool): void
   setInkColor(color: string): void
   /** fromCanvas: the console's own canvas already drew it. */

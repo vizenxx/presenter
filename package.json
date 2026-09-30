@@ -55,6 +55,9 @@
       "out/**/*",
       "package.json"
     ],
+    "electronLanguages": [
+      "en-US"
+    ],
     "mac": {
       "category": "public.app-category.education",
       "target": [
