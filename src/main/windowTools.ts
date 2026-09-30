@@ -37,6 +37,7 @@ export class WindowTools {
       skipTaskbar: true,
       focusable: false,
       hasShadow: false,
+      backgroundColor: '#00000000',
       alwaysOnTop: true,
       webPreferences: { preload: paths.deckPreload, contextIsolation: true, sandbox: true, backgroundThrottling: false }
     })
@@ -51,6 +52,7 @@ export class WindowTools {
       height: 56,
       frame: false,
       transparent: true,
+      backgroundColor: '#00000000',
       resizable: false,
       skipTaskbar: true,
       hasShadow: false,

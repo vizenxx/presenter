@@ -404,6 +404,8 @@ try {
     await call(() => globalThis.__presenter.tools.toolbar.focus())
     await sleep(800)
     assert.equal(await toolsShown(), true, 'tools stay while the toolbar is used')
+    const barSize = await call(() => globalThis.__presenter.tools.toolbar.getBounds())
+    assert.ok(barSize.height <= 60 && barSize.width > 600, `toolbar is one wide row (${barSize.width} x ${barSize.height})`)
     const clickBar = (text) => call((_e, text) => globalThis.__presenter.tools.toolbar.webContents.executeJavaScript(`(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.includes(${JSON.stringify(text)})); if (b) b.click(); return !!b })()`), text)
     assert.equal(await clickBar('Roll'), true, 'the toolbar has a Roll button')
     s = await waitFor('roll from the toolbar', (s) => s.roller.roll !== null, 4000)

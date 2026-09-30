@@ -91,7 +91,8 @@ const OPENERS: Record<string, string> = {
 
 async function shot(projecting: boolean, open: Open = null, page = 'console'): Promise<void> {
   writeStub(sampleState(projecting, open === 'crowd'))
-  const win = new BrowserWindow({ show: false, width: page === 'console' ? 1536 : 1100, height: page === 'console' ? 864 : 90, useContentSize: true, backgroundColor: '#475569', webPreferences: { preload: STUB, contextIsolation: true, sandbox: true, offscreen: true } })
+  // The toolbar starts in a 520 x 56 window, as in the app (src/main/windowTools.ts).
+  const win = new BrowserWindow({ show: false, width: page === 'console' ? 1536 : 520, height: page === 'console' ? 864 : 56, useContentSize: true, backgroundColor: '#475569', webPreferences: { preload: STUB, contextIsolation: true, sandbox: true, offscreen: true } })
   // A page load can be refused while the previous window is still closing; retry once.
   await win.loadFile(path.join(ROOT, 'out', 'renderer', `${page}.html`)).catch(async () => {
     await wait(500)
@@ -102,6 +103,16 @@ async function shot(projecting: boolean, open: Open = null, page = 'console'): P
     const opened = await win.webContents.executeJavaScript(`(async () => { const b = await ${OPENERS[open]}; if (b) b.click(); return !!b })()`)
     if (!opened) throw new Error(`${open} button not found`)
     await wait(600)
+  }
+  if (page === 'toolbar') {
+    // One row however narrow the window starts, and nothing painted outside the rounded bar.
+    const bar = await win.webContents.executeJavaScript('(() => { const r = document.getElementById("root").firstElementChild.getBoundingClientRect(); return [Math.ceil(r.width), Math.ceil(r.height)] })()')
+    if (bar[1] > 56) throw new Error(`toolbar wraps: ${bar[0]} x ${bar[1]}`)
+    if (bar[0] <= 520) throw new Error(`toolbar squeezed to the window: ${bar[0]} px`)
+    const bodyBg = await win.webContents.executeJavaScript('getComputedStyle(document.body).backgroundColor')
+    if (bodyBg !== 'rgba(0, 0, 0, 0)' && bodyBg !== 'transparent') throw new Error(`toolbar page not see-through: ${bodyBg}`)
+    win.setContentSize(bar[0], bar[1])
+    await wait(300)
   }
   const image = await win.webContents.capturePage()
   const name = `${page}${projecting ? '-projecting' : ''}${open ? `-${open}` : ''}.png`

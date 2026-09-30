@@ -90,7 +90,11 @@ function Toolbar() {
   useLayoutEffect(() => {
     const el = root.current
     if (!el) return
-    const report = (): void => window.presenter.toolbarSize(el.offsetWidth, el.offsetHeight)
+    // max-content width: the bar never wraps to fit the window; the window follows the bar.
+    const report = (): void => {
+      const r = el.getBoundingClientRect()
+      window.presenter.toolbarSize(Math.ceil(r.width), Math.ceil(r.height))
+    }
     const ro = new ResizeObserver(report)
     ro.observe(el)
     report()
@@ -109,7 +113,7 @@ function Toolbar() {
   const audience = !!state && (state.projecting || state.projectors.length > 0)
 
   return (
-    <div ref={root} className="inline-flex flex-col gap-1.5 rounded-2xl border border-line bg-panel/95 px-2 py-1.5 text-ink shadow-2xl">
+    <div ref={root} className="inline-flex w-max flex-col gap-1.5 rounded-2xl border border-line bg-panel/95 px-2 py-1.5 whitespace-nowrap text-ink">
       <div className="flex items-center gap-2">
         <span className="cursor-move px-1 text-lg leading-none text-muted [-webkit-app-region:drag]" title={t.toolbarDrag}>
           ⠿
