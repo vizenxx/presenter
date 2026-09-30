@@ -23,7 +23,7 @@ import { RollerController } from './roller'
 import { RollerOverlay } from './rollerOverlay'
 import { ProjectorScreen } from './projectorScreen'
 import { startupLog } from './startupLog'
-import { WindowsHelper, windowHandle } from './windowsHelper'
+import { WindowsHelper } from './windowsHelper'
 import { rememberZoom, zoomFor } from './zoomMemory'
 
 export interface StorePaths {
@@ -319,6 +319,8 @@ export class Store {
     } else if (to !== null) this.setExtraContent(to, o)
     else o.view.setVisible(false)
     if (from === 1 || to === 1) this.afterStageChange()
+    // A window shown on a projector comes to the front (restored if minimized), ready to use.
+    if (to !== null && o.capture) this.windows.raise(o.capture.sourceId)
     this.emit()
   }
 
@@ -376,8 +378,7 @@ export class Store {
     o.capture = { sourceId, name: name.slice(0, 80) }
     o.linked = false
     o.view.webContents.session.setDisplayMediaRequestHandler((_request, callback) => callback({ video: { id: sourceId, name } }))
-    // A minimized window has no picture: restore it (without taking the focus) first.
-    if (windowHandle(sourceId) !== null) this.windows.restore(sourceId)
+    // The window is left as it is (minimized or not); it comes forward only when a projector shows it.
     this.paths.loadCapture(o.view)
     this.emit()
   }
@@ -559,11 +560,10 @@ export class Store {
    */
   select(id: OutputId): void {
     const o = this.outputs.get(id)
-    // A window content: its window comes to the front for the teacher to use (the teacher's
-    // choice, 2026-09-30); where it is shown is the projector menu's job.
-    if (o?.kind === 'capture' && o.capture) {
+    // A window content: clicking its card only selects it; the window comes forward when a
+    // projector is chosen for it (the teacher's choice, 2026-10-01).
+    if (o?.kind === 'capture') {
       this.selectedId = id
-      this.windows.raise(o.capture.sourceId)
       this.emit()
       return
     }

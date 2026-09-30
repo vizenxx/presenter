@@ -8,20 +8,18 @@ const say = (text: string): void => {
   note.hidden = false
 }
 
-// A window that was minimized needs a moment to come back; try a few times.
+// A minimized window gives no picture until it is restored (when a projector shows it), so
+// keep trying quietly; after a while also say why nothing shows yet.
 async function connect(tries: number): Promise<void> {
   try {
     const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 60 } }, audio: false })
     video.srcObject = stream
     note.hidden = true
-    stream.getVideoTracks()[0]?.addEventListener('ended', () => say('The window was closed. Remove this screen, or add the window again.'))
+    stream.getVideoTracks()[0]?.addEventListener('ended', () => say('The window was closed. Remove this content, or add the window again.'))
   } catch {
-    if (tries > 1) {
-      window.setTimeout(() => void connect(tries - 1), 700)
-      return
-    }
-    say('This window cannot be shown. On a Mac, allow Presenter under System Settings → Privacy & Security → Screen & System Audio Recording.')
+    if (tries === 6) say('Waiting for the window. It comes forward when you choose a projector for it. (On a Mac, allow Presenter under System Settings → Privacy & Security → Screen & System Audio Recording.)')
+    window.setTimeout(() => void connect(tries + 1), tries < 6 ? 700 : 1500)
   }
 }
 
-void connect(6)
+void connect(1)

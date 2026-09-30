@@ -25,7 +25,6 @@ export interface ProgramWindow {
  * order (what Alt+Tab, Zoom and Teams offer). Chromium's own list leaves minimized windows out.
  * Raise: restores and brings a window forward; it attaches to the input of the window in front
  * (the console the teacher just clicked), which Windows requires first.
- * Restore: un-minimizes without taking the focus, so a newly added window screen gets a picture.
  */
 export const HELPER_SCRIPT = `[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Add-Type -TypeDefinition @'
@@ -139,12 +138,6 @@ export class WindowsHelper {
   raise(sourceId: string): void {
     const handle = windowHandle(sourceId)
     if (handle !== null) this.send(`[PresenterWin]::Raise(${handle})`)
-  }
-
-  /** Un-minimize without taking the focus. */
-  restore(sourceId: string): void {
-    const handle = windowHandle(sourceId)
-    if (handle !== null) this.send(`[PresenterWin]::Restore(${handle})`)
   }
 
   dispose(): void {

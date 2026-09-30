@@ -348,14 +348,16 @@ try {
     assert.equal(src.minimized, true, 'listed as minimized')
     await call((_e, w) => globalThis.__presenter.addWindowScreen(w.id, w.name), src)
     s = await waitFor('window screen added', (s) => s.outputs.some((o) => o.kind === 'capture'))
-    for (let i = 0; i < 20 && (await call(() => globalThis.__e2eWin.isMinimized())); i++) await sleep(200)
-    assert.equal(await call(() => globalThis.__e2eWin.isMinimized()), false, 'adding it restores the window')
+    await sleep(1000)
+    assert.equal(await call(() => globalThis.__e2eWin.isMinimized()), true, 'adding it leaves the window as it is')
     const wid = s.outputs.find((o) => o.kind === 'capture').id
     await call(() => globalThis.__presenter.consoleWin.win.focus())
     await sleep(300)
     await call((_e, id) => globalThis.__presenter.select(id), wid)
+    await sleep(1000)
     s = await state()
     assert.equal(s.onAirId, 'projector', 'clicking the window card does not change what the audience sees')
+    assert.equal(await call(() => globalThis.__e2eWin.isMinimized()), true, 'clicking the card does not bring the window forward')
     await call((_e, id) => globalThis.__presenter.showOn(id, 1), wid)
     s = await state()
     assert.equal(s.onAirId, wid, 'the projector menu puts it on Projector 1')
@@ -382,7 +384,7 @@ try {
     s = await state()
     assert.equal(s.onAirId, 'projector', 'removing it puts screen 1 back')
     await call(() => globalThis.__e2eWin.destroy())
-    console.log('ok 16 window content: listed when minimized, live picture, brought to the front, on Projector 1')
+    console.log('ok 16 window content: listed when minimized, untouched until shown, then brought forward and live on Projector 1')
   }
 
   assert.deepEqual(errors, [], 'console errors')
