@@ -6,7 +6,8 @@ import type { RollStep } from './roller'
 import type { ZoomDirection } from './zoom'
 
 export type OutputId = string
-export type OutputKind = 'projector' | 'preview' | 'window'
+/** projector = the main deck (Screen 1) · window = an extra deck screen · capture = another program's window, shown live · preview = the next-slide preview */
+export type OutputKind = 'projector' | 'preview' | 'window' | 'capture'
 /** none = no deck · loading = waiting for the deck to answer · uxd202 = UXD202 sync protocol · keys = any HTML, arrow keys only */
 export type AdapterKind = 'none' | 'loading' | 'uxd202' | 'keys'
 
@@ -48,6 +49,16 @@ export interface OutputView {
   /** Page zoom in percent (字号); the next preview follows the screen it previews. */
   zoomPercent: number
   deckKind: DeckKind | null
+  /** Window screens: the title of the program window they show. */
+  captureName: string | null
+}
+
+/** A program window that can become a window screen. */
+export interface WindowSource {
+  id: string
+  name: string
+  /** PNG data URL. */
+  thumbnail: string
 }
 
 /** Opening a deck: PowerPoint files are converted first, which takes a moment. */
@@ -115,6 +126,8 @@ export interface AppState {
   mainDeck: DeckRef | null
   /** Slide list and notes of the selected screen (the projector when the selection has no deck). */
   slides: SlideMeta[]
+  /** The screen on the projector (before projecting: in the current pane). Selecting a screen does not change it. */
+  onAirId: OutputId
   /** The screen `slides` belongs to: the selected one (the next preview counts), else the projector. */
   slidesOf: OutputId
   /** The screen the next preview follows: the last selected real screen. */
@@ -155,6 +168,10 @@ export interface PreviewRect {
 /** API the console preload exposes as window.presenter. */
 export interface ConsoleApi {
   onState(cb: (state: AppState) => void): void
+  /** Put this screen on the projector (students see it). */
+  project(id: OutputId): void
+  listWindows(): Promise<WindowSource[]>
+  addWindowScreen(id: string, name: string): void
   onMirror(cb: (jpeg: Uint8Array) => void): void
   openDialog(): void
   openPath(path: string): void

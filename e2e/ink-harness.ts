@@ -58,7 +58,7 @@ app.whenReady().then(async () => {
     if (event.level === 'error') console.log(`[page error] ${event.message}`)
   })
   const wc = win.webContents
-  const tool = (name: InkTool): void => wc.send('ink:settings', { tool: name, color: '#ef4444', projecting: false })
+  const tool = (name: InkTool): void => wc.send('ink:settings', { tool: name, color: '#ef4444', projecting: false, active: true })
   const drag = async (from: [number, number], to: [number, number]): Promise<void> => {
     wc.sendInputEvent({ type: 'mouseDown', x: from[0], y: from[1], button: 'left', clickCount: 1 })
     for (let i = 1; i <= 10; i++) {

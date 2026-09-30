@@ -176,6 +176,28 @@ try {
   s = await waitFor('preview back on the projector deck', (s) => out(s, 'next').deck?.name === out(s, 'projector').deck.name && out(s, 'next').shownIndex === 7)
   console.log('ok 8b preview and notes follow a screen with another deck')
 
+  // 8c. ▶ Project puts another screen on the projector; selecting a screen does not.
+  const inConsole = (id) => call((_e, id) => globalThis.__presenter.consoleWin.win.contentView.children.includes(globalThis.__presenter.outputs.get(id).view), id)
+  await call(() => globalThis.__presenter.addScreen(false))
+  s = await waitFor('screen 5 connected', (s) => out(s, 'screen-5')?.total === 4)
+  await call(() => globalThis.__presenter.select('screen-5'))
+  s = await state()
+  assert.equal(s.onAirId, 'projector', 'selecting does not change what students see')
+  await call(() => globalThis.__presenter.project('screen-5'))
+  s = await state()
+  assert.equal(s.onAirId, 'screen-5', 'screen 5 on the projector')
+  assert.equal(await inConsole('screen-5'), true, 'screen 5 shown in the current pane')
+  assert.equal(await inConsole('projector'), false, 'screen 1 left the current pane')
+  await call(() => globalThis.__presenter.startProjecting())
+  assert.equal(await call(() => globalThis.__presenter.projectorWin.content === globalThis.__presenter.outputs.get('screen-5').view), true, 'projector window shows screen 5')
+  await call(() => globalThis.__presenter.project('projector'))
+  assert.equal(await call(() => globalThis.__presenter.projectorWin.content === globalThis.__presenter.outputs.get('projector').view), true, 'projector window shows screen 1 again')
+  assert.equal(await call(() => globalThis.__presenter.screens.get('screen-5').lent), false, 'screen 5 back in its own window')
+  await call(() => globalThis.__presenter.stopProjecting())
+  assert.equal(await inConsole('projector'), true, 'screen 1 back in the current pane')
+  await call(() => globalThis.__presenter.removeScreen('screen-5'))
+  console.log('ok 8c project another screen, then switch back')
+
   // Steps 9-15 show the projector window and capture the desktop.
   if (!HEADLESS) {
     // 9. Screenshots before projecting: console DOM, and the real desktop with the live views.
@@ -294,6 +316,51 @@ try {
     await press('Escape')
     s = await waitFor('esc stops projecting', (s) => !s.projecting)
     console.log('ok 15 marks and live mirror')
+
+    // 16. Window screen: a program window shown live; clicking its card brings it to the front
+    // and puts it on the projector. The test uses its own window only (no desktop capture).
+    const TEST_TITLE = 'Presenter e2e window'
+    await call(({ BrowserWindow }, title) => {
+      const w = new BrowserWindow({ width: 640, height: 400, title, show: true })
+      w.on('page-title-updated', (e) => e.preventDefault())
+      void w.loadURL('data:text/html,<body style="margin:0;background:%23087f5b"><h1 style="color:white;font:64px sans-serif;margin:40px">e2e window</h1></body>')
+      globalThis.__e2eWin = w
+    }, TEST_TITLE)
+    await sleep(1500)
+    const src = await call(async (_e, title) => (await globalThis.__presenter.listWindows()).map(({ id, name }) => ({ id, name })).find((w) => w.name === title), TEST_TITLE)
+    assert.ok(src, 'the test window is in the window list')
+    await call((_e, w) => globalThis.__presenter.addWindowScreen(w.id, w.name), src)
+    s = await waitFor('window screen added', (s) => s.outputs.some((o) => o.kind === 'capture'))
+    const wid = s.outputs.find((o) => o.kind === 'capture').id
+    await call(() => globalThis.__presenter.consoleWin.win.focus())
+    await sleep(300)
+    await call((_e, id) => globalThis.__presenter.select(id), wid)
+    s = await state()
+    assert.equal(s.onAirId, wid, 'clicking the window card puts it on the projector')
+    const videoWidth = await call(async (_e, id) => {
+      const wc = globalThis.__presenter.outputs.get(id).view.webContents
+      for (let i = 0; i < 40; i++) {
+        const w = await wc.executeJavaScript('document.querySelector("video").videoWidth').catch(() => 0)
+        if (w > 0) return w
+        await new Promise((r) => setTimeout(r, 250))
+      }
+      return 0
+    }, wid)
+    assert.ok(videoWidth > 0, 'the window is shown live')
+    let raised = false
+    for (let i = 0; i < 25 && !raised; i++) {
+      raised = await call(() => globalThis.__e2eWin.isFocused())
+      if (!raised) await sleep(200)
+    }
+    assert.ok(raised, 'the window came to the front')
+    await call(() => globalThis.__presenter.startProjecting())
+    assert.equal(await call((_e, id) => globalThis.__presenter.projectorWin.content === globalThis.__presenter.outputs.get(id).view, wid), true, 'projector window shows the window screen')
+    await call(() => globalThis.__presenter.stopProjecting())
+    await call((_e, id) => globalThis.__presenter.removeScreen(id), wid)
+    s = await state()
+    assert.equal(s.onAirId, 'projector', 'removing it puts screen 1 back')
+    await call(() => globalThis.__e2eWin.destroy())
+    console.log('ok 16 window screen: live picture, brought to the front, on the projector')
   }
 
   assert.deepEqual(errors, [], 'console errors')

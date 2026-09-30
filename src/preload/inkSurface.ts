@@ -10,6 +10,8 @@ import { inkSvg, type InkIconName } from '../shared/inkIcons'
 interface SurfaceSettings extends InkSettings {
   /** The palette shows only on the projector while projecting. */
   projecting: boolean
+  /** Only the screen on the projector shows and takes marks. */
+  active: boolean
 }
 
 const PALETTE_IDLE_MS = 2500
@@ -32,10 +34,10 @@ const CSS = `
 
 export function mountInkSurface(): void {
   const scene = new InkScene()
-  let settings: SurfaceSettings = { tool: 'pointer', color: INK_COLORS[0], projecting: false }
+  let settings: SurfaceSettings = { tool: 'pointer', color: INK_COLORS[0], projecting: false, active: false }
 
   const host = document.createElement('presenter-ink')
-  host.style.cssText = 'position:fixed;inset:0;z-index:2147483647;pointer-events:none;display:block;'
+  host.style.cssText = 'position:fixed;inset:0;z-index:2147483647;pointer-events:none;display:none;'
   const root = host.attachShadow({ mode: 'closed' })
   const tool = (name: InkTool): string => `<button data-tool="${name}" title="${name}">${inkSvg(name as InkIconName)}</button>`
   root.innerHTML = `<style>${CSS}</style><canvas></canvas>
@@ -74,6 +76,7 @@ export function mountInkSurface(): void {
   }
 
   const apply = (): void => {
+    host.style.display = settings.active ? 'block' : 'none'
     const drawing = settings.tool !== 'pointer'
     canvas.style.pointerEvents = drawing ? 'auto' : 'none'
     canvas.style.cursor = CURSORS[settings.tool]

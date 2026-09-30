@@ -8,6 +8,7 @@ import { NextPane } from './NextPane'
 import { ScreensBar } from './ScreensBar'
 import { SpeakerTimer } from './SpeakerTimer'
 import { TimerPanel } from './TimerPanel'
+import { WindowPicker } from './WindowPicker'
 import { useT } from './i18n'
 import { DeckStatusBar, type ConsoleMenu } from './ui'
 
@@ -19,14 +20,17 @@ export function App() {
   const [menu, setMenu] = useState<ConsoleMenu>(null)
   const [guide, setGuide] = useState(false)
   const closeGuide = useCallback(() => setGuide(false), [])
+  const [picker, setPicker] = useState(false)
+  const closePicker = useCallback(() => setPicker(false), [])
   useConsoleKeys(state?.timer.alarming ?? false, state?.ink.tool ?? 'pointer')
   useFileDrop()
   if (!state) return <div className="grid h-full place-items-center text-base text-muted">{t.starting}</div>
-  const projector = state.outputs.find((o) => o.id === 'projector')
+  // The current pane shows the screen on the projector (it can be another screen than the main deck).
+  const projector = state.outputs.find((o) => o.id === state.onAirId) ?? state.outputs.find((o) => o.id === 'projector')
   const next = state.outputs.find((o) => o.id === 'next')
   if (!projector || !next) return null
   // Native deck views draw above the page, so they step aside while a menu or the guide is open.
-  const suspended = menu !== null || guide
+  const suspended = menu !== null || guide || picker
   const cols = drawer ? 'grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_20rem]' : 'grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]'
   return (
     <div
@@ -46,8 +50,9 @@ export function App() {
         </div>
         {drawer && <Drawer state={state} tab={drawer} onTab={setDrawer} />}
       </main>
-      <ScreensBar state={state} menu={menu} onMenu={setMenu} />
+      <ScreensBar state={state} menu={menu} onMenu={setMenu} onPickWindow={() => setPicker(true)} />
       {guide && <GuideDialog onClose={closeGuide} />}
+      {picker && <WindowPicker onClose={closePicker} />}
     </div>
   )
 }

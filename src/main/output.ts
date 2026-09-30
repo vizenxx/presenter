@@ -81,6 +81,8 @@ export class Output {
   followsMain = false
   /** True while this deck is on the projector: Esc then stops projecting instead of reaching the deck. */
   escapeStops = false
+  /** Window screens: the program window shown live. */
+  capture: { sourceId: string; name: string } | null = null
   /** Teacher-chosen page zoom in percent (字号). */
   zoomPercent = 100
   /** The deck shows the countdown itself (UXD202 navbar); otherwise the projector overlay does. */
@@ -242,7 +244,8 @@ export class Output {
       title: this.slides[shown]?.title ?? '',
       fullscreen: this.fullscreen,
       zoomPercent: this.zoomPercent,
-      deckKind: this.deck ? deckKind(this.deck.path) : null
+      deckKind: this.deck ? deckKind(this.deck.path) : null,
+      captureName: this.capture?.name ?? null
     }
   }
 

@@ -13,6 +13,12 @@ function ProjectStatus({ state }: { state: AppState }) {
   )
 }
 
+/** Something to show: the screen on air has a deck, or is a window screen. */
+function canProject(state: AppState): boolean {
+  const onAir = state.outputs.find((o) => o.id === state.onAirId)
+  return !!onAir && (onAir.deck !== null || onAir.kind === 'capture')
+}
+
 /** menu = the console menu that is open; native deck views hide while one is open. */
 export function Header(props: {
   state: AppState
@@ -60,7 +66,7 @@ export function Header(props: {
           {t.stopProjecting}
         </Btn>
       ) : (
-        <Btn tone="primary" title={t.startProjectingTitle} disabled={!state.mainDeck} onClick={() => window.presenter.startProjecting()}>
+        <Btn tone="primary" title={t.startProjectingTitle} disabled={!canProject(state)} onClick={() => window.presenter.startProjecting()}>
           {t.startProjecting}
         </Btn>
       )}

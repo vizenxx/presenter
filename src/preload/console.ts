@@ -21,6 +21,9 @@ const api: ConsoleApi = {
       if (!pushed) take(state)
     })
   },
+  project: (id) => ipcRenderer.send('console:project', id),
+  listWindows: () => ipcRenderer.invoke('console:list-windows'),
+  addWindowScreen: (id, name) => ipcRenderer.send('console:add-window-screen', id, name),
   onMirror: (cb) => {
     ipcRenderer.on('mirror', (_e, jpeg: Uint8Array) => cb(jpeg))
   },

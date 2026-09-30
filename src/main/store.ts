@@ -1,4 +1,4 @@
-import { app, dialog, screen, session, systemPreferences, type BrowserWindow, type WebContents, type WebContentsView } from 'electron'
+import { app, desktopCapturer, dialog, screen, session, systemPreferences, type BrowserWindow, type WebContents, type WebContentsView } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
 import { commandKey, intentToAction, keyIntent, type CommandKey } from '../shared/keys'
@@ -9,7 +9,7 @@ import { MAIN_STRINGS } from '../shared/lang'
 import { mergeRecent } from '../shared/recentList'
 import * as T from '../shared/timer'
 import { stepZoom, zoomKey, type ZoomDirection } from '../shared/zoom'
-import type { AppState, DeckRef, DeckStatus, KeyIntent, NavAction, OutputId, OutputKind, PreviewRect, RollerPlay, TimerView } from '../shared/types'
+import type { AppState, DeckRef, DeckStatus, KeyIntent, NavAction, OutputId, OutputKind, PreviewRect, RollerPlay, TimerView, WindowSource } from '../shared/types'
 import type { GuideFile } from '../shared/guide'
 import { ConsoleWindow } from './consoleWindow'
 import { saveGuideFile } from './guide'
@@ -23,6 +23,7 @@ import { RollerController } from './roller'
 import { RollerOverlay } from './rollerOverlay'
 import { ScreenWindow } from './screenWindow'
 import { startupLog } from './startupLog'
+import { WindowRaiser } from './windowRaiser'
 import { rememberZoom, zoomFor } from './zoomMemory'
 
 export interface StorePaths {
@@ -33,6 +34,7 @@ export interface StorePaths {
   loadConsole: (win: BrowserWindow) => void
   loadOverlay: (view: WebContentsView) => void
   loadRoller: (view: WebContentsView) => void
+  loadCapture: (view: WebContentsView) => void
 }
 
 const TICK_MS = 200
@@ -49,6 +51,9 @@ export class Store {
   private selectedId: OutputId = 'projector'
   /** The screen the next preview follows: the last selected real screen. */
   private previewOfId: OutputId = 'projector'
+  /** The screen on the projector (before projecting: in the console's current pane). */
+  private onAirId: OutputId = 'projector'
+  private readonly raiser = new WindowRaiser()
   private mainDeck: DeckRef | null = null
   private mainPrepared: PreparedDeck | null = null
   private deckStatus: DeckStatus = { state: 'ready' }
@@ -108,9 +113,9 @@ export class Store {
       if (!zoom && !command && !intent) return
       event.preventDefault()
       if (input.type !== 'keyDown') return
-      if (zoom) this.zoom('projector', zoom)
+      if (zoom) this.zoom(this.onAirId, zoom)
       else if (command) this.onCommand(command)
-      else if (intent) this.onKey(intent, 'projector')
+      else if (intent) this.onKey(intent, this.onAirId)
     })
 
     screen.on('display-added', () => this.onDisplaysChanged())
@@ -161,6 +166,8 @@ export class Store {
     }
     this.setSelected('projector')
     this.followPreview(true)
+    // Opening a deck means showing it: it goes back on the projector if another screen was there.
+    this.project('projector')
     this.emit()
   }
 
@@ -244,7 +251,15 @@ export class Store {
 
   removeScreen(id: OutputId): void {
     const o = this.outputs.get(id)
-    if (!o || o.kind !== 'window') return
+    if (!o || (o.kind !== 'window' && o.kind !== 'capture')) return
+    if (this.onAirId === id) {
+      if (this.hasContent(this.projector())) this.project('projector')
+      else {
+        if (this.projecting) this.stopProjecting()
+        this.leaveStage(o)
+        this.onAirId = 'projector'
+      }
+    }
     const w = this.screens.get(id)
     this.screens.delete(id)
     this.outputs.delete(id)
@@ -266,14 +281,14 @@ export class Store {
   // ---------- projection ----------
 
   startProjecting(): void {
-    if (this.projecting || !this.mainDeck) return
+    const onAir = this.onAir()
+    if (this.projecting || !this.hasContent(onAir)) return
     this.projecting = true
-    const projector = this.projector()
-    this.consoleWin.win.contentView.removeChildView(projector.view)
-    this.projectorWin.attach(projector.view)
-    projector.view.setVisible(true)
-    projector.setBaseZoom(1)
-    projector.escapeStops = true
+    this.consoleWin.win.contentView.removeChildView(onAir.view)
+    this.projectorWin.attach(onAir.view)
+    onAir.view.setVisible(true)
+    onAir.setBaseZoom(1)
+    onAir.escapeStops = true
     this.projectorWin.open()
     this.sendInkSettings()
     this.applyPreview()
@@ -286,16 +301,59 @@ export class Store {
     if (!this.projecting) return
     if (this.roller.showing) this.rollerHide()
     this.projecting = false
-    const projector = this.projector()
-    projector.escapeStops = false
+    const onAir = this.onAir()
+    onAir.escapeStops = false
     this.projectorWin.close()
-    this.projectorWin.detach(projector.view)
-    this.consoleWin.win.contentView.addChildView(projector.view)
+    this.projectorWin.detach(onAir.view)
+    this.consoleWin.win.contentView.addChildView(onAir.view)
     this.mirrorVideo = false
     this.sendInkSettings()
     this.applyCurrent()
     this.applyPreview()
     this.syncTimer(true)
+    this.emit()
+  }
+
+  /**
+   * Put another screen on the projector (before projecting: in the current pane). Only this
+   * button does it; selecting a screen does not, so the teacher can browse another deck with
+   * the next preview while students keep seeing the same screen.
+   */
+  project(id: OutputId): void {
+    const next = this.outputs.get(id)
+    if (!next || next.kind === 'preview' || !this.hasContent(next) || next.id === this.onAirId) return
+    this.leaveStage(this.onAir())
+    this.onAirId = next.id
+    this.enterStage(next)
+    // Marks belong to what students saw; they clear with the change.
+    this.inkScene.apply({ t: 'clear' })
+    this.inkPage = next.shownIndex()
+    this.sendInkSettings()
+    if (this.projecting) this.consoleContents()?.send('ink:op', { t: 'clear' })
+    if (this.timer.status === 'idle') this.timer = T.reset(this.timer, this.defaultDuration())
+    this.syncTimer(true)
+    this.emit()
+    setTimeout(() => void this.captureMirror(), 300)
+  }
+
+  /** The program windows that could become window screens (Presenter's own windows left out). */
+  async listWindows(): Promise<WindowSource[]> {
+    const own = new Set([this.consoleWin.win, this.projectorWin.win].map((w) => w.getMediaSourceId()))
+    for (const w of this.screens.values()) own.add(w.mediaSourceId())
+    const sources = await desktopCapturer.getSources({ types: ['window'], thumbnailSize: { width: 320, height: 200 } })
+    return sources.filter((s) => !own.has(s.id) && s.name.trim() !== '').map((s) => ({ id: s.id, name: s.name, thumbnail: s.thumbnail.toDataURL() }))
+  }
+
+  /** A window screen: another program's window, shown live on the projector (like screen sharing). */
+  addWindowScreen(sourceId: string, name: string): void {
+    if (!/^window:/.test(sourceId)) return
+    const n = this.screenSeq++
+    const id = `window-${n}`
+    const o = this.createOutput(id, n, 'capture', 0)
+    o.capture = { sourceId, name: name.slice(0, 80) }
+    o.linked = false
+    o.view.webContents.session.setDisplayMediaRequestHandler((_request, callback) => callback({ video: { id: sourceId, name } }))
+    this.paths.loadCapture(o.view)
     this.emit()
   }
 
@@ -402,10 +460,19 @@ export class Store {
     return this.inkScene.strokes
   }
 
-  /** The projector page's marking layer is ready (after every load). */
-  inkReady(): void {
+  /** A deck page's marking layer is ready (after every load); only the screen on the projector draws. */
+  inkReady(o: Output): void {
     this.sendInkSettings()
-    this.projectorContents()?.send('ink:snapshot', this.inkScene.strokes)
+    if (o === this.onAir()) this.projectorContents()?.send('ink:snapshot', this.inkScene.strokes)
+  }
+
+  isOnAir(o: Output | undefined): boolean {
+    return o !== undefined && o === this.onAir()
+  }
+
+  /** A click on the projector window selects the screen shown there. */
+  onProjectorPointer(): void {
+    this.onPointer(this.onAirId)
   }
 
   setMirrorMode(mode: 'video' | 'snapshot'): void {
@@ -438,8 +505,10 @@ export class Store {
       this.closeRollerByUser()
       return
     }
-    // A key pressed inside a screen (or the next preview) selects it first.
-    if (sourceId && this.outputs.has(sourceId)) this.select(sourceId)
+    // A key pressed inside a screen (or the next preview) selects it first; window screens
+    // have no pages (the key belongs to their own program).
+    const source = sourceId ? this.outputs.get(sourceId) : undefined
+    if (source && source.kind !== 'capture') this.select(source.id)
     this.navigate(intentToAction(intent))
   }
 
@@ -465,6 +534,15 @@ export class Store {
    */
   select(id: OutputId): void {
     const o = this.outputs.get(id)
+    // A window screen: its window comes to the front and it goes on the projector (the
+    // teacher's choice, 2026-09-30); the next preview keeps following the last deck screen.
+    if (o?.kind === 'capture' && o.capture) {
+      this.selectedId = id
+      this.project(id)
+      this.raiser.raise(o.capture.sourceId)
+      this.emit()
+      return
+    }
     if (!o || !o.deck) return
     // From the deck end, browsing starts on the last slide (not one past it).
     if (o.kind === 'preview' && this.selectedId !== id) o.index = o.shownIndex()
@@ -525,18 +603,19 @@ export class Store {
   }
 
   getState(): AppState {
-    const projector = this.projector()
+    const onAir = this.onAir()
     const selected = this.outputs.get(this.selectedId)
-    const focus = selected && selected.deck ? selected : projector
+    const focus = selected && selected.deck ? selected : this.projector()
     return {
       outputs: [...this.outputs.values()].map((o) => o.toView()),
       selectedId: this.selectedId,
       mainDeck: this.mainDeck,
       slides: focus.slides,
       slidesOf: focus.id,
+      onAirId: onAir.id,
       previewOf: this.previewSource().id,
       previewSize: this.layoutSize(this.previewSource()),
-      milestones: projector.milestones,
+      milestones: onAir.milestones,
       timer: this.timerView(),
       plannedMinutes: this.plannedMinutes(),
       recent: this.recent,
@@ -595,11 +674,11 @@ export class Store {
         break
       case 'loaded':
         if (o.kind === 'preview') this.applyPreview()
-        if (o.kind === 'projector' && !this.projecting) this.applyCurrent()
+        if (o === this.onAir() && !this.projecting) this.applyCurrent()
         this.emit()
         break
       case 'changed':
-        if (o.kind === 'projector') this.syncTimer(true)
+        if (o === this.onAir()) this.syncTimer(true)
         this.emit()
         break
     }
@@ -626,7 +705,7 @@ export class Store {
       }
       this.afterMove()
     }
-    if (o.kind === 'projector' && msg.timer) this.adoptDeckTimer(msg.timer)
+    if (o === this.onAir() && msg.timer) this.adoptDeckTimer(msg.timer)
     // The page count may have just arrived, which moves "the slide after" at the deck end.
     if (o === this.previewSource()) this.followPreview()
     this.emit()
@@ -658,18 +737,23 @@ export class Store {
 
   /** Marks are temporary: they clear when the projector shows another page. */
   private clearInkIfPageChanged(): void {
-    const page = this.projector().shownIndex()
+    const page = this.onAir().shownIndex()
     if (page === this.inkPage) return
     this.inkPage = page
     if (this.inkScene.strokes.length > 0 || this.inkScene.laser) this.inkOp({ t: 'clear' }, 'main')
   }
 
   private sendInkSettings(): void {
-    this.projectorContents()?.send('ink:settings', { ...this.inkSettings, projecting: this.projecting })
+    const onAir = this.onAir()
+    for (const o of this.outputs.values()) {
+      if (o.kind === 'preview' || o.kind === 'capture') continue
+      const wc = o.view.webContents
+      if (!wc.isDestroyed()) wc.send('ink:settings', { ...this.inkSettings, projecting: this.projecting, active: o === onAir })
+    }
   }
 
   private projectorContents(): WebContents | null {
-    const wc = this.projector().view.webContents
+    const wc = this.onAir().view.webContents
     return wc.isDestroyed() ? null : wc
   }
 
@@ -708,10 +792,10 @@ export class Store {
     if (!force && key === this.lastTimerKey) return
     this.lastTimerKey = key
     if (force) this.lastTimerCmd = Date.now()
-    const projector = this.projector()
-    projector.sendTimer({ remaining: view.status === 'idle' ? null : view.remainingSec, isRunning: view.status === 'running', isDone: view.alarming })
-    // UXD202 decks show the countdown in their own navbar; every other deck gets the overlay.
-    const deckShowsTimer = projector.adapter === 'uxd202' && projector.ownTimer
+    const onAir = this.onAir()
+    onAir.sendTimer({ remaining: view.status === 'idle' ? null : view.remainingSec, isRunning: view.status === 'running', isDone: view.alarming })
+    // UXD202 decks show the countdown in their own navbar; every other screen gets the overlay.
+    const deckShowsTimer = onAir.adapter === 'uxd202' && onAir.ownTimer
     this.projectorWin.setOverlayVisible(this.projecting && !deckShowsTimer && view.status !== 'idle')
     const overlay = this.projectorWin.overlay.webContents
     if (!overlay.isDestroyed()) overlay.send('timer', view)
@@ -723,7 +807,7 @@ export class Store {
   }
 
   private plannedMinutes(): number | null {
-    const p = this.projector()
+    const p = this.onAir()
     const minutes = p.slides[p.shownIndex()]?.minutes
     return typeof minutes === 'number' && minutes > 0 ? minutes : null
   }
@@ -776,22 +860,56 @@ export class Store {
 
   /** The size a screen's deck is laid out for. */
   private layoutSize(o: Output): { width: number; height: number } {
-    if (o.kind === 'window') return this.screens.get(o.id)?.contentSize() ?? { ...WINDOWED }
+    if (o.kind === 'window' && o !== this.onAir()) return this.screens.get(o.id)?.contentSize() ?? { ...WINDOWED }
     return this.targetSize()
   }
 
-  /** Not projecting: the projector deck is shown live in the console's current pane. */
+  /** Not projecting: the screen on air is shown live in the console's current pane. */
   private applyCurrent(): void {
     if (this.projecting) return
-    const projector = this.projector()
+    const onAir = this.onAir()
     const r = this.currentRect
-    if (!r || !projector.deck) {
-      projector.view.setVisible(false)
+    if (!r || !this.hasContent(onAir)) {
+      onAir.view.setVisible(false)
       return
     }
-    projector.view.setBounds({ x: Math.round(r.x), y: Math.round(r.y), width: Math.round(r.width), height: Math.round(r.height) })
-    projector.view.setVisible(true)
-    projector.setBaseZoom(r.width / Math.max(1, this.targetSize().width))
+    onAir.view.setBounds({ x: Math.round(r.x), y: Math.round(r.y), width: Math.round(r.width), height: Math.round(r.height) })
+    onAir.view.setVisible(true)
+    onAir.setBaseZoom(r.width / Math.max(1, this.targetSize().width))
+  }
+
+  /** The screen on the projector (before projecting: in the current pane). */
+  private onAir(): Output {
+    return this.outputs.get(this.onAirId) ?? this.projector()
+  }
+
+  private hasContent(o: Output): boolean {
+    return o.deck !== null || o.capture !== null
+  }
+
+  /** Off the projector: an extra deck screen returns to its own window; others wait out of sight. */
+  private leaveStage(o: Output): void {
+    if (this.projecting) this.projectorWin.detach(o.view)
+    else this.consoleWin.win.contentView.removeChildView(o.view)
+    o.escapeStops = false
+    const home = this.screens.get(o.id)
+    if (home) {
+      o.setBaseZoom(1)
+      home.takeBack()
+    } else o.view.setVisible(false)
+  }
+
+  private enterStage(o: Output): void {
+    this.screens.get(o.id)?.lend()
+    if (this.projecting) {
+      this.projectorWin.attach(o.view)
+      o.view.setVisible(true)
+      o.setBaseZoom(1)
+      o.escapeStops = true
+    } else {
+      this.consoleWin.win.contentView.addChildView(o.view)
+      this.applyCurrent()
+    }
   }
 
   /** The size decks are laid out for: the projector window, else the external display, else 1280x720. */
@@ -807,7 +925,7 @@ export class Store {
     if (cw.isDestroyed() || cw.isMinimized() || !cw.isVisible()) return
     this.mirrorBusy = true
     try {
-      const img = await this.projector().view.webContents.capturePage()
+      const img = await this.onAir().view.webContents.capturePage()
       if (!img.isEmpty() && !cw.isDestroyed()) cw.webContents.send('mirror', img.resize({ width: 1280, quality: 'good' }).toJPEG(80))
     } catch {
       // The projector page is between loads; the next tick retries.
@@ -866,6 +984,7 @@ export class Store {
   private quit(): void {
     if (this.quitting) return
     this.quitting = true
+    this.raiser.dispose()
     app.quit()
   }
 }

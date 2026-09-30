@@ -4,8 +4,9 @@ import { ipcRenderer } from 'electron'
 import { mountInkSurface } from './inkSurface'
 
 const tabId = new URLSearchParams(location.search).get('tabId') ?? ''
-// Marks (pen, box, laser…) are drawn on the projector deck only.
-if (tabId === 'projector') mountInkSurface()
+// Every deck page gets the marking layer; the main process turns it on only for the screen
+// on the projector (screens can change places).
+mountInkSurface()
 // UXD202 decks use their original channel; everything else uses the public protocol
 // (docs/protocol.md, sdk/presenter-bridge.js). Commands go to both.
 const channels = [new BroadcastChannel('UXD202_SLIDES_SYNC'), new BroadcastChannel('presenter-sync-v1')]

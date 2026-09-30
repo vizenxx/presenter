@@ -12,6 +12,12 @@ const en = {
   addScreen: 'Add screen',
   sameDeckWindow: 'Same deck (new window)',
   otherDeckWindow: 'Another deck (new window)…',
+  windowScreen: 'A window on this computer (browser, video …)…',
+  pickWindowTitle: 'Show a window on the projector',
+  pickWindowIntro: 'Choose a program window. It stays on your screen, where you use it as usual; the projector shows it live. Later, click its card at the bottom to bring it to the front and show it again.',
+  pickWindowMac: 'On a Mac, allow Presenter under System Settings → Privacy & Security → Screen & System Audio Recording, then open this list again.',
+  noWindows: 'No program windows found. Open the window first (it must not be minimized), then try again.',
+  loadingWindows: 'Looking for windows…',
   rollerButton: '🎲 Name picker',
   rollerButtonTitle: 'Pick a name at random from a list; the rolling names show on the projector',
   projectingExternal: 'Projecting on the second screen',
@@ -27,6 +33,7 @@ const en = {
   supported: 'PPT, PPTX, PDF and HTML decks are supported.',
   recentlyOpened: 'Recently opened',
   paneProjecting: 'Projector · what students see',
+  paneOnAir: (name: string) => ` · ${name}`,
   paneNotProjecting: 'Current slide · not projecting yet',
   slides: 'Slides',
   notes: 'Notes',
@@ -60,7 +67,13 @@ const en = {
   minutes: 'min',
   startCustom: 'Start',
 
-  projector: 'Projector',
+  projector: 'Screen 1',
+  onProjector: 'On projector',
+  onProjectorTitle: 'Students see this screen (while projecting)',
+  project: '▶ Project',
+  projectTitle: 'Show this screen on the projector. Clicking the card only selects it.',
+  windowCardTitle: 'Click to bring this window to the front and show it on the projector',
+  removeWindowScreen: 'Remove this window screen',
   screenN: (n: number) => `Screen ${n}`,
   screens: 'Screens',
   notProjecting: 'not projecting',
@@ -162,9 +175,12 @@ const en = {
     ['See what comes next', 'Next slide (right). Click it to look further ahead: students see no change. Click the current slide to go back.'],
     ['Mark on the slide', 'Bar above the slide: pen (P), highlighter (H), box (R), laser (L), eraser (E). Marks clear on the next page.'],
     ['Read notes or jump to a slide', 'Slides and Notes, above the slide.'],
-    ['Time an activity', 'Timer: click 1 min, 5 min … or type minutes and click Start. It rings at zero; any key stops it.'],
+    ['Time an activity', 'Class timer: click 1 min, 5 min … or type minutes and click Start. It rings at zero; any key stops it.'],
+    ['Time my own talk', 'My timer (bottom right): count up or count down. Only you see it; it makes no sound.'],
     ['Pick a name at random', '🎲 Name picker in the top bar.'],
     ['Use more screens', '＋ Add screen in the bottom bar. Screens with Linked turn pages together.'],
+    ['Show another screen to the class', '▶ Project on its card. Clicking a card only selects it, so you can look through another deck without the class seeing it.'],
+    ['Show a program window (browser, video …)', '＋ Add screen → A window on this computer. Clicking its card brings the window to the front and shows it on the projector.'],
     ['Make the text bigger', `Text size, or ${KEYS.mod} + / ${KEYS.mod} − (HTML decks).`]
   ] as string[][],
   guidePrepareIntro: 'Most decks need no preparation. Find your kind of deck:',
@@ -202,5 +218,6 @@ export function useT(): Strings {
 export function screenLabel(t: Strings, o: OutputView): string {
   if (o.kind === 'projector') return t.projector
   if (o.kind === 'preview') return t.nextSlide
+  if (o.kind === 'capture') return `🪟 ${o.captureName ?? t.screenN(o.screenNumber)}`
   return t.screenN(o.screenNumber)
 }

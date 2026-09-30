@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'" />
+    <title>window screen</title>
+    <style>
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
+      video { position: fixed; inset: 0; width: 100vw; height: 100vh; object-fit: contain; }
+      #note { position: fixed; inset: 0; display: grid; place-items: center; color: #9ca3af; font: 24px system-ui, sans-serif; text-align: center; padding: 2em; }
+      #note[hidden] { display: none; }
+    </style>
+  </head>
+  <body>
+    <video autoplay muted playsinline></video>
+    <div id="note">Connecting to the window…</div>
+    <script type="module" src="./src/capture/main.ts"></script>
+  </body>
+</html>

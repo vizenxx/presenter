@@ -137,7 +137,7 @@ export function Milestones({ state, index }: { state: AppState; index: number })
             key={`${m.label}-${m.slideIndex}`}
             type="button"
             title={t.goTo(m.label)}
-            onClick={() => goToSlide(m.slideIndex)}
+            onClick={() => goToSlide(m.slideIndex, state.onAirId)}
             className={`rounded-full px-2.5 py-0.5 text-sm ${active ? 'bg-accent font-semibold text-black' : 'bg-panel-2 text-muted hover:text-ink'}`}
           >
             {m.label}

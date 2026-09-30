@@ -31,6 +31,9 @@ function wireIpc(store: Store): void {
     startupLog('console asked for its state')
     return store.getState()
   })
+  ipcMain.on('console:project', (_e, id: OutputId) => store.project(id))
+  ipcMain.handle('console:list-windows', () => store.listWindows())
+  ipcMain.on('console:add-window-screen', (_e, id: string, name: string) => store.addWindowScreen(String(id), String(name)))
   ipcMain.on('console:got-state', () => startupLog('console received its state (the app is ready)'))
   ipcMain.on('deck:state', (e, msg: DeckStateMsg) => outputOf(e.sender)?.receiveState(msg))
   ipcMain.on('deck:editing', (e, editing: boolean) => {
@@ -41,13 +44,14 @@ function wireIpc(store: Store): void {
     const o = outputOf(e.sender)
     if (o) store.onPointer(o.id)
   })
-  ipcMain.on('overlay:pointer', () => store.onPointer('projector'))
+  ipcMain.on('overlay:pointer', () => store.onProjectorPointer())
   // Marks: only the projector deck page may send them.
   ipcMain.on('ink:op', (e, op: InkOp) => {
-    if (outputOf(e.sender)?.kind === 'projector') store.inkOp(op, 'deck')
+    if (store.isOnAir(outputOf(e.sender))) store.inkOp(op, 'deck')
   })
   ipcMain.on('ink:ready', (e) => {
-    if (outputOf(e.sender)?.kind === 'projector') store.inkReady()
+    const o = outputOf(e.sender)
+    if (o) store.inkReady(o)
   })
   ipcMain.on('ink:set-tool', (_e, tool: InkTool) => store.setInkTool(tool))
   ipcMain.on('ink:set-color', (_e, color: string) => store.setInkColor(color))
@@ -112,7 +116,8 @@ app.whenReady().then(() => {
     rollerPreload: preload('roller'),
     loadConsole: (win) => loadPage(win.webContents, 'console'),
     loadOverlay: (view) => loadPage(view.webContents, 'overlay'),
-    loadRoller: (view) => loadPage(view.webContents, 'roller')
+    loadRoller: (view) => loadPage(view.webContents, 'roller'),
+    loadCapture: (view) => loadPage(view.webContents, 'capture')
   })
   store.start()
   wireIpc(store)

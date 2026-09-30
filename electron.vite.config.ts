@@ -26,7 +26,8 @@ export default defineConfig({
           console: resolve(__dirname, 'src/renderer/console.html'),
           overlay: resolve(__dirname, 'src/renderer/overlay.html'),
           roller: resolve(__dirname, 'src/renderer/roller.html'),
-          pdfdeck: resolve(__dirname, 'src/renderer/pdfdeck.html')
+          pdfdeck: resolve(__dirname, 'src/renderer/pdfdeck.html'),
+          capture: resolve(__dirname, 'src/renderer/capture.html')
         }
       }
     }

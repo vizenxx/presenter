@@ -1,6 +1,6 @@
 import type { AppState, OutputView, PreviewRect } from '../../../shared/types'
 import type { DrawerTab } from './Drawer'
-import { useT } from './i18n'
+import { screenLabel, useT } from './i18n'
 import { InkToolbar, MirrorView } from './Ink'
 import { Btn, Milestones, PageText, ZoomControl } from './ui'
 import { ViewSlot } from './ViewSlot'
@@ -48,13 +48,16 @@ export function CurrentPane(props: {
 }) {
   const { state, projector, mirror, suspended, drawer, onDrawer, onGuide } = props
   const t = useT()
-  if (!state.mainDeck) return <EmptyState state={state} onGuide={onGuide} />
+  if (!state.mainDeck && projector.kind !== 'capture') return <EmptyState state={state} onGuide={onGuide} />
   const selected = state.selectedId === projector.id
   const aspect = state.projectorSize.width / Math.max(1, state.projectorSize.height)
   return (
     <section className={`flex min-h-0 flex-col rounded-2xl border-2 bg-panel p-3 ${selected ? 'border-accent' : 'border-line'}`}>
       <div className="mb-2 flex items-center gap-2">
-        <h2 className="truncate text-sm font-semibold text-muted">{state.projecting ? t.paneProjecting : t.paneNotProjecting}</h2>
+        <h2 className="truncate text-sm font-semibold text-muted">
+          {state.projecting ? t.paneProjecting : t.paneNotProjecting}
+          {t.paneOnAir(screenLabel(t, projector))}
+        </h2>
         <div className="ml-auto flex shrink-0 items-center gap-2">
           <ZoomControl o={projector} />
           <span className="mx-1 h-6 w-px bg-line" />
@@ -66,7 +69,7 @@ export function CurrentPane(props: {
           </Btn>
         </div>
       </div>
-      <InkToolbar ink={state.ink} enabled={projector.adapter !== 'loading'} />
+      <InkToolbar ink={state.ink} enabled={projector.deck !== null && projector.adapter !== 'loading'} />
       {state.projecting ? (
         <MirrorView aspect={aspect} ink={state.ink} fallback={mirror} />
       ) : (

@@ -76,6 +76,7 @@ The bar above the current slide: **Pointer, Pen, Highlighter, Box, Laser, Eraser
 - When the deck plans a time for a slide, the timer shows it.
 - At zero the alarm rings until you press any key or click. That key does not turn the page.
 - UXD202 decks show the countdown in their own bar; other decks show it at the bottom right of the projector.
+- **My timer** (bottom right of the console) is only for you: **Count up** or **Count down** to pace your talk. Students never see it and it makes no sound. A countdown keeps going past zero as **Over time**.
 
 ## Name picker
 
@@ -88,6 +89,8 @@ Click **🎲 Name picker**. Choose a list and click **🎲 Pick a name**: the li
 ## Extra screens and text size
 
 - **＋ Add screen** (end of the Screens bar) opens the same deck or another deck in a new window. Move it to any display. Its card's **⋯** menu has text size, **Full screen** and **Close this screen**.
+- **▶ Project** on a card puts that screen on the projector (its card then says **On projector**). Clicking a card only **selects** it: page keys, Next slide and Notes follow it, and the class keeps seeing the same screen. Use this to look through another deck quietly.
+- **A window on this computer** (in ＋ Add screen) makes a program window a screen: a browser, a video player, a spreadsheet … The real window stays on your laptop, where you use it as usual; the projector shows it live. Clicking its card brings the window to the front and shows it on the projector. Page turns, marks and notes do not apply to it; **✕** removes it. (On a Mac, bring the window forward yourself, and allow Screen Recording once.)
 - **Text size** (Ctrl + / Ctrl − / Ctrl 0; ⌘ on a Mac) enlarges an HTML deck on one screen and is remembered per deck file. The next preview follows the screen it previews.
 
 ## For maintainers
