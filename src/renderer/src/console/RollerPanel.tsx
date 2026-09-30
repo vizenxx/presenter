@@ -11,7 +11,7 @@ interface Draft {
 }
 
 /** The name the console shows: flips along the same path as the students' screens. */
-function useRollFace(r: RollerView): { person: { name: string; id: string } | null; landed: boolean } {
+export function useRollFace(r: RollerView): { person: { name: string; id: string } | null; landed: boolean } {
   const [now, setNow] = useState(() => Date.now())
   const roll = r.roll
   useEffect(() => {

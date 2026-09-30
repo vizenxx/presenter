@@ -400,6 +400,19 @@ try {
     assert.equal(await call((_e, id) => globalThis.__presenter.scene(id).strokes.length, wid), 1, 'the mark belongs to the window content')
     assert.equal(await call(() => globalThis.__presenter.scene('projector').strokes.length), 0, 'the deck has no marks')
     await call(() => globalThis.__presenter.setInkTool('pointer'))
+    // Using the toolbar (it becomes the window in front) must keep the tools up.
+    await call(() => globalThis.__presenter.tools.toolbar.focus())
+    await sleep(800)
+    assert.equal(await toolsShown(), true, 'tools stay while the toolbar is used')
+    const clickBar = (text) => call((_e, text) => globalThis.__presenter.tools.toolbar.webContents.executeJavaScript(`(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.includes(${JSON.stringify(text)})); if (b) b.click(); return !!b })()`), text)
+    assert.equal(await clickBar('Roll'), true, 'the toolbar has a Roll button')
+    s = await waitFor('roll from the toolbar', (s) => s.roller.roll !== null, 4000)
+    assert.equal(await clickBar('Timer'), true, 'the toolbar has a Timer button')
+    await sleep(400)
+    assert.equal(await call(() => globalThis.__presenter.tools.toolbar.webContents.executeJavaScript('!!document.querySelector("input[type=number]")')), true, 'Timer opens its settings')
+    await sleep(3500)
+    await call(() => globalThis.__presenter.rollerHide())
+    await call(() => globalThis.__presenter.rollerReset())
     await call(() => globalThis.__presenter.consoleWin.win.focus())
     let toolsGone = false
     for (let i = 0; i < 25 && !toolsGone; i++) {

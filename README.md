@@ -80,7 +80,7 @@ The bar above the current slide: **Pointer, Pen, Highlighter, Box, Laser, Eraser
 
 ## Name picker
 
-Click **🎲 Name picker**. Choose a list and click **🎲 Pick a name**: the list rolls on the projector and the extra screens, slows down and stops on one person. After it stops, any key or click hides it; that key does not turn the page. The rules are those of the earlier Lucky Roller page.
+Click **🎲 Name picker**. Choose a list and click **🎲 Roll**: the list rolls on the projector and the extra screens, slows down and stops on one person. After it stops, any key or click hides it; that key does not turn the page. The rules are those of the earlier Lucky Roller page.
 
 - Under the button, **Picked so far: X of Y** counts the picks. **↺ Reset** (after a confirmation) makes everyone in the list unpicked again.
 - The first start has a sample list: click **Edit** and paste your own (one person per line; a number in front is optional).
@@ -94,7 +94,7 @@ Click **🎲 Name picker**. Choose a list and click **🎲 Pick a name**: the li
 - Clicking a card only **selects** it: page keys, Next slide and Notes follow it, and the audience keeps seeing the same thing. Use this to look through a waiting deck quietly.
 - **A window on this computer** lists every program window, minimized ones too (as in Zoom). The real window stays on your laptop, where you use it as usual; a projector shows it live. Adding it or clicking its card changes nothing on your screen; choosing a projector for it brings the window to the front (restored if minimized). Page turns, marks and notes do not apply to it; **✕** removes it. (On a Mac, bring the window forward yourself, and allow Screen Recording once.)
 - A deck card's **⋯** menu has text size and **Remove**.
-- **Floating tools** (Windows): while a program window shown on a projector is in front, a small toolbar floats on top of the screen with the marking tools and the name picker, plus My timer's time once you have started it (set it in the console). With a drawing tool you draw right on the window; the marks show on the projector over the window's picture, and stay until you clear them (or the window leaves the projector). With the pointer you use the window as usual. **◂** folds the toolbar, **⠿** moves it. The audience never sees the toolbar. It hides when you switch to the console or another program.
+- **Floating tools** (Windows): while a program window shown on a projector is in front, a small toolbar floats on top of the screen with the marking tools, **⏱** (the class timer: it shows the time left while it runs; click it for its settings), **🎲 Roll** (the name picked shows next to it), plus My timer's time once you have started it (set it in the console). With a drawing tool you draw right on the window; the marks show on the projector over the window's picture, and stay until you clear them (or the window leaves the projector). With the pointer you use the window as usual. **◂** folds the toolbar, **⠿** moves it. The audience never sees the toolbar. It hides when you switch to the console or another program.
 - **Text size** (Ctrl + / Ctrl − / Ctrl 0; ⌘ on a Mac) enlarges an HTML deck on one screen and is remembered per deck file. The next preview follows the screen it previews.
 
 ## For maintainers
