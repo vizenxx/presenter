@@ -1,4 +1,4 @@
-import { app, desktopCapturer, dialog, screen, session, systemPreferences, type BrowserWindow, type WebContents, type WebContentsView } from 'electron'
+import { app, desktopCapturer, dialog, screen, session, systemPreferences, type BrowserWindow, type Rectangle, type WebContents, type WebContentsView } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
 import { commandKey, intentToAction, keyIntent, type CommandKey } from '../shared/keys'
@@ -9,7 +9,7 @@ import { MAIN_STRINGS } from '../shared/lang'
 import { mergeRecent } from '../shared/recentList'
 import * as T from '../shared/timer'
 import { stepZoom, zoomKey, type ZoomDirection } from '../shared/zoom'
-import type { AppState, DeckRef, DeckStatus, KeyIntent, NavAction, OutputId, OutputKind, PreviewRect, RollerPlay, TimerView, WindowSource } from '../shared/types'
+import type { AppState, DeckRef, DeckStatus, KeyIntent, NavAction, OutputId, OutputKind, PreviewRect, RollerPlay, SpeakerTimerView, TimerView, WindowSource } from '../shared/types'
 import type { GuideFile } from '../shared/guide'
 import { ConsoleWindow } from './consoleWindow'
 import { saveGuideFile } from './guide'
@@ -23,7 +23,8 @@ import { RollerController } from './roller'
 import { RollerOverlay } from './rollerOverlay'
 import { ProjectorScreen } from './projectorScreen'
 import { startupLog } from './startupLog'
-import { WindowsHelper } from './windowsHelper'
+import { WindowsHelper, windowHandle } from './windowsHelper'
+import { WindowTools } from './windowTools'
 import { rememberZoom, zoomFor } from './zoomMemory'
 
 export interface StorePaths {
@@ -35,9 +36,13 @@ export interface StorePaths {
   loadOverlay: (view: WebContentsView) => void
   loadRoller: (view: WebContentsView) => void
   loadCapture: (view: WebContentsView) => void
+  loadToolbar: (win: BrowserWindow) => void
+  loadInkPad: (win: BrowserWindow) => void
 }
 
 const TICK_MS = 200
+/** How often the program windows on projectors are checked (in front? moved?). */
+const TRACK_MS = 250
 const MIRROR_MS = 250
 /** Ignore deck-side "not done" reports this soon after the alarm starts (they are stale echoes). */
 const ALARM_GUARD_MS = 1500
@@ -61,7 +66,13 @@ export class Store {
   private mainPrepared: PreparedDeck | null = null
   private deckStatus: DeckStatus = { state: 'ready' }
   private inkSettings: InkSettings = { tool: 'pointer', color: INK_COLORS[0] }
-  private readonly inkScene = new InkScene()
+  /** Marks per content: a deck's clear on a page turn, a program window's only when cleared. */
+  private readonly scenes = new Map<OutputId, InkScene>()
+  /** The program window in front that the floating tools serve. */
+  private activeWindowId: OutputId | null = null
+  private tools!: WindowTools
+  private tracking = false
+  private speaker: SpeakerTimerView = { mode: 'up', minutes: 45, startedAt: null, heldMs: 0 }
   /** Projector page the marks belong to; marks clear when it changes. */
   private inkPage = -1
   /** The console shows a live video of the projector; JPEG snapshots are only a fallback. */
@@ -101,6 +112,7 @@ export class Store {
       this.consoleWin.win.contentView.addChildView(view)
       view.setVisible(false)
     }
+    this.tools = new WindowTools({ consolePreload: this.paths.consolePreload, deckPreload: this.paths.deckPreload, loadToolbar: this.paths.loadToolbar, loadInkPad: this.paths.loadInkPad })
     this.consoleWin.win.webContents.on('did-finish-load', () => {
       startupLog('console page loaded; state sent')
       this.emitNow()
@@ -137,6 +149,7 @@ export class Store {
       callback({ video: { id: this.projectorWin.win.getMediaSourceId(), name: 'Projector' } })
     })
     setInterval(() => this.tick(), TICK_MS)
+    setInterval(() => void this.trackWindows(), TRACK_MS)
     setInterval(() => void this.captureMirror(), MIRROR_MS)
   }
 
@@ -156,7 +169,7 @@ export class Store {
     this.mainDeck = deck
     this.mainPrepared = prepared
     this.remember(deck)
-    this.inkScene.apply({ t: 'clear' })
+    this.scene('projector').apply({ t: 'clear' })
     this.inkPage = 0
     const zoom = zoomFor(deck.path)
     this.projector().index = 0
@@ -304,6 +317,9 @@ export class Store {
     const to = target === 'new' ? this.nextProjectorNumber() : target
     const from = this.shownOn(o)
     if (to === from) return
+    // Marks belong to where a content was shown: the moved content and the one it replaces lose theirs.
+    const replaced = to === 1 ? this.onAirId : to !== null ? (this.extras.get(to)?.contentId ?? null) : null
+    for (const id of [o.id, replaced]) if (id) this.applyInk(id, { t: 'clear' }, 'main')
     if (to !== null && to !== 1 && !this.extras.has(to)) {
       if (target !== 'new') return
       this.createProjector(to)
@@ -321,6 +337,7 @@ export class Store {
     if (from === 1 || to === 1) this.afterStageChange()
     // A window shown on a projector comes to the front (restored if minimized), ready to use.
     if (to !== null && o.capture) this.windows.raise(o.capture.sourceId)
+    this.sendInkSettings()
     this.emit()
   }
 
@@ -475,21 +492,64 @@ export class Store {
     this.emit()
   }
 
-  /** origin = who already drew it: the projector page, the console canvas, or nobody. */
-  inkOp(op: InkOp, origin: 'deck' | 'console' | 'main'): void {
-    this.inkScene.apply(op)
-    if (origin !== 'deck') this.projectorContents()?.send('ink:op', op)
-    if (origin !== 'console' && this.projecting) this.consoleContents()?.send('ink:op', op)
+  /**
+   * origin = who already drew it: the Projector 1 page ('deck'), the console canvas, the ink pad
+   * over a program window ('pad'), or nobody ('main'). Buttons and the pad mark the program window
+   * in front when there is one, else Projector 1.
+   */
+  inkOp(op: InkOp, origin: 'deck' | 'console' | 'pad' | 'main'): void {
+    const target = origin === 'deck' || origin === 'console' ? this.onAirId : this.inkTargetId()
+    if (target) this.applyInk(target, op, origin)
   }
 
   inkSnapshot(): InkStroke[] {
-    return this.inkScene.strokes
+    return this.onAirId ? this.scene(this.onAirId).strokes : []
   }
 
-  /** A deck page's marking layer is ready (after every load); only the screen on the projector draws. */
+  /** A content page's marking layer is ready (after every load). */
   inkReady(o: Output): void {
     this.sendInkSettings()
-    if (o === this.onAir()) this.projectorContents()?.send('ink:snapshot', this.inkScene.strokes)
+    const wc = o.view.webContents
+    if (!wc.isDestroyed()) wc.send('ink:snapshot', this.scene(o.id).strokes)
+  }
+
+  /** The ink pad over program windows is ready. */
+  padReady(): void {
+    this.sendPadSettings()
+    if (!this.tools.pad.isDestroyed()) this.tools.pad.webContents.send('ink:snapshot', this.activeWindowId ? this.scene(this.activeWindowId).strokes : [])
+  }
+
+  isPad(wc: WebContents): boolean {
+    return !this.tools.pad.isDestroyed() && wc === this.tools.pad.webContents
+  }
+
+  toolbarSize(width: number, height: number): void {
+    this.tools.resizeToolbar(width, height)
+  }
+
+  // ---------- my timer (the speaker's own) ----------
+
+  speakerMode(mode: 'up' | 'down'): void {
+    if (mode !== 'up' && mode !== 'down') return
+    this.speaker = { ...this.speaker, mode, startedAt: null, heldMs: 0 }
+    this.emit()
+  }
+
+  speakerMinutes(minutes: number): void {
+    this.speaker = { ...this.speaker, minutes: Math.min(240, Math.max(1, Math.round(Number(minutes)) || 1)) }
+    this.emit()
+  }
+
+  speakerToggle(): void {
+    const s = this.speaker
+    const now = Date.now()
+    this.speaker = s.startedAt === null ? { ...s, startedAt: now } : { ...s, startedAt: null, heldMs: s.heldMs + now - s.startedAt }
+    this.emit()
+  }
+
+  speakerReset(): void {
+    this.speaker = { ...this.speaker, startedAt: null, heldMs: 0 }
+    this.emit()
   }
 
   isOnAir(o: Output | undefined): boolean {
@@ -648,6 +708,8 @@ export class Store {
       projecting: this.projecting,
       projectorSize: this.targetSize(),
       roller: this.roller.view(),
+      speaker: this.speaker,
+      toolsFor: this.activeWindowId,
       deckStatus: this.deckStatus,
       ink: this.inkSettings
     }
@@ -762,19 +824,97 @@ export class Store {
 
   /** Marks are temporary: they clear when the projector shows another page. */
   private clearInkIfPageChanged(): void {
-    const page = this.onAir()?.shownIndex() ?? -1
+    const onAir = this.onAir()
+    const page = onAir?.shownIndex() ?? -1
     if (page === this.inkPage) return
     this.inkPage = page
-    if (this.inkScene.strokes.length > 0 || this.inkScene.laser) this.inkOp({ t: 'clear' }, 'main')
+    if (!onAir || onAir.kind === 'capture') return
+    const marks = this.scene(onAir.id)
+    if (marks.strokes.length > 0 || marks.laser) this.applyInk(onAir.id, { t: 'clear' }, 'main')
   }
 
   private sendInkSettings(): void {
     const onAir = this.onAir()
     for (const o of this.outputs.values()) {
-      if (o.kind === 'preview' || o.kind === 'capture') continue
+      if (o.kind === 'preview') continue
       const wc = o.view.webContents
-      if (!wc.isDestroyed()) wc.send('ink:settings', { ...this.inkSettings, projecting: this.projecting, active: o === onAir })
+      if (wc.isDestroyed()) continue
+      // A program window's page only shows its marks (they are drawn on the ink pad); a deck on
+      // Projector 1 also takes marks drawn on the projector.
+      const settings =
+        o.kind === 'capture'
+          ? { ...this.inkSettings, tool: 'pointer', projecting: false, active: this.shownOn(o) !== null }
+          : { ...this.inkSettings, projecting: this.projecting, active: o === onAir }
+      wc.send('ink:settings', settings)
     }
+    this.sendPadSettings()
+  }
+
+  private sendPadSettings(): void {
+    if (!this.tools || this.tools.pad.isDestroyed()) return
+    const active = this.activeWindowId !== null
+    this.tools.pad.webContents.send('ink:settings', { ...this.inkSettings, projecting: false, active })
+    this.tools.setDrawing(active && this.inkSettings.tool !== 'pointer')
+  }
+
+  private scene(id: OutputId): InkScene {
+    let s = this.scenes.get(id)
+    if (!s) {
+      s = new InkScene()
+      this.scenes.set(id, s)
+    }
+    return s
+  }
+
+  /** Marks follow the program window in front; otherwise Projector 1. */
+  private inkTargetId(): OutputId | null {
+    return this.activeWindowId ?? this.onAirId
+  }
+
+  private applyInk(id: OutputId, op: InkOp, origin: 'deck' | 'console' | 'pad' | 'main'): void {
+    this.scene(id).apply(op)
+    const wc = this.outputs.get(id)?.view.webContents
+    if (origin !== 'deck' && wc && !wc.isDestroyed()) wc.send('ink:op', op)
+    if (origin !== 'console' && this.projecting && id === this.onAirId) this.consoleContents()?.send('ink:op', op)
+    if (origin !== 'pad' && id === this.activeWindowId && !this.tools.pad.isDestroyed()) this.tools.pad.webContents.send('ink:op', op)
+  }
+
+  /**
+   * Program windows on a projector: when one is in front (or the teacher is using the floating
+   * toolbar), the toolbar and the ink pad come up over it; otherwise they hide (Windows only).
+   */
+  private async trackWindows(): Promise<void> {
+    if (this.tracking || this.quitting || !this.tools) return
+    const shown = [...this.outputs.values()].filter((o) => o.capture !== null && this.shownOn(o) !== null)
+    if (shown.length === 0) {
+      this.setActiveWindow(null, null)
+      return
+    }
+    this.tracking = true
+    try {
+      const states = await this.windows.states(shown.map((o) => o.capture?.sourceId ?? ''))
+      if (!states) {
+        this.setActiveWindow(null, null)
+        return
+      }
+      let active = shown.find((o) => windowHandle(o.capture?.sourceId ?? '') === states.fg) ?? null
+      if (!active && this.activeWindowId && this.tools.handles().includes(states.fg)) active = shown.find((o) => o.id === this.activeWindowId) ?? null
+      const place = active ? states.w.find((w) => w.h === windowHandle(active?.capture?.sourceId ?? '')) : undefined
+      if (!active || !place || place.m) this.setActiveWindow(null, null)
+      else this.setActiveWindow(active.id, { x: place.x, y: place.y, width: place.w, height: place.hh })
+    } finally {
+      this.tracking = false
+    }
+  }
+
+  private setActiveWindow(id: OutputId | null, rect: Rectangle | null): void {
+    const changed = id !== this.activeWindowId
+    this.activeWindowId = id
+    this.tools.place(id ? rect : null)
+    if (!changed) return
+    this.sendPadSettings()
+    if (!this.tools.pad.isDestroyed()) this.tools.pad.webContents.send('ink:snapshot', id ? this.scene(id).strokes : [])
+    this.emit()
   }
 
   private projectorContents(): WebContents | null {
@@ -981,10 +1121,11 @@ export class Store {
 
   /** Marks belong to what the audience saw on Projector 1; they clear when it shows something else. */
   private afterStageChange(): void {
-    this.inkScene.apply({ t: 'clear' })
-    this.inkPage = this.onAir()?.shownIndex() ?? -1
+    const onAir = this.onAir()
+    if (onAir) this.applyInk(onAir.id, { t: 'clear' }, 'main')
+    else if (this.projecting) this.consoleContents()?.send('ink:op', { t: 'clear' })
+    this.inkPage = onAir?.shownIndex() ?? -1
     this.sendInkSettings()
-    if (this.projecting) this.consoleContents()?.send('ink:op', { t: 'clear' })
     if (this.timer.status === 'idle') this.timer = T.reset(this.timer, this.defaultDuration())
     this.syncTimer(true)
     this.applyCurrent()
@@ -1083,13 +1224,17 @@ export class Store {
   private emitNow(): void {
     const wc = this.consoleWin?.win.webContents
     if (!wc || wc.isDestroyed()) return
-    wc.send('state', this.getState())
+    const state = this.getState()
+    wc.send('state', state)
+    const bar = this.tools?.toolbar.webContents
+    if (bar && !bar.isDestroyed()) bar.send('state', state)
   }
 
   private quit(): void {
     if (this.quitting) return
     this.quitting = true
     this.windows.dispose()
+    this.tools?.destroy()
     app.quit()
   }
 }

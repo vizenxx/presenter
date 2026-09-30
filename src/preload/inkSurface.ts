@@ -58,8 +58,8 @@ export function mountInkSurface(): void {
     frame = requestAnimationFrame(() => {
       frame = 0
       const ratio = window.devicePixelRatio || 1
-      const w = window.innerWidth
-      const h = window.innerHeight
+      const w = canvas.clientWidth || window.innerWidth
+      const h = canvas.clientHeight || window.innerHeight
       if (canvas.width !== Math.round(w * ratio) || canvas.height !== Math.round(h * ratio)) {
         canvas.width = Math.round(w * ratio)
         canvas.height = Math.round(h * ratio)
@@ -132,9 +132,27 @@ export function mountInkSurface(): void {
     apply()
   })
   window.addEventListener('resize', redraw)
+  // A window content's page says where the program window's picture is (letterboxed video);
+  // marks use that area, so they match the ink pad lying on the real window.
+  const applyFrame = (): void => {
+    const f = document.documentElement?.dataset['presenterInkFrame']
+    const parts = f ? f.split(',').map(Number) : []
+    if (parts.length === 4 && parts.every(Number.isFinite)) {
+      canvas.style.left = `${parts[0]}px`
+      canvas.style.top = `${parts[1]}px`
+      canvas.style.width = `${parts[2]}px`
+      canvas.style.height = `${parts[3]}px`
+      canvas.style.right = 'auto'
+      canvas.style.bottom = 'auto'
+    }
+    redraw()
+  }
 
   const attach = (): void => {
     document.documentElement.appendChild(host)
+    // Only now does the page's root exist to be watched.
+    new MutationObserver(applyFrame).observe(document.documentElement, { attributes: true, attributeFilter: ['data-presenter-ink-frame'] })
+    applyFrame()
     apply()
     redraw()
     ipcRenderer.send('ink:ready')

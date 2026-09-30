@@ -13,7 +13,7 @@ const OUT = path.join(ROOT, 'e2e', 'out')
 const STUB = path.join(OUT, 'harness', 'console-stub-preload.cjs')
 const AI_REQUEST = aiRequestText(fs.readFileSync(path.join(ROOT, 'docs', 'ai-integration.md'), 'utf8'))
 /** Every ConsoleApi method (contextBridge copies plain objects only, so no Proxy). */
-const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "listWindows", "addWindowScreen"]
+const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "listWindows", "addWindowScreen"]
 
 app.disableHardwareAcceleration()
 // Each screenshot closes its window; keep the app alive between them.
@@ -36,6 +36,8 @@ function sampleState(projecting: boolean, crowd = false): AppState {
     mainDeck: deck,
     slidesOf: 'projector',
     onAirId: crowd ? 'screen-2' : 'projector',
+    speaker: { mode: 'down', minutes: 45, startedAt: null, heldMs: 754000 },
+    toolsFor: crowd ? 'window-7' : null,
     projectors: crowd ? [{ number: 2, contentId: 'window-7', fullscreen: true }] : [],
     previewOf: 'projector',
     slides: Array.from({ length: 18 }, (_, i) => ({ title: `Slide title ${i + 1}`, notes: i === 2 ? 'Ask the class first.' : '' })),
@@ -87,13 +89,13 @@ const OPENERS: Record<string, string> = {
   roller: `[...document.querySelectorAll('header button')].find((x) => x.textContent.includes('🎲'))`
 }
 
-async function shot(projecting: boolean, open: Open = null): Promise<void> {
+async function shot(projecting: boolean, open: Open = null, page = 'console'): Promise<void> {
   writeStub(sampleState(projecting, open === 'crowd'))
-  const win = new BrowserWindow({ show: false, width: 1536, height: 864, useContentSize: true, webPreferences: { preload: STUB, contextIsolation: true, sandbox: true, offscreen: true } })
+  const win = new BrowserWindow({ show: false, width: page === 'console' ? 1536 : 1100, height: page === 'console' ? 864 : 90, useContentSize: true, backgroundColor: '#475569', webPreferences: { preload: STUB, contextIsolation: true, sandbox: true, offscreen: true } })
   // A page load can be refused while the previous window is still closing; retry once.
-  await win.loadFile(path.join(ROOT, 'out', 'renderer', 'console.html')).catch(async () => {
+  await win.loadFile(path.join(ROOT, 'out', 'renderer', `${page}.html`)).catch(async () => {
     await wait(500)
-    await win.loadFile(path.join(ROOT, 'out', 'renderer', 'console.html'))
+    await win.loadFile(path.join(ROOT, 'out', 'renderer', `${page}.html`))
   })
   await wait(1200)
   if (open && OPENERS[open]) {
@@ -102,7 +104,7 @@ async function shot(projecting: boolean, open: Open = null): Promise<void> {
     await wait(600)
   }
   const image = await win.webContents.capturePage()
-  const name = `console${projecting ? '-projecting' : ''}${open ? `-${open}` : ''}.png`
+  const name = `${page}${projecting ? '-projecting' : ''}${open ? `-${open}` : ''}.png`
   fs.writeFileSync(path.join(OUT, name), image.toPNG())
   const overflow = await win.webContents.executeJavaScript('document.documentElement.scrollWidth > innerWidth || document.documentElement.scrollHeight > innerHeight')
   // A dialog must fit inside the window (its body scrolls instead).
@@ -124,6 +126,7 @@ app.whenReady().then(async () => {
     await shot(false, 'crowd')
     await shot(false, 'window-picker')
     await shot(false, 'roller')
+    await shot(false, 'crowd', 'toolbar')
     console.log('CONSOLE OK')
   } catch (error) {
     console.error(String(error))

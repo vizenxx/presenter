@@ -377,6 +377,37 @@ try {
       if (!raised) await sleep(200)
     }
     assert.ok(raised, 'the window came to the front')
+
+    // 17. Floating tools over the program window in front: the toolbar and the ink pad come up,
+    // the pad lies on the window, marks belong to the window, and all of it hides behind the console.
+    const toolsShown = () => call(() => globalThis.__presenter.tools.isShown())
+    let toolsUp = false
+    for (let i = 0; i < 25 && !toolsUp; i++) {
+      toolsUp = await toolsShown()
+      if (!toolsUp) await sleep(150)
+    }
+    assert.ok(toolsUp, 'tools shown over the window in front')
+    const fit = await call(() => {
+      const p = globalThis.__presenter.tools.pad.getBounds()
+      const w = globalThis.__e2eWin.getBounds()
+      return [p.x - w.x, p.y - w.y, p.width - w.width, p.height - w.height]
+    })
+    assert.ok(Math.abs(fit[0]) <= 12 && Math.abs(fit[1]) <= 12 && Math.abs(fit[2]) <= 24 && Math.abs(fit[3]) <= 24, `ink pad lies on the window (${fit})`)
+    s = await state()
+    assert.equal(s.toolsFor, wid, 'the tools serve this window')
+    await call(() => globalThis.__presenter.setInkTool('pen'))
+    await call(() => globalThis.__presenter.inkOp({ t: 'begin', stroke: { id: 'w1', tool: 'pen', color: '#ef4444', points: [0.1, 0.1, 0.5, 0.5] } }, 'pad'))
+    assert.equal(await call((_e, id) => globalThis.__presenter.scene(id).strokes.length, wid), 1, 'the mark belongs to the window content')
+    assert.equal(await call(() => globalThis.__presenter.scene('projector').strokes.length), 0, 'the deck has no marks')
+    await call(() => globalThis.__presenter.setInkTool('pointer'))
+    await call(() => globalThis.__presenter.consoleWin.win.focus())
+    let toolsGone = false
+    for (let i = 0; i < 25 && !toolsGone; i++) {
+      toolsGone = !(await toolsShown())
+      if (!toolsGone) await sleep(150)
+    }
+    assert.ok(toolsGone, 'tools hide when the console is in front')
+    console.log('ok 17 floating tools: over the window in front, pad on the window, marks on the window, hidden behind the console')
     await call(() => globalThis.__presenter.startProjecting())
     assert.equal(await call((_e, id) => globalThis.__presenter.projectorWin.content === globalThis.__presenter.outputs.get(id).view, wid), true, 'projector window shows the window screen')
     await call(() => globalThis.__presenter.stopProjecting())

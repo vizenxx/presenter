@@ -36,6 +36,11 @@ function wireIpc(store: Store): void {
     if (to !== undefined) store.showOn(id, to)
   })
   ipcMain.on('console:projector-fullscreen', (_e, n: number) => store.projectorFullscreen(Number(n)))
+  ipcMain.on('console:speaker-mode', (_e, mode: 'up' | 'down') => store.speakerMode(mode))
+  ipcMain.on('console:speaker-minutes', (_e, minutes: number) => store.speakerMinutes(Number(minutes)))
+  ipcMain.on('console:speaker-toggle', () => store.speakerToggle())
+  ipcMain.on('console:speaker-reset', () => store.speakerReset())
+  ipcMain.on('console:toolbar-size', (_e, width: number, height: number) => store.toolbarSize(Number(width), Number(height)))
   ipcMain.on('console:close-projector', (_e, n: number) => store.closeProjector(Number(n)))
   ipcMain.handle('console:list-windows', () => store.listWindows())
   ipcMain.on('console:add-window-screen', (_e, id: string, name: string) => store.addWindowScreen(String(id), String(name)))
@@ -52,11 +57,13 @@ function wireIpc(store: Store): void {
   ipcMain.on('overlay:pointer', () => store.onProjectorPointer())
   // Marks: only the projector deck page may send them.
   ipcMain.on('ink:op', (e, op: InkOp) => {
-    if (store.isOnAir(outputOf(e.sender))) store.inkOp(op, 'deck')
+    if (store.isPad(e.sender)) store.inkOp(op, 'pad')
+    else if (store.isOnAir(outputOf(e.sender))) store.inkOp(op, 'deck')
   })
   ipcMain.on('ink:ready', (e) => {
     const o = outputOf(e.sender)
     if (o) store.inkReady(o)
+    else if (store.isPad(e.sender)) store.padReady()
   })
   ipcMain.on('ink:set-tool', (_e, tool: InkTool) => store.setInkTool(tool))
   ipcMain.on('ink:set-color', (_e, color: string) => store.setInkColor(color))
@@ -121,7 +128,9 @@ app.whenReady().then(() => {
     loadConsole: (win) => loadPage(win.webContents, 'console'),
     loadOverlay: (view) => loadPage(view.webContents, 'overlay'),
     loadRoller: (view) => loadPage(view.webContents, 'roller'),
-    loadCapture: (view) => loadPage(view.webContents, 'capture')
+    loadCapture: (view) => loadPage(view.webContents, 'capture'),
+    loadToolbar: (win) => loadPage(win.webContents, 'toolbar'),
+    loadInkPad: (win) => loadPage(win.webContents, 'inkpad')
   })
   store.start()
   wireIpc(store)

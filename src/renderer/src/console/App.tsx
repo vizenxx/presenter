@@ -52,7 +52,7 @@ export function App() {
         <div className="flex min-h-0 flex-col gap-3">
           {state.mainDeck ? <NextPane state={state} next={next} suspended={suspended} /> : <div className="flex-1" />}
           <TimerPanel state={state} />
-          <SpeakerTimer />
+          <SpeakerTimer speaker={state.speaker} />
         </div>
         {drawer && <Drawer state={state} tab={drawer} onTab={setDrawer} />}
       </main>

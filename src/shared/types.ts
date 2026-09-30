@@ -55,6 +55,14 @@ export interface OutputView {
   shownOn: number | null
 }
 
+/** The speaker's own timer (never shown to the audience). Times are Date.now() values. */
+export interface SpeakerTimerView {
+  mode: 'up' | 'down'
+  minutes: number
+  startedAt: number | null
+  heldMs: number
+}
+
 /** Projector 2, 3 …: extra audience screens the teacher opened. */
 export interface ProjectorView {
   number: number
@@ -145,6 +153,9 @@ export interface AppState {
   onAirId: OutputId | null
   /** Projector 2, 3 … in number order. */
   projectors: ProjectorView[]
+  speaker: SpeakerTimerView
+  /** The program window in front that the floating tools serve (null = tools hidden). */
+  toolsFor: OutputId | null
   /** The screen `slides` belongs to: the selected one (the next preview counts), else the projector. */
   slidesOf: OutputId
   /** The screen the next preview follows: the last selected real screen. */
@@ -188,6 +199,12 @@ export interface ConsoleApi {
   /** Show a content on Projector n, on a new projector, or nowhere (null: it waits, keeping its page). */
   showOn(id: OutputId, target: number | 'new' | null): void
   projectorFullscreen(n: number): void
+  speakerMode(mode: 'up' | 'down'): void
+  speakerMinutes(minutes: number): void
+  speakerToggle(): void
+  speakerReset(): void
+  /** The floating toolbar page reports its size. */
+  toolbarSize(width: number, height: number): void
   closeProjector(n: number): void
   listWindows(): Promise<WindowSource[]>
   addWindowScreen(id: string, name: string): void
