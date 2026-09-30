@@ -176,27 +176,40 @@ try {
   s = await waitFor('preview back on the projector deck', (s) => out(s, 'next').deck?.name === out(s, 'projector').deck.name && out(s, 'next').shownIndex === 7)
   console.log('ok 8b preview and notes follow a screen with another deck')
 
-  // 8c. ▶ Project puts another screen on the projector; selecting a screen does not.
+  // 8c. The projector menu decides what the audience sees; selecting a card does not.
+  // A projector shows one content; the one it showed waits and keeps its page.
   const inConsole = (id) => call((_e, id) => globalThis.__presenter.consoleWin.win.contentView.children.includes(globalThis.__presenter.outputs.get(id).view), id)
   await call(() => globalThis.__presenter.addScreen(false))
-  s = await waitFor('screen 5 connected', (s) => out(s, 'screen-5')?.total === 4)
+  s = await waitFor('screen 5 waits', (s) => out(s, 'screen-5')?.total === 4)
+  assert.equal(out(s, 'screen-5').shownOn, null, 'a new content waits (no window)')
   await call(() => globalThis.__presenter.select('screen-5'))
   s = await state()
-  assert.equal(s.onAirId, 'projector', 'selecting does not change what students see')
-  await call(() => globalThis.__presenter.project('screen-5'))
+  assert.equal(s.onAirId, 'projector', 'selecting does not change what the audience sees')
+  await call(() => globalThis.__presenter.showOn('screen-5', 1))
   s = await state()
-  assert.equal(s.onAirId, 'screen-5', 'screen 5 on the projector')
-  assert.equal(await inConsole('screen-5'), true, 'screen 5 shown in the current pane')
+  assert.equal(s.onAirId, 'screen-5', 'screen 5 on Projector 1')
+  assert.equal(out(s, 'projector').shownOn, null, 'screen 1 waits')
+  assert.equal(await inConsole('screen-5'), true, 'screen 5 in the current pane')
   assert.equal(await inConsole('projector'), false, 'screen 1 left the current pane')
   await call(() => globalThis.__presenter.startProjecting())
-  assert.equal(await call(() => globalThis.__presenter.projectorWin.content === globalThis.__presenter.outputs.get('screen-5').view), true, 'projector window shows screen 5')
-  await call(() => globalThis.__presenter.project('projector'))
-  assert.equal(await call(() => globalThis.__presenter.projectorWin.content === globalThis.__presenter.outputs.get('projector').view), true, 'projector window shows screen 1 again')
-  assert.equal(await call(() => globalThis.__presenter.screens.get('screen-5').lent), false, 'screen 5 back in its own window')
+  assert.equal(await call(() => globalThis.__presenter.projectorWin.content === globalThis.__presenter.outputs.get('screen-5').view), true, 'Projector 1 shows screen 5')
+  const page1 = out(s, 'projector').shownIndex
+  await call(() => globalThis.__presenter.showOn('projector', 'new'))
+  s = await state()
+  assert.deepEqual(s.projectors.map((p) => [p.number, p.contentId]), [[2, 'projector']], 'Projector 2 opened with screen 1')
+  assert.equal(await call(() => globalThis.__presenter.extras.get(2).screen.shows(globalThis.__presenter.outputs.get('projector').view)), true, 'Projector 2 window shows screen 1')
+  assert.equal(out(s, 'projector').shownIndex, page1, 'screen 1 kept its page')
+  await call(() => globalThis.__presenter.showOn('projector', 1))
+  s = await state()
+  assert.equal(s.onAirId, 'projector', 'screen 1 back on Projector 1')
+  assert.equal(out(s, 'screen-5').shownOn, null, 'screen 5 waits again')
+  assert.deepEqual(s.projectors.map((p) => [p.number, p.contentId]), [[2, null]], 'Projector 2 now shows nothing')
+  await call(() => globalThis.__presenter.closeProjector(2))
+  s = await waitFor('projector 2 closed', (s) => s.projectors.length === 0)
   await call(() => globalThis.__presenter.stopProjecting())
   assert.equal(await inConsole('projector'), true, 'screen 1 back in the current pane')
   await call(() => globalThis.__presenter.removeScreen('screen-5'))
-  console.log('ok 8c project another screen, then switch back')
+  console.log('ok 8c projector menu: Projector 1, a new Projector 2, pages kept')
 
   // Steps 9-15 show the projector window and capture the desktop.
   if (!HEADLESS) {
@@ -342,7 +355,10 @@ try {
     await sleep(300)
     await call((_e, id) => globalThis.__presenter.select(id), wid)
     s = await state()
-    assert.equal(s.onAirId, wid, 'clicking the window card puts it on the projector')
+    assert.equal(s.onAirId, 'projector', 'clicking the window card does not change what the audience sees')
+    await call((_e, id) => globalThis.__presenter.showOn(id, 1), wid)
+    s = await state()
+    assert.equal(s.onAirId, wid, 'the projector menu puts it on Projector 1')
     const videoWidth = await call(async (_e, id) => {
       const wc = globalThis.__presenter.outputs.get(id).view.webContents
       for (let i = 0; i < 40; i++) {
@@ -366,7 +382,7 @@ try {
     s = await state()
     assert.equal(s.onAirId, 'projector', 'removing it puts screen 1 back')
     await call(() => globalThis.__e2eWin.destroy())
-    console.log('ok 16 window screen: live picture, brought to the front, on the projector')
+    console.log('ok 16 window content: listed when minimized, live picture, brought to the front, on Projector 1')
   }
 
   assert.deepEqual(errors, [], 'console errors')

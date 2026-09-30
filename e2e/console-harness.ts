@@ -13,7 +13,7 @@ const OUT = path.join(ROOT, 'e2e', 'out')
 const STUB = path.join(OUT, 'harness', 'console-stub-preload.cjs')
 const AI_REQUEST = aiRequestText(fs.readFileSync(path.join(ROOT, 'docs', 'ai-integration.md'), 'utf8'))
 /** Every ConsoleApi method (contextBridge copies plain objects only, so no Proxy). */
-const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "toggleFullscreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "project", "listWindows", "addWindowScreen"]
+const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "listWindows", "addWindowScreen"]
 
 app.disableHardwareAcceleration()
 // Each screenshot closes its window; keep the app alive between them.
@@ -23,19 +23,20 @@ const wait = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms)
 /** crowd = six extra screens and the next preview selected (checks that the screens bar stays in view). */
 function sampleState(projecting: boolean, crowd = false): AppState {
   const deck = { path: 'C:/decks/UXD202 Lecture n1.pptx', name: 'UXD202 Lecture n1' }
-  const base = { deck, adapter: 'uxd202' as const, total: 18, linked: true, fullscreen: false, zoomPercent: 100, deckKind: 'slides' as const, captureName: null }
+  const base = { deck, adapter: 'uxd202' as const, total: 18, linked: true, fullscreen: false, zoomPercent: 100, deckKind: 'slides' as const, captureName: null, shownOn: null as number | null }
   return {
     outputs: [
-      { ...base, id: 'projector', kind: 'projector', screenNumber: 1, index: 2, shownIndex: 2, title: 'The first stage of the product development life cycle' },
+      { ...base, id: 'projector', kind: 'projector', shownOn: crowd ? null : 1, screenNumber: 1, index: 2, shownIndex: 2, title: 'The first stage of the product development life cycle' },
       { ...base, id: 'next', kind: 'preview', screenNumber: 0, index: 3, shownIndex: 3, title: 'The goal is to figure out the specifications' },
-      { ...base, id: 'screen-2', kind: 'window', screenNumber: 2, index: 2, shownIndex: 2, linked: false, title: 'The first stage of the product development life cycle' },
+      { ...base, id: 'screen-2', kind: 'window', shownOn: crowd ? 1 : null, screenNumber: 2, index: 2, shownIndex: 2, linked: false, title: 'The first stage of the product development life cycle' },
       ...(crowd ? [3, 4, 5, 6].map((n) => ({ ...base, id: `screen-${n}`, kind: 'window' as const, screenNumber: n, index: n, shownIndex: n, title: `Slide ${n + 1}` })) : []),
-      { ...base, id: 'window-7', kind: 'capture', screenNumber: 7, deck: null, deckKind: null, adapter: 'none', total: null, index: 0, shownIndex: 0, linked: false, title: '', captureName: 'Video player – lesson clip.mp4' }
+      { ...base, id: 'window-7', kind: 'capture', screenNumber: 7, deck: null, deckKind: null, adapter: 'none', total: null, index: 0, shownIndex: 0, linked: false, title: '', captureName: 'Video player – lesson clip.mp4', shownOn: crowd ? 2 : null }
     ],
     selectedId: crowd ? 'next' : 'projector',
     mainDeck: deck,
     slidesOf: 'projector',
     onAirId: crowd ? 'screen-2' : 'projector',
+    projectors: crowd ? [{ number: 2, contentId: 'window-7', fullscreen: true }] : [],
     previewOf: 'projector',
     slides: Array.from({ length: 18 }, (_, i) => ({ title: `Slide title ${i + 1}`, notes: i === 2 ? 'Ask the class first.' : '' })),
     milestones: [],

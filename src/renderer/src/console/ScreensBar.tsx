@@ -4,6 +4,78 @@ import { Menu, MenuItem, ZoomControl, type ConsoleMenu } from './ui'
 
 const SMALL_BTN = 'grid h-7 min-w-7 place-items-center rounded-md px-1.5 text-sm hover:bg-line'
 
+/** Projector numbers in use: 1 always, then the extra ones. */
+function projectorNumbers(state: AppState): number[] {
+  return [1, ...state.projectors.map((p) => p.number)]
+}
+
+function nextProjectorNumber(state: AppState): number {
+  let n = 2
+  while (state.projectors.some((p) => p.number === n)) n++
+  return n
+}
+
+/**
+ * Where the audience sees this content: Projector 1, another projector, or nowhere. A projector
+ * shows one content at a time; the content it showed before waits and keeps its page.
+ */
+function ProjectorPicker(props: { o: OutputView; state: AppState; menu: ConsoleMenu; onMenu: (m: ConsoleMenu) => void }) {
+  const { o, state, menu, onMenu } = props
+  const t = useT()
+  const menuId: ConsoleMenu = `show:${o.id}`
+  const on = o.shownOn
+  const canShow = o.deck !== null || o.kind === 'capture'
+  // Students see Projector 1 only while projecting; other projectors are always shown.
+  const live = on !== null && (on > 1 || state.projecting)
+  const occupant = (n: number): string => {
+    const id = n === 1 ? state.onAirId : (state.projectors.find((p) => p.number === n)?.contentId ?? null)
+    const shown = id && id !== o.id ? state.outputs.find((x) => x.id === id) : undefined
+    return shown ? t.nowShowing(screenLabel(t, shown)) : ''
+  }
+  const pick = (target: number | 'new' | null): void => {
+    onMenu(null)
+    window.presenter.showOn(o.id, target)
+  }
+  const extra = on !== null && on > 1 ? state.projectors.find((p) => p.number === on) : undefined
+  return (
+    <span className="relative" onClick={(e) => e.stopPropagation()}>
+      <button
+        type="button"
+        title={t.showOnTitle}
+        disabled={!canShow}
+        onClick={() => onMenu(menu === menuId ? null : menuId)}
+        className={`flex h-7 items-center gap-1.5 rounded-md px-2 text-sm whitespace-nowrap hover:bg-line disabled:opacity-40 ${on !== null ? 'text-link' : 'text-muted'} ${menu === menuId ? 'bg-line' : ''}`}
+      >
+        {on !== null && <span className={`h-2 w-2 rounded-full ${live ? 'bg-link' : 'bg-muted'}`} />}
+        {on !== null ? t.projectorN(on) : t.notShown} ▾
+      </button>
+      {menu === menuId && (
+        <Menu up width="w-96" onClose={() => onMenu(null)}>
+          {projectorNumbers(state).map((n) => (
+            <MenuItem key={n} onClick={() => pick(n)}>
+              {on === n ? '✓ ' : ''}
+              {t.projectorN(n)}
+              <span className="text-muted">{occupant(n)}</span>
+            </MenuItem>
+          ))}
+          <MenuItem onClick={() => pick('new')}>＋ {t.newProjector(nextProjectorNumber(state))}</MenuItem>
+          <MenuItem onClick={() => pick(null)}>
+            {on === null ? '✓ ' : ''}
+            {t.notShownItem}
+          </MenuItem>
+          {extra && (
+            <>
+              <div className="my-1 h-px bg-line" />
+              <MenuItem onClick={() => { onMenu(null); window.presenter.projectorFullscreen(extra.number) }}>{t.projectorFullScreen(extra.number, extra.fullscreen)}</MenuItem>
+              <MenuItem onClick={() => { onMenu(null); window.presenter.closeProjector(extra.number) }}>{t.closeProjector(extra.number)}</MenuItem>
+            </>
+          )}
+        </Menu>
+      )}
+    </span>
+  )
+}
+
 /** "3/18"; key-mode decks show only the page number. */
 function PageShort({ o }: { o: OutputView }) {
   const t = useT()
@@ -17,17 +89,15 @@ function PageShort({ o }: { o: OutputView }) {
   )
 }
 
-/** One screen, kept small: name, page, Linked, one-page moves; the rest sits in its ⋯ menu. */
+/** One content, kept small: name, page, where it is shown, Linked, one-page moves; the rest sits in its ⋯ menu. */
 function ScreenChip(props: { o: OutputView; state: AppState; menu: ConsoleMenu; onMenu: (m: ConsoleMenu) => void }) {
   const { o, state, menu, onMenu } = props
   const t = useT()
   const selected = o.id === state.selectedId
-  const onAir = o.id === state.onAirId
   const capture = o.kind === 'capture'
-  const canShow = o.deck !== null || capture
   const menuId: ConsoleMenu = `screen:${o.id}`
   const stop = (e: { stopPropagation: () => void }): void => e.stopPropagation()
-  const tip = capture ? t.windowCardTitle : [screenLabel(t, o), o.deck?.name, onAir && !state.projecting ? t.notProjecting : ''].filter(Boolean).join(' · ')
+  const tip = capture ? t.windowCardTitle : [screenLabel(t, o), o.deck?.name, o.shownOn === 1 && !state.projecting ? t.notProjecting : ''].filter(Boolean).join(' · ')
   return (
     <div
       onClick={() => window.presenter.select(o.id)}
@@ -40,16 +110,7 @@ function ScreenChip(props: { o: OutputView; state: AppState; menu: ConsoleMenu; 
           <PageShort o={o} />
         </span>
       )}
-      {onAir ? (
-        <span title={t.onProjectorTitle} className={`flex items-center gap-1 rounded-md px-1.5 text-sm whitespace-nowrap ${state.projecting ? 'text-link' : 'text-muted'}`}>
-          <span className={`h-2 w-2 rounded-full ${state.projecting ? 'bg-link' : 'bg-muted'}`} />
-          {t.onProjector}
-        </span>
-      ) : (
-        <button type="button" title={t.projectTitle} disabled={!canShow} onClick={(e) => { stop(e); window.presenter.project(o.id) }} className={`${SMALL_BTN} px-2 whitespace-nowrap text-accent disabled:opacity-40`}>
-          {t.project}
-        </button>
-      )}
+      <ProjectorPicker o={o} state={state} menu={menu} onMenu={onMenu} />
       {!capture && <label onClick={stop} title={t.linkedTitle} className={`flex cursor-pointer items-center gap-1 px-1 text-sm ${o.linked ? 'text-link' : 'text-muted'}`}>
         <input type="checkbox" checked={o.linked} onChange={(e) => window.presenter.setLinked(o.id, e.target.checked)} className="h-4 w-4 accent-link" />
         {t.linked}
@@ -76,7 +137,6 @@ function ScreenChip(props: { o: OutputView; state: AppState; menu: ConsoleMenu; 
               <div className="px-2 pb-1">
                 <ZoomControl o={o} />
               </div>
-              <MenuItem onClick={() => { onMenu(null); window.presenter.toggleFullscreen(o.id) }}>{o.fullscreen ? t.exitFullScreen : t.fullScreen}</MenuItem>
               <MenuItem onClick={() => { onMenu(null); window.presenter.removeScreen(o.id) }}>{t.closeScreen}</MenuItem>
             </Menu>
           )}

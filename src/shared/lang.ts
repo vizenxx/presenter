@@ -6,7 +6,7 @@ export const MAIN_STRINGS = {
   consoleTitle: 'Presenter · Console',
   projectorTitle: 'Projector · Presenter',
   projectorWindowed: 'Projector (window) · Esc stops projecting',
-  screenTitle: (n: number) => `Screen ${n} · Presenter`,
+  extraProjectorTitle: (n: number) => `Projector ${n} · Presenter`,
   openDeck: 'Open a deck',
   pickScreenDeck: 'Choose the deck for the new screen',
   deckFilter: 'Decks (PPT, Keynote, PDF, HTML)',

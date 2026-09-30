@@ -245,7 +245,8 @@ export class Output {
       fullscreen: this.fullscreen,
       zoomPercent: this.zoomPercent,
       deckKind: this.deck ? deckKind(this.deck.path) : null,
-      captureName: this.capture?.name ?? null
+      captureName: this.capture?.name ?? null,
+      shownOn: null
     }
   }
 

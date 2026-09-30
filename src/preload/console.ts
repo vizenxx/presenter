@@ -21,7 +21,9 @@ const api: ConsoleApi = {
       if (!pushed) take(state)
     })
   },
-  project: (id) => ipcRenderer.send('console:project', id),
+  showOn: (id, target) => ipcRenderer.send('console:show-on', id, target),
+  projectorFullscreen: (n) => ipcRenderer.send('console:projector-fullscreen', n),
+  closeProjector: (n) => ipcRenderer.send('console:close-projector', n),
   listWindows: () => ipcRenderer.invoke('console:list-windows'),
   addWindowScreen: (id, name) => ipcRenderer.send('console:add-window-screen', id, name),
   onMirror: (cb) => {
@@ -37,7 +39,6 @@ const api: ConsoleApi = {
   nudge: (id, delta) => ipcRenderer.send('console:nudge', id, delta),
   addScreen: (sameDeck) => ipcRenderer.send('console:add-screen', sameDeck),
   removeScreen: (id) => ipcRenderer.send('console:remove-screen', id),
-  toggleFullscreen: (id) => ipcRenderer.send('console:fullscreen', id),
   timerStart: (sec) => ipcRenderer.send('console:timer-start', sec),
   timerToggle: () => ipcRenderer.send('console:timer-toggle'),
   timerReset: () => ipcRenderer.send('console:timer-reset'),

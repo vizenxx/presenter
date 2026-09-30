@@ -49,38 +49,35 @@ export function SpeakerTimer() {
     reset()
   }
 
+  const SMALL = 'rounded-md px-2 py-1 text-sm'
   return (
-    <section className={`rounded-2xl border-2 p-3 ${over ? 'border-alarm/60 bg-alarm/10' : 'border-line bg-panel'}`} title={t.myTimerTitle}>
-      <div className="flex items-center gap-2">
+    <section className={`rounded-2xl border-2 px-3 py-2 ${over ? 'border-alarm/60 bg-alarm/10' : 'border-line bg-panel'}`} title={t.myTimerTitle}>
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <h2 className="text-sm font-semibold text-muted">{t.myTimer}</h2>
-        <div className="ml-auto flex gap-1">
-          <Btn tone={mode === 'up' ? 'primary' : 'quiet'} onClick={() => pick('up')}>
+        <span className="flex overflow-hidden rounded-md border border-line">
+          <button type="button" onClick={() => pick('up')} className={`${SMALL} ${mode === 'up' ? 'bg-accent text-black' : 'text-muted hover:bg-line'}`}>
             {t.countUp}
-          </Btn>
-          <Btn tone={mode === 'down' ? 'primary' : 'quiet'} onClick={() => pick('down')}>
+          </button>
+          <button type="button" onClick={() => pick('down')} className={`${SMALL} ${mode === 'down' ? 'bg-accent text-black' : 'text-muted hover:bg-line'}`}>
             {t.countDown}
-          </Btn>
-        </div>
-      </div>
-      <div className="mt-1 flex items-center gap-2">
-        <span className={`font-mono text-3xl font-bold tabular-nums ${over ? 'text-alarm' : running ? 'text-ink' : 'text-muted'}`}>{clock(shownSec)}</span>
-        {over && <span className="text-sm font-semibold text-alarm">{t.overTime}</span>}
+          </button>
+        </span>
         {mode === 'down' && !started && (
           <span className="flex items-center gap-1">
-            <Btn onClick={() => setMinutes((m) => clampMinutes(m - 5))}>−</Btn>
             <input
               type="number"
               min={1}
               max={240}
               value={minutes}
               onChange={(e) => setMinutes(clampMinutes(Number(e.target.value)))}
-              className="w-16 rounded-lg border border-line bg-panel-2 px-2 py-1 text-center font-mono text-base"
+              className="w-12 rounded-md border border-line bg-panel-2 px-1 py-0.5 text-center font-mono text-sm"
             />
-            <Btn onClick={() => setMinutes((m) => clampMinutes(m + 5))}>+</Btn>
             <span className="text-sm text-muted">{t.minutes}</span>
           </span>
         )}
-        <span className="ml-auto flex gap-2">
+        <span className="ml-auto flex items-center gap-2">
+          {over && <span className="text-sm font-semibold text-alarm">{t.overTime}</span>}
+          <span className={`font-mono text-2xl font-bold tabular-nums ${over ? 'text-alarm' : running ? 'text-ink' : 'text-muted'}`}>{clock(shownSec)}</span>
           <Btn tone="primary" onClick={toggle}>
             {running ? t.pause : started ? t.resume : t.start}
           </Btn>

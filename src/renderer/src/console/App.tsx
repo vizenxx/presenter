@@ -25,10 +25,12 @@ export function App() {
   useConsoleKeys(state?.timer.alarming ?? false, state?.ink.tool ?? 'pointer')
   useFileDrop()
   if (!state) return <div className="grid h-full place-items-center text-base text-muted">{t.starting}</div>
-  // The current pane shows the screen on the projector (it can be another screen than the main deck).
-  const projector = state.outputs.find((o) => o.id === state.onAirId) ?? state.outputs.find((o) => o.id === 'projector')
+  // The current pane shows what is on Projector 1 (it can be another content than the main deck).
+  const onAir = state.outputs.find((o) => o.id === state.onAirId)
+  const projector = onAir ?? state.outputs.find((o) => o.id === 'projector')
   const next = state.outputs.find((o) => o.id === 'next')
   if (!projector || !next) return null
+  const nothingOnProjector = !onAir && state.mainDeck !== null
   // Native deck views draw above the page, so they step aside while a menu or the guide is open.
   const suspended = menu !== null || guide || picker
   const cols = drawer ? 'grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_20rem]' : 'grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]'
@@ -42,7 +44,11 @@ export function App() {
       <Header state={state} menu={menu} onMenu={setMenu} rollerOpen={drawer === 'roller'} onRoller={() => setDrawer(drawer === 'roller' ? null : 'roller')} onGuide={() => setGuide(true)} />
       <DeckStatusBar status={state.deckStatus} />
       <main className={`grid min-h-0 flex-1 gap-3 p-3 ${cols}`}>
-        <CurrentPane state={state} projector={projector} mirror={mirror} suspended={suspended} drawer={drawer} onDrawer={setDrawer} onGuide={() => setGuide(true)} />
+        {nothingOnProjector ? (
+          <section className="grid min-h-0 place-items-center rounded-2xl border-2 border-dashed border-line bg-panel p-6 text-center text-base text-muted">{t.projector1Empty}</section>
+        ) : (
+          <CurrentPane state={state} projector={projector} mirror={mirror} suspended={suspended} drawer={drawer} onDrawer={setDrawer} onGuide={() => setGuide(true)} />
+        )}
         <div className="flex min-h-0 flex-col gap-3">
           {state.mainDeck ? <NextPane state={state} next={next} suspended={suspended} /> : <div className="flex-1" />}
           <TimerPanel state={state} />

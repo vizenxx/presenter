@@ -31,7 +31,12 @@ function wireIpc(store: Store): void {
     startupLog('console asked for its state')
     return store.getState()
   })
-  ipcMain.on('console:project', (_e, id: OutputId) => store.project(id))
+  ipcMain.on('console:show-on', (_e, id: OutputId, target: number | 'new' | null) => {
+    const to = target === 'new' || target === null ? target : Number.isInteger(target) && target >= 1 ? target : undefined
+    if (to !== undefined) store.showOn(id, to)
+  })
+  ipcMain.on('console:projector-fullscreen', (_e, n: number) => store.projectorFullscreen(Number(n)))
+  ipcMain.on('console:close-projector', (_e, n: number) => store.closeProjector(Number(n)))
   ipcMain.handle('console:list-windows', () => store.listWindows())
   ipcMain.on('console:add-window-screen', (_e, id: string, name: string) => store.addWindowScreen(String(id), String(name)))
   ipcMain.on('console:got-state', () => startupLog('console received its state (the app is ready)'))
@@ -73,7 +78,6 @@ function wireIpc(store: Store): void {
   ipcMain.on('console:nudge', (_e, id: OutputId, delta: number) => store.nudge(id, delta))
   ipcMain.on('console:add-screen', (_e, sameDeck: boolean) => void store.addScreen(sameDeck))
   ipcMain.on('console:remove-screen', (_e, id: OutputId) => store.removeScreen(id))
-  ipcMain.on('console:fullscreen', (_e, id: OutputId) => store.toggleFullscreen(id))
   ipcMain.on('console:timer-start', (_e, sec: number) => store.timerStart(sec))
   ipcMain.on('console:timer-toggle', () => store.timerToggle())
   ipcMain.on('console:timer-reset', () => store.timerReset())

@@ -88,9 +88,12 @@ Click **🎲 Name picker**. Choose a list and click **🎲 Pick a name**: the li
 
 ## Extra screens and text size
 
-- **＋ Add screen** (end of the Screens bar) opens the same deck or another deck in a new window. Move it to any display. Its card's **⋯** menu has text size, **Full screen** and **Close this screen**.
-- **▶ Project** on a card puts that screen on the projector (its card then says **On projector**). Clicking a card only **selects** it: page keys, Next slide and Notes follow it, and the class keeps seeing the same screen. Use this to look through another deck quietly.
-- **A window on this computer** (in ＋ Add screen) makes a program window a screen: a browser, a video player, a spreadsheet … The real window stays on your laptop, where you use it as usual; the projector shows it live. Clicking its card brings the window to the front and shows it on the projector. Page turns, marks and notes do not apply to it; **✕** removes it. (On a Mac, bring the window forward yourself, and allow Screen Recording once.)
+- Each card in the bottom bar is one **content**: a deck or a program window. It remembers its own page.
+- **＋ Add screen** (end of the bar) adds a content: the same deck, another deck, or **A window on this computer**. A new content **waits**; no window opens.
+- The card's **Projector ▾** button decides where the audience sees it: **Projector 1** (the main projector), another projector, **New projector** (a second projector or TV; it opens full screen on a free display, else as a window), or **Not shown**. A projector shows one content at a time; the one it showed before waits and keeps its page, so you can switch back and go on where you were. The same menu has full screen and close for Projector 2, 3 ….
+- Clicking a card only **selects** it: page keys, Next slide and Notes follow it, and the audience keeps seeing the same thing. Use this to look through a waiting deck quietly.
+- **A window on this computer** lists every program window, minimized ones too (as in Zoom). The real window stays on your laptop, where you use it as usual; a projector shows it live. Clicking its card brings the window to the front. Page turns, marks and notes do not apply to it; **✕** removes it. (On a Mac, bring the window forward yourself, and allow Screen Recording once.)
+- A deck card's **⋯** menu has text size and **Remove**.
 - **Text size** (Ctrl + / Ctrl − / Ctrl 0; ⌘ on a Mac) enlarges an HTML deck on one screen and is remembered per deck file. The next preview follows the screen it previews.
 
 ## For maintainers

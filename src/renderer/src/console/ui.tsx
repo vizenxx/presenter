@@ -25,7 +25,7 @@ export function Btn(props: { children: ReactNode; onClick?: () => void; tone?: T
 }
 
 /** Menus that can be open in the console; native deck views step aside while one is. */
-export type ConsoleMenu = 'recent' | 'add' | `screen:${string}` | null
+export type ConsoleMenu = 'recent' | 'add' | `screen:${string}` | `show:${string}` | null
 
 /**
  * A pop-up menu below (or above) its button. A press anywhere else closes it; the button
@@ -137,7 +137,7 @@ export function Milestones({ state, index }: { state: AppState; index: number })
             key={`${m.label}-${m.slideIndex}`}
             type="button"
             title={t.goTo(m.label)}
-            onClick={() => goToSlide(m.slideIndex, state.onAirId)}
+            onClick={() => goToSlide(m.slideIndex, state.onAirId ?? 'projector')}
             className={`rounded-full px-2.5 py-0.5 text-sm ${active ? 'bg-accent font-semibold text-black' : 'bg-panel-2 text-muted hover:text-ink'}`}
           >
             {m.label}

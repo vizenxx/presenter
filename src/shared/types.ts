@@ -51,6 +51,15 @@ export interface OutputView {
   deckKind: DeckKind | null
   /** Window screens: the title of the program window they show. */
   captureName: string | null
+  /** The projector showing this content (1 = main projector), or null while it waits. */
+  shownOn: number | null
+}
+
+/** Projector 2, 3 …: extra audience screens the teacher opened. */
+export interface ProjectorView {
+  number: number
+  contentId: OutputId | null
+  fullscreen: boolean
 }
 
 /** A program window that can become a window screen. */
@@ -132,8 +141,10 @@ export interface AppState {
   mainDeck: DeckRef | null
   /** Slide list and notes of the selected screen (the projector when the selection has no deck). */
   slides: SlideMeta[]
-  /** The screen on the projector (before projecting: in the current pane). Selecting a screen does not change it. */
-  onAirId: OutputId
+  /** The content on Projector 1 (before projecting: in the current pane); null = nothing. Selecting a card does not change it. */
+  onAirId: OutputId | null
+  /** Projector 2, 3 … in number order. */
+  projectors: ProjectorView[]
   /** The screen `slides` belongs to: the selected one (the next preview counts), else the projector. */
   slidesOf: OutputId
   /** The screen the next preview follows: the last selected real screen. */
@@ -174,8 +185,10 @@ export interface PreviewRect {
 /** API the console preload exposes as window.presenter. */
 export interface ConsoleApi {
   onState(cb: (state: AppState) => void): void
-  /** Put this screen on the projector (students see it). */
-  project(id: OutputId): void
+  /** Show a content on Projector n, on a new projector, or nowhere (null: it waits, keeping its page). */
+  showOn(id: OutputId, target: number | 'new' | null): void
+  projectorFullscreen(n: number): void
+  closeProjector(n: number): void
   listWindows(): Promise<WindowSource[]>
   addWindowScreen(id: string, name: string): void
   onMirror(cb: (jpeg: Uint8Array) => void): void
@@ -189,7 +202,6 @@ export interface ConsoleApi {
   nudge(id: OutputId, delta: number): void
   addScreen(sameDeck: boolean): void
   removeScreen(id: OutputId): void
-  toggleFullscreen(id: OutputId): void
   timerStart(sec: number): void
   timerToggle(): void
   timerReset(): void
