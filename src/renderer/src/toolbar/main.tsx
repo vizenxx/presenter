@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import '../styles.css'
-import { clock, mmss } from '../../../shared/format'
+import { clock } from '../../../shared/format'
 import { INK_COLORS, type InkTool } from '../../../shared/ink'
 import { inkSvg, type InkIconName } from '../../../shared/inkIcons'
 import { useAppState } from '../console/hooks'
@@ -9,7 +9,6 @@ import { screenLabel, useT } from '../console/i18n'
 import { speakerSeconds, useNow } from '../console/SpeakerTimer'
 
 const TOOLS: InkTool[] = ['pointer', 'pen', 'highlighter', 'rect', 'laser', 'eraser']
-const PRESETS = [1, 3, 5, 10]
 const ICON_BTN = 'grid h-8 w-8 place-items-center rounded-lg hover:bg-line'
 const SMALL_BTN = 'rounded-md px-1.5 py-0.5 text-sm hover:bg-line'
 
@@ -27,9 +26,10 @@ function Group({ label, children }: { label: string; children: ReactNode }) {
 }
 
 /**
- * The floating tools over a program window shown on a projector: marks, both timers and the
- * name picker. It floats above the window, can fold to a small handle, is left out of screen
- * capture, and the audience never sees it.
+ * The floating tools over a program window shown on a projector: marks, the name picker, and
+ * My timer's time while it runs (the teacher's choice: no class timer here, no My timer buttons).
+ * It floats above the window, can fold to a small handle, is left out of screen capture, and
+ * the audience never sees it.
  */
 function Toolbar() {
   const t = useT()
@@ -51,9 +51,10 @@ function Toolbar() {
   }, [])
 
   const target = state?.outputs.find((o) => o.id === state.toolsFor)
-  const timer = state?.timer
   const speaker = state?.speaker
   const mine = speaker ? speakerSeconds(speaker, now) : 0
+  // My timer shows only once the teacher has started it (running or paused).
+  const mineSet = !!speaker && (speaker.startedAt !== null || speaker.heldMs > 0)
   const tool = state?.ink.tool ?? 'pointer'
 
   return (
@@ -61,7 +62,7 @@ function Toolbar() {
       <span className="cursor-move px-1 text-lg leading-none text-muted [-webkit-app-region:drag]" title={t.toolbarDrag}>
         ⠿
       </span>
-      {!open || !state || !timer || !speaker ? (
+      {!open || !state || !speaker ? (
         <button type="button" onClick={() => setOpen(true)} title={target ? t.toolbarFor(screenLabel(t, target)) : undefined} className={`${SMALL_BTN} font-semibold`}>
           ✎ {t.toolbarTitle} ▸
         </button>
@@ -83,29 +84,13 @@ function Toolbar() {
               <Icon name="clear" />
             </button>
           </span>
-          <Group label={t.classShort}>
-            <span className={`font-mono text-lg font-bold tabular-nums ${timer.alarming ? 'text-alarm' : timer.status === 'running' ? 'text-ink' : 'text-muted'}`}>{mmss(timer.remainingSec)}</span>
-            <button type="button" onClick={() => window.presenter.timerToggle()} className={`${SMALL_BTN} bg-accent/20 text-accent`}>
-              {timer.alarming ? t.stopAlarm : timer.status === 'running' ? '⏸' : '▶'}
-            </button>
-            <button type="button" title={t.reset} onClick={() => window.presenter.timerReset()} className={SMALL_BTN}>
-              ↺
-            </button>
-            {PRESETS.map((m) => (
-              <button key={m} type="button" title={t.presetMinutes(m)} onClick={() => window.presenter.timerStart(m * 60)} className={SMALL_BTN}>
-                {m}
-              </button>
-            ))}
-          </Group>
-          <Group label={t.mineShort}>
-            <span className={`font-mono text-lg font-bold tabular-nums ${speaker.mode === 'down' && mine < 0 ? 'text-alarm' : running ? 'text-ink' : 'text-muted'}`}>{clock(mine)}</span>
-            <button type="button" onClick={() => window.presenter.speakerToggle()} className={`${SMALL_BTN} bg-accent/20 text-accent`}>
-              {running ? '⏸' : '▶'}
-            </button>
-            <button type="button" title={t.reset} onClick={() => window.presenter.speakerReset()} className={SMALL_BTN}>
-              ↺
-            </button>
-          </Group>
+          {mineSet && (
+            <Group label={t.mineShort}>
+              <span title={t.myTimerTitle} className={`font-mono text-lg font-bold tabular-nums ${speaker.mode === 'down' && mine < 0 ? 'text-alarm' : running ? 'text-ink' : 'text-muted'}`}>
+                {clock(mine)}
+              </span>
+            </Group>
+          )}
           <span className="flex items-center gap-1 border-l border-line pl-2">
             {state.roller.showing ? (
               <button type="button" onClick={() => window.presenter.rollerHide()} className={SMALL_BTN}>

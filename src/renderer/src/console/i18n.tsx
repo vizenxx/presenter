@@ -61,7 +61,6 @@ const en = {
   toolbarFor: (label: string) => `Marks go on ${label}`,
   toolbarDrag: 'Drag to move',
   toolbarHide: 'Fold the tools',
-  classShort: 'Class',
   mineShort: 'Mine',
   pickShort: 'Pick a name',
   hidePickShort: 'Hide picker',
@@ -193,7 +192,7 @@ const en = {
     ['Add another deck or window', '＋ Add screen in the bottom bar. It waits (no window opens) until you choose a projector for it. Cards with Linked turn pages together.'],
     ['Change what the audience sees', 'On a card, click Not shown ▾ and choose Projector 1. What was there waits and keeps its page. Clicking the card itself only selects it (to look through it quietly).'],
     ['Use a second projector or TV', 'On a card, Projector ▾ → New projector. It opens full screen on a free display (else as a window); close it from the same menu.'],
-    ['Mark on a program window', 'When a window shown on a projector is in front, a small toolbar floats on top: marks (drawn right on the window), both timers and the name picker. The audience never sees the toolbar; ◂ folds it. (Windows only.)'],
+    ['Mark on a program window', 'When a window shown on a projector is in front, a small toolbar floats on top: marks (drawn right on the window), the name picker, and My timer’s time while it runs. The audience never sees the toolbar; ◂ folds it. (Windows only.)'],
     ['Show a program window (browser, video …)', '＋ Add screen → A window on this computer (minimized windows are listed too). Choose a projector for it with Projector ▾: the window then comes to the front.'],
     ['Make the text bigger', `Text size, or ${KEYS.mod} + / ${KEYS.mod} − (HTML decks).`]
   ] as string[][],
