@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { pickDisplayIds } from '../src/shared/displays'
-import { mmss } from '../src/shared/format'
+import { clock, mmss } from '../src/shared/format'
 import { mergeRecent } from '../src/shared/recentList'
 
 describe('mmss', () => {
@@ -33,5 +33,14 @@ describe('pickDisplayIds', () => {
   })
   it('falls back to the primary display for the console', () => {
     expect(pickDisplayIds([{ id: 1 }, { id: 2 }], 1)).toEqual({ consoleId: 1, projectorId: 2 })
+  })
+})
+
+describe('clock (speaker timer)', () => {
+  it('shows minutes and seconds, hours when needed, and a minus sign when over time', () => {
+    expect(clock(307)).toBe('05:07')
+    expect(clock(3723)).toBe('1:02:03')
+    expect(clock(-42.5)).toBe('−00:42')
+    expect(clock(0)).toBe('00:00')
   })
 })

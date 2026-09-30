@@ -43,7 +43,12 @@ const en = {
   nextSelectTitle: 'Click to select: page keys then turn only this preview. Click the current slide to go back.',
   previewBrowsing: 'Keys turn only this preview',
 
-  timer: 'Timer',
+  timer: 'Class timer · students see it',
+  myTimer: 'My timer · only you see it',
+  myTimerTitle: 'For pacing your talk. Students never see it, and it makes no sound. It does not affect the class timer.',
+  countUp: 'Count up',
+  countDown: 'Count down',
+  overTime: 'Over time',
   planned: (m: number) => `Planned for this slide: ${m} min`,
   stopAlarm: 'Stop alarm',
   pause: 'Pause',
