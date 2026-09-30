@@ -30,7 +30,7 @@ const api: ConsoleApi = {
   toolbarSize: (width, height) => ipcRenderer.send('console:toolbar-size', width, height),
   closeProjector: (n) => ipcRenderer.send('console:close-projector', n),
   listWindows: () => ipcRenderer.invoke('console:list-windows'),
-  addWindowScreen: (id, name) => ipcRenderer.send('console:add-window-screen', id, name),
+  addWindowScreen: (id, name, show) => ipcRenderer.send('console:add-window-screen', id, name, show === true),
   onMirror: (cb) => {
     ipcRenderer.on('mirror', (_e, jpeg: Uint8Array) => cb(jpeg))
   },

@@ -43,7 +43,7 @@ function wireIpc(store: Store): void {
   ipcMain.on('console:toolbar-size', (_e, width: number, height: number) => store.toolbarSize(Number(width), Number(height)))
   ipcMain.on('console:close-projector', (_e, n: number) => store.closeProjector(Number(n)))
   ipcMain.handle('console:list-windows', () => store.listWindows())
-  ipcMain.on('console:add-window-screen', (_e, id: string, name: string) => store.addWindowScreen(String(id), String(name)))
+  ipcMain.on('console:add-window-screen', (_e, id: string, name: string, show: boolean) => store.addWindowScreen(String(id), String(name), show === true))
   ipcMain.on('console:got-state', () => startupLog('console received its state (the app is ready)'))
   ipcMain.on('deck:state', (e, msg: DeckStateMsg) => outputOf(e.sender)?.receiveState(msg))
   ipcMain.on('deck:editing', (e, editing: boolean) => {

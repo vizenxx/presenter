@@ -387,7 +387,7 @@ export class Store {
   }
 
   /** A window screen: another program's window, shown live on the projector (like screen sharing). */
-  addWindowScreen(sourceId: string, name: string): void {
+  addWindowScreen(sourceId: string, name: string, show = false): void {
     if (!/^window:/.test(sourceId)) return
     const n = this.screenSeq++
     const id = `window-${n}`
@@ -397,6 +397,8 @@ export class Store {
     o.view.webContents.session.setDisplayMediaRequestHandler((_request, callback) => callback({ video: { id: sourceId, name } }))
     // The window is left as it is (minimized or not); it comes forward only when a projector shows it.
     this.paths.loadCapture(o.view)
+    // From the start screen (no deck yet) it is the first content: straight onto Projector 1.
+    if (show) this.showOn(id, 1)
     this.emit()
   }
 

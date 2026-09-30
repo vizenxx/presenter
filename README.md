@@ -30,7 +30,7 @@ Presenter is a folder you unzip; there is no installer and no administrator pass
 
 ## Show a deck
 
-1. Drop a deck file on the console, or click **Open deck**. PPT, PPTX, PDF and HTML are supported. The deck first shows in the console only; students cannot see it yet.
+1. Drop a deck file on the console, or click **Open deck**. PPT, PPTX, PDF and HTML are supported. No deck? **Show a program window…** on the start screen puts a browser, a video or any open program window on Projector 1 instead. The deck first shows in the console only; students cannot see it yet.
 2. Click **▶ Start projecting** (top right) or press **F5**. The deck goes full screen on the projector.
 3. Click **■ Stop projecting** or press **Esc**. The projector closes and the deck comes back to the console.
 4. Set the projector to **Extend** mode. Without a projector, projecting opens a normal window (good for practice at home).

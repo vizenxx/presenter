@@ -7,15 +7,20 @@ import { ViewSlot } from './ViewSlot'
 
 const layoutCurrent = (rect: PreviewRect | null): void => window.presenter.layoutCurrent(rect)
 
-function EmptyState({ state, onGuide }: { state: AppState; onGuide: () => void }) {
+function EmptyState({ state, onGuide, onPickWindow }: { state: AppState; onGuide: () => void; onPickWindow: () => void }) {
   const t = useT()
   return (
     <section className="flex min-h-0 flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed border-line bg-panel p-6 text-center">
       <p className="text-2xl font-semibold">{t.dropHere}</p>
       <p className="text-sm text-muted">{t.supported}</p>
-      <Btn tone="primary" onClick={() => window.presenter.openDialog()}>
-        {t.openDeck}
-      </Btn>
+      <div className="flex flex-wrap justify-center gap-2">
+        <Btn tone="primary" onClick={() => window.presenter.openDialog()}>
+          {t.openDeck}
+        </Btn>
+        <Btn title={t.firstWindowTitle} onClick={onPickWindow}>
+          🪟 {t.firstWindow}
+        </Btn>
+      </div>
       <button type="button" onClick={onGuide} className="text-sm text-accent hover:underline">
         {t.guideLink}
       </button>
@@ -45,10 +50,11 @@ export function CurrentPane(props: {
   drawer: DrawerTab | null
   onDrawer: (tab: DrawerTab | null) => void
   onGuide: () => void
+  onPickWindow: () => void
 }) {
-  const { state, projector, mirror, suspended, drawer, onDrawer, onGuide } = props
+  const { state, projector, mirror, suspended, drawer, onDrawer, onGuide, onPickWindow } = props
   const t = useT()
-  if (!state.mainDeck && projector.kind !== 'capture') return <EmptyState state={state} onGuide={onGuide} />
+  if (!state.mainDeck && projector.kind !== 'capture') return <EmptyState state={state} onGuide={onGuide} onPickWindow={onPickWindow} />
   const selected = state.selectedId === projector.id
   const aspect = state.projectorSize.width / Math.max(1, state.projectorSize.height)
   return (

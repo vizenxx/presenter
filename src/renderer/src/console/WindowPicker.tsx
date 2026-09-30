@@ -5,7 +5,7 @@ import { IS_MAC } from './platform'
 import { Btn } from './ui'
 
 /** Choose a program window to become a window screen. */
-export function WindowPicker({ onClose }: { onClose: () => void }) {
+export function WindowPicker({ show, onClose }: { show: boolean; onClose: () => void }) {
   const t = useT()
   const [windows, setWindows] = useState<WindowSource[] | null>(null)
 
@@ -26,7 +26,7 @@ export function WindowPicker({ onClose }: { onClose: () => void }) {
   }, [onClose])
 
   const choose = (w: WindowSource): void => {
-    window.presenter.addWindowScreen(w.id, w.name)
+    window.presenter.addWindowScreen(w.id, w.name, show)
     onClose()
   }
 

@@ -207,7 +207,8 @@ export interface ConsoleApi {
   toolbarSize(width: number, height: number): void
   closeProjector(n: number): void
   listWindows(): Promise<WindowSource[]>
-  addWindowScreen(id: string, name: string): void
+  /** show = put it on Projector 1 at once (the start screen's choice); otherwise it waits. */
+  addWindowScreen(id: string, name: string, show?: boolean): void
   onMirror(cb: (jpeg: Uint8Array) => void): void
   openDialog(): void
   openPath(path: string): void

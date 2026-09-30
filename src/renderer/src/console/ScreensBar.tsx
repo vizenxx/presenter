@@ -156,7 +156,8 @@ export function ScreensBar({ state, menu, onMenu, onPickWindow }: { state: AppSt
         {t.screens}
       </span>
       {state.outputs
-        .filter((o) => o.kind !== 'preview')
+        // Screen 1 gets a card once a deck is open; before that a program window can be the first content.
+        .filter((o) => o.kind !== 'preview' && !(o.kind === 'projector' && !o.deck))
         .map((o) => (
           <ScreenChip key={o.id} o={o} state={state} menu={menu} onMenu={onMenu} />
         ))}

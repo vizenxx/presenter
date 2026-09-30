@@ -78,7 +78,7 @@ contextBridge.exposeInMainWorld('presenter', api)
   )
 }
 
-type Open = 'guide' | 'guide-prepare' | 'window-picker' | 'screen-menu' | 'add-menu' | 'crowd' | 'roller' | null
+type Open = 'guide' | 'guide-prepare' | 'window-picker' | 'start' | 'screen-menu' | 'add-menu' | 'crowd' | 'roller' | null
 /** Clicks the button that opens each pop-up. */
 const OPENERS: Record<string, string> = {
   guide: `[...document.querySelectorAll('header button')].find((x) => x.textContent.includes('📘'))`,
@@ -90,7 +90,13 @@ const OPENERS: Record<string, string> = {
 }
 
 async function shot(projecting: boolean, open: Open = null, page = 'console'): Promise<void> {
-  writeStub(sampleState(projecting, open === 'crowd'))
+  const state = sampleState(projecting, open === 'crowd')
+  if (open === 'start') {
+    // First start: no deck yet (Open deck, or a program window as the first content).
+    state.mainDeck = null
+    state.outputs = state.outputs.filter((o) => o.kind !== 'capture' && o.kind !== 'window').map((o) => ({ ...o, deck: null, deckKind: null, total: null }))
+  }
+  writeStub(state)
   // The toolbar starts in a 520 x 56 window, as in the app (src/main/windowTools.ts).
   const win = new BrowserWindow({ show: false, width: page === 'console' ? 1536 : 520, height: page === 'console' ? 864 : 56, useContentSize: true, backgroundColor: '#475569', webPreferences: { preload: STUB, contextIsolation: true, sandbox: true, offscreen: true } })
   // A page load can be refused while the previous window is still closing; retry once.
@@ -138,6 +144,7 @@ app.whenReady().then(async () => {
     await shot(false, 'window-picker')
     await shot(false, 'roller')
     await shot(false, 'crowd', 'toolbar')
+    await shot(false, 'start')
     console.log('CONSOLE OK')
   } catch (error) {
     console.error(String(error))

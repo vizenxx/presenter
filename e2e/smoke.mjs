@@ -429,6 +429,13 @@ try {
     await call((_e, id) => globalThis.__presenter.removeScreen(id), wid)
     s = await state()
     assert.equal(s.onAirId, 'projector', 'removing it puts screen 1 back')
+    // The start screen's choice: a program window as the content shown on Projector 1 at once.
+    await call((_e, w) => globalThis.__presenter.addWindowScreen(w.id, w.name, true), src)
+    s = await waitFor('window straight onto Projector 1', (s) => s.outputs.some((o) => o.kind === 'capture' && o.id === s.onAirId))
+    const wid2 = s.onAirId
+    await call((_e, id) => globalThis.__presenter.removeScreen(id), wid2)
+    s = await state()
+    assert.equal(s.onAirId, 'projector', 'removing it puts screen 1 back')
     await call(() => globalThis.__e2eWin.destroy())
     console.log('ok 16 window content: listed when minimized, untouched until shown, then brought forward and live on Projector 1')
   }

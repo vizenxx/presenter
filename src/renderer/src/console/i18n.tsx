@@ -8,6 +8,8 @@ const en = {
   starting: 'Starting…',
   noDeck: 'No deck open',
   openDeck: 'Open deck',
+  firstWindow: 'Show a program window…',
+  firstWindowTitle: 'Show a browser, a video or any open program window on Projector 1 instead of a deck',
   recent: 'Recent ▾',
   addScreen: 'Add screen',
   sameDeckWindow: 'Same deck (new window)',
