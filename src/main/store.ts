@@ -23,7 +23,7 @@ import { RollerController } from './roller'
 import { RollerOverlay } from './rollerOverlay'
 import { ScreenWindow } from './screenWindow'
 import { startupLog } from './startupLog'
-import { WindowRaiser } from './windowRaiser'
+import { WindowsHelper, windowHandle } from './windowsHelper'
 import { rememberZoom, zoomFor } from './zoomMemory'
 
 export interface StorePaths {
@@ -53,7 +53,9 @@ export class Store {
   private previewOfId: OutputId = 'projector'
   /** The screen on the projector (before projecting: in the console's current pane). */
   private onAirId: OutputId = 'projector'
-  private readonly raiser = new WindowRaiser()
+  /** Windows: lists program windows the Alt+Tab way and brings them forward. */
+  private readonly windows = new WindowsHelper()
+  private readonly iconCache = new Map<string, string>()
   private mainDeck: DeckRef | null = null
   private mainPrepared: PreparedDeck | null = null
   private deckStatus: DeckStatus = { state: 'ready' }
@@ -336,12 +338,49 @@ export class Store {
     setTimeout(() => void this.captureMirror(), 300)
   }
 
-  /** The program windows that could become window screens (Presenter's own windows left out). */
+  /**
+   * The program windows that could become window screens, like the lists in Zoom or Teams:
+   * on Windows every Alt+Tab window, minimized ones included (Chromium's own list leaves those
+   * out), with a live picture when there is one and the program icon otherwise. Presenter's own
+   * windows are left out.
+   */
   async listWindows(): Promise<WindowSource[]> {
     const own = new Set([this.consoleWin.win, this.projectorWin.win].map((w) => w.getMediaSourceId()))
     for (const w of this.screens.values()) own.add(w.mediaSourceId())
-    const sources = await desktopCapturer.getSources({ types: ['window'], thumbnailSize: { width: 320, height: 200 } })
-    return sources.filter((s) => !own.has(s.id) && s.name.trim() !== '').map((s) => ({ id: s.id, name: s.name, thumbnail: s.thumbnail.toDataURL() }))
+    const [programs, sources] = await Promise.all([this.windows.list(), desktopCapturer.getSources({ types: ['window'], thumbnailSize: { width: 320, height: 200 } })])
+    const pictures = new Map(sources.map((s) => [s.id, s]))
+    if (programs.length === 0) {
+      // A Mac, or Windows could not be asked: Chromium's list (open windows only).
+      return sources.filter((s) => !own.has(s.id) && s.name.trim() !== '').map((s) => ({ id: s.id, name: s.name, app: '', thumbnail: s.thumbnail.toDataURL(), icon: '', minimized: false }))
+    }
+    const list: WindowSource[] = []
+    for (const w of programs) {
+      const id = `window:${w.h}:0`
+      if (own.has(id)) continue
+      const picture = pictures.get(id)?.thumbnail
+      list.push({
+        id,
+        name: w.t,
+        app: w.d || path.win32.basename(w.p, '.exe'),
+        thumbnail: !w.m && picture && !picture.isEmpty() ? picture.toDataURL() : '',
+        icon: w.p ? await this.iconOf(w.p) : '',
+        minimized: w.m
+      })
+    }
+    return list
+  }
+
+  private async iconOf(file: string): Promise<string> {
+    const known = this.iconCache.get(file)
+    if (known !== undefined) return known
+    let icon = ''
+    try {
+      icon = (await app.getFileIcon(file, { size: 'large' })).toDataURL()
+    } catch {
+      // No icon: the card shows the program name only.
+    }
+    this.iconCache.set(file, icon)
+    return icon
   }
 
   /** A window screen: another program's window, shown live on the projector (like screen sharing). */
@@ -353,6 +392,8 @@ export class Store {
     o.capture = { sourceId, name: name.slice(0, 80) }
     o.linked = false
     o.view.webContents.session.setDisplayMediaRequestHandler((_request, callback) => callback({ video: { id: sourceId, name } }))
+    // A minimized window has no picture: restore it (without taking the focus) first.
+    if (windowHandle(sourceId) !== null) this.windows.restore(sourceId)
     this.paths.loadCapture(o.view)
     this.emit()
   }
@@ -539,7 +580,7 @@ export class Store {
     if (o?.kind === 'capture' && o.capture) {
       this.selectedId = id
       this.project(id)
-      this.raiser.raise(o.capture.sourceId)
+      this.windows.raise(o.capture.sourceId)
       this.emit()
       return
     }
@@ -984,7 +1025,7 @@ export class Store {
   private quit(): void {
     if (this.quitting) return
     this.quitting = true
-    this.raiser.dispose()
+    this.windows.dispose()
     app.quit()
   }
 }

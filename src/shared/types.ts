@@ -56,9 +56,15 @@ export interface OutputView {
 /** A program window that can become a window screen. */
 export interface WindowSource {
   id: string
+  /** Window title. */
   name: string
-  /** PNG data URL. */
+  /** Program name, e.g. "Microsoft Edge" ('' when unknown). */
+  app: string
+  /** Live picture as a PNG data URL; '' for a minimized window (it has no picture). */
   thumbnail: string
+  /** Program icon as a PNG data URL ('' when unknown). */
+  icon: string
+  minimized: boolean
 }
 
 /** Opening a deck: PowerPoint files are converted first, which takes a moment. */

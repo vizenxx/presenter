@@ -52,7 +52,7 @@ function sampleState(projecting: boolean, crowd = false): AppState {
   }
 }
 
-const SAMPLE_WINDOWS = ['Browser – Class website', 'Video player – lesson clip.mp4', 'Spreadsheet – marks.xlsx'].map((name, i) => ({ id: `window:${100 + i}:0`, name, thumbnail: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='200'><rect width='320' height='200' fill='%23334155'/><rect x='20' y='20' width='280' height='30' fill='%2394a3b8'/></svg>" }))
+const SAMPLE_WINDOWS = ['Browser – Class website', 'Video player – lesson clip.mp4', 'Spreadsheet – marks.xlsx'].map((name, i) => ({ id: `window:${100 + i}:0`, name, app: ['Microsoft Edge', 'VLC media player', 'Microsoft Excel'][i], icon: '', minimized: i === 2, thumbnail: i === 2 ? '' : "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='200'><rect width='320' height='200' fill='%23334155'/><rect x='20' y='20' width='280' height='30' fill='%2394a3b8'/></svg>" }))
 
 function writeStub(state: AppState): void {
   fs.mkdirSync(path.dirname(STUB), { recursive: true })

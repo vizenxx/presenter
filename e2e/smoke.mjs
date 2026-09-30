@@ -327,10 +327,16 @@ try {
       globalThis.__e2eWin = w
     }, TEST_TITLE)
     await sleep(1500)
-    const src = await call(async (_e, title) => (await globalThis.__presenter.listWindows()).map(({ id, name }) => ({ id, name })).find((w) => w.name === title), TEST_TITLE)
-    assert.ok(src, 'the test window is in the window list')
+    // Minimized, like most windows a teacher leaves open: it must still be listed (as in Zoom).
+    await call(() => globalThis.__e2eWin.minimize())
+    await sleep(800)
+    const src = await call(async (_e, title) => (await globalThis.__presenter.listWindows()).map(({ id, name, minimized }) => ({ id, name, minimized })).find((w) => w.name === title), TEST_TITLE)
+    assert.ok(src, 'the minimized test window is in the window list')
+    assert.equal(src.minimized, true, 'listed as minimized')
     await call((_e, w) => globalThis.__presenter.addWindowScreen(w.id, w.name), src)
     s = await waitFor('window screen added', (s) => s.outputs.some((o) => o.kind === 'capture'))
+    for (let i = 0; i < 20 && (await call(() => globalThis.__e2eWin.isMinimized())); i++) await sleep(200)
+    assert.equal(await call(() => globalThis.__e2eWin.isMinimized()), false, 'adding it restores the window')
     const wid = s.outputs.find((o) => o.kind === 'capture').id
     await call(() => globalThis.__presenter.consoleWin.win.focus())
     await sleep(300)

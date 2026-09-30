@@ -50,9 +50,21 @@ export function WindowPicker({ onClose }: { onClose: () => void }) {
           {windows !== null && windows.length === 0 && <p className="text-base text-muted">{t.noWindows}</p>}
           <div className="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-3">
             {windows?.map((w) => (
-              <button key={w.id} type="button" onClick={() => choose(w)} className="flex flex-col gap-2 rounded-xl border-2 border-line bg-panel-2 p-2 text-left hover:border-accent">
-                <img src={w.thumbnail} alt="" className="aspect-[16/10] w-full rounded-lg bg-black object-contain" />
-                <span className="truncate text-sm font-semibold">{w.name}</span>
+              <button key={w.id} type="button" title={w.name} onClick={() => choose(w)} className="flex flex-col gap-1.5 rounded-xl border-2 border-line bg-panel-2 p-2 text-left hover:border-accent">
+                {w.thumbnail ? (
+                  <img src={w.thumbnail} alt="" className="aspect-[16/10] w-full rounded-lg bg-black object-contain" />
+                ) : (
+                  // A minimized window has no picture: its program icon stands in (as in Zoom).
+                  <span className="flex aspect-[16/10] w-full flex-col items-center justify-center gap-2 rounded-lg bg-black/60">
+                    {w.icon ? <img src={w.icon} alt="" className="h-12 w-12" /> : <span className="text-4xl">🪟</span>}
+                    {w.minimized && <span className="text-sm text-muted">{t.minimizedWindow}</span>}
+                  </span>
+                )}
+                <span className="flex min-w-0 items-center gap-1.5">
+                  {w.icon && w.thumbnail && <img src={w.icon} alt="" className="h-4 w-4 shrink-0" />}
+                  <span className="truncate text-sm font-semibold">{w.name}</span>
+                </span>
+                {w.app && <span className="truncate text-sm text-muted">{w.app}</span>}
               </button>
             ))}
           </div>
