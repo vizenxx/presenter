@@ -24,6 +24,7 @@ Nothing to install.
 1. Double-click the zip. You get **Presenter**.
 2. Double-click **Presenter**. If macOS says it cannot check the app: open **System Settings → Privacy & Security**, scroll down, click **Open Anyway**. This is needed once.
 3. PPT files open through Keynote. When macOS asks "Presenter wants to control Keynote", click **OK**.
+4. To show program windows (a browser, a video …), allow Presenter in **System Settings → Privacy & Security → Screen & System Audio Recording**, and, when asked, **Accessibility**.
 
 ## Full guide
 

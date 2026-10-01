@@ -9,3 +9,5 @@ e2e/fixtures/frameworks/reveal/reveal.css
 e2e/fixtures/frameworks/reveal/white.css
 e2e/fixtures/frameworks/impress/impress.js
 e2e/fixtures/frameworks/remark/remark.min.js
+# The macOS window helper is built (native/mac-helper/build.sh), not kept in git
+build/mac-helper/

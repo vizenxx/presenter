@@ -25,7 +25,9 @@ Presenter is a folder you unzip; there is no installer and no administrator pass
 2. The first time, macOS may say it cannot check the app. Open **System Settings → Privacy & Security**, scroll down and click **Open Anyway**. This is needed once.
 3. PPT and PPTX files open through **Keynote** (free on every Mac). The first time, macOS asks "Presenter wants to control Keynote": click **OK**. Keynote opens a window while it converts, then closes. Without Keynote, LibreOffice works too.
 4. Mac shortcuts: **⌘ Return** or **fn F5** starts projecting; **⌘ +**, **⌘ −**, **⌘ 0** set the text size; **⌘ Z** undoes a mark; **delete** clears the marks.
-5. The console copies the projector picture a few times a second. For a live (video) copy, and to show program windows, allow Presenter under **System Settings → Privacy & Security → Screen & System Audio Recording**, then restart Presenter.
+5. In **System Settings → Privacy & Security**, allow Presenter under:
+   - **Screen & System Audio Recording**: needed to show program windows (and their titles in the list), and for a live copy of the projector in the console. Restart Presenter after allowing it.
+   - **Accessibility** (optional; Presenter asks when you add the first program window): brings forward the exact window you chose and un-minimizes it. Without it the whole program comes forward instead.
 
 ## The console at a glance
 
@@ -92,9 +94,9 @@ The **📘 Guide** in the app has the same help in two parts: **1 · Use Present
 - The real window stays on your laptop, where you use it as usual; the projector shows it live.
 - Adding a window or clicking its card does not move the window. Choosing a projector for it brings it to the front (restored if it was minimized).
 - Page turns and notes do not apply to a window. **✕** on its card removes it.
-- On a Mac, bring the window to the front yourself, and allow Screen Recording once (see **Open → Mac**).
+- On a Mac this needs Screen Recording, and Accessibility for the exact window (see **Open → Mac**). Windows on another desktop Space count as minimized.
 
-### Floating tools (Windows)
+### Floating tools
 
 While a program window shown on a projector is in front, a small toolbar floats at the top of the screen:
 

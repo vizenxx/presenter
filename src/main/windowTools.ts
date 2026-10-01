@@ -1,5 +1,6 @@
 import { BrowserWindow, screen, type Rectangle } from 'electron'
 import { HEADLESS } from './headless'
+import { IS_MAC } from './platform'
 
 export interface WindowToolsPaths {
   consolePreload: string
@@ -43,6 +44,8 @@ export class WindowTools {
     })
     this.pad.setAlwaysOnTop(true, 'floating')
     this.pad.setContentProtection(true)
+    // macOS: also over programs in full screen (their own Space).
+    if (IS_MAC) this.pad.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
     this.pad.setIgnoreMouseEvents(true)
     paths.loadInkPad(this.pad)
 
@@ -61,6 +64,7 @@ export class WindowTools {
     })
     this.toolbar.setAlwaysOnTop(true, 'screen-saver')
     this.toolbar.setContentProtection(true)
+    if (IS_MAC) this.toolbar.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
     paths.loadToolbar(this.toolbar)
   }
 
@@ -72,7 +76,7 @@ export class WindowTools {
     return this.shown
   }
 
-  /** Show over the window (physical pixels, as Windows reports it), or hide (null). */
+  /** Show over the window (Windows: physical pixels; macOS: points, as the system reports them), or hide (null). */
   place(physical: Rectangle | null): void {
     if (HEADLESS || this.toolbar.isDestroyed() || this.pad.isDestroyed()) return
     if (!physical) {
@@ -82,7 +86,7 @@ export class WindowTools {
       this.toolbar.hide()
       return
     }
-    const bounds = screen.screenToDipRect(null, physical)
+    const bounds = IS_MAC ? physical : screen.screenToDipRect(null, physical)
     const now = this.pad.getBounds()
     if (now.x !== bounds.x || now.y !== bounds.y || now.width !== bounds.width || now.height !== bounds.height) this.pad.setBounds(bounds)
     if (!this.placed) {

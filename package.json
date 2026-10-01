@@ -16,7 +16,7 @@
     "check:console": "esbuild e2e/console-harness.ts --bundle --platform=node --format=cjs --external:electron --outfile=e2e/out/harness/console-harness.cjs --log-level=warning && electron e2e/out/harness/console-harness.cjs",
     "check:frameworks": "esbuild e2e/frameworks-harness.ts --bundle --platform=node --format=cjs --external:electron --outfile=e2e/out/harness/frameworks-harness.cjs --log-level=warning && electron e2e/out/harness/frameworks-harness.cjs",
     "dist:win": "electron-vite build && electron-builder --win",
-    "dist:mac": "electron-vite build && electron-builder --mac",
+    "dist:mac": "bash native/mac-helper/build.sh && electron-vite build && electron-builder --mac",
     "check:start": "node e2e/start-check.mjs"
   },
   "devDependencies": {
@@ -74,7 +74,13 @@
         "NSScreenCaptureUsageDescription": "Presenter shows a live copy of the projector in the console."
       },
       "artifactName": "Presenter-${version}-mac.zip",
-      "identity": "-"
+      "identity": "-",
+      "extraResources": [
+        {
+          "from": "build/mac-helper/presenter-window-helper",
+          "to": "presenter-window-helper"
+        }
+      ]
     },
     "win": {
       "target": [

@@ -1,4 +1,5 @@
 import { spawn, type ChildProcess } from 'node:child_process'
+import fs from 'node:fs'
 
 /** Window capture sources are named "window:<handle>:0" on Windows. */
 export function windowHandle(sourceId: string): number | null {
@@ -136,10 +137,15 @@ public static class PresenterWin {
 const LIST_TIMEOUT_MS = 8000
 
 /**
- * Windows only (on a Mac these do nothing and the list comes from Chromium). One hidden
- * PowerShell, started on first use, answers every request without a new start delay.
+ * Asks the system about program windows. Windows: one hidden PowerShell with HELPER_SCRIPT.
+ * macOS: the small Swift helper (native/mac-helper/main.swift) packed with the app; without it
+ * these answer nothing and the list comes from Chromium. Either one starts on first use and
+ * then answers every request without a new start delay.
  */
 export class WindowsHelper {
+  /** macHelper = the path of the macOS helper program (it may be missing in a source copy). */
+  constructor(private readonly macHelper: string | null = null) {}
+
   private shell: ChildProcess | null = null
   private buffer = ''
   /** Answers come back in the order the questions were asked. */
@@ -147,15 +153,15 @@ export class WindowsHelper {
 
   /** Program windows in front-to-back order; [] when Windows cannot be asked. */
   list(): Promise<ProgramWindow[]> {
-    if (process.platform !== 'win32') return Promise.resolve([])
-    return this.ask('[PresenterWin]::List()', []).then((a) => (Array.isArray(a) ? (a as ProgramWindow[]) : []))
+    if (!this.available()) return Promise.resolve([])
+    return this.ask(this.isMac() ? 'list' : '[PresenterWin]::List()', []).then((a) => (Array.isArray(a) ? (a as ProgramWindow[]) : []))
   }
 
   /** The window in front, and where the given windows are; null when Windows cannot be asked. */
   states(sourceIds: string[]): Promise<WindowStates | null> {
     const handles = sourceIds.map(windowHandle).filter((h): h is number => h !== null)
-    if (process.platform !== 'win32' || handles.length === 0) return Promise.resolve(null)
-    return this.ask(`[PresenterWin]::States('${handles.join(',')}')`, null).then((a) => (a && typeof a === 'object' && !Array.isArray(a) ? (a as WindowStates) : null))
+    if (!this.available() || handles.length === 0) return Promise.resolve(null)
+    return this.ask(this.isMac() ? `states ${handles.join(',')}` : `[PresenterWin]::States('${handles.join(',')}')`, null).then((a) => (a && typeof a === 'object' && !Array.isArray(a) ? (a as WindowStates) : null))
   }
 
   private ask(line: string, fallback: unknown): Promise<unknown> {
@@ -176,10 +182,20 @@ export class WindowsHelper {
     })
   }
 
-  /** Restore and bring to the front. */
+  /** Restore and bring to the front (macOS: its program, and the exact window with Accessibility allowed). */
   raise(sourceId: string): void {
     const handle = windowHandle(sourceId)
-    if (handle !== null) this.send(`[PresenterWin]::Raise(${handle})`)
+    if (handle !== null && this.available()) this.send(this.isMac() ? `raise ${handle}` : `[PresenterWin]::Raise(${handle})`)
+  }
+
+  private isMac(): boolean {
+    return process.platform === 'darwin'
+  }
+
+  /** Windows always; macOS when the helper program is there. */
+  private available(): boolean {
+    if (process.platform === 'win32') return true
+    return this.isMac() && this.macHelper !== null && fs.existsSync(this.macHelper)
   }
 
   dispose(): void {
@@ -188,14 +204,17 @@ export class WindowsHelper {
   }
 
   private send(line: string): void {
-    if (process.platform !== 'win32') return
+    if (!this.available()) return
     if (!this.shell || this.shell.exitCode !== null || !this.shell.stdin?.writable) this.startShell()
     this.shell?.stdin?.write(`${line}\n`)
   }
 
   private startShell(): void {
     this.buffer = ''
-    const shell = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', '-'], { windowsHide: true, stdio: ['pipe', 'pipe', 'ignore'] })
+    const shell =
+      this.isMac() && this.macHelper
+        ? spawn(this.macHelper, [], { stdio: ['pipe', 'pipe', 'ignore'] })
+        : spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', '-'], { windowsHide: true, stdio: ['pipe', 'pipe', 'ignore'] })
     shell.on('error', () => {
       if (this.shell === shell) this.shell = null
     })
@@ -216,7 +235,7 @@ export class WindowsHelper {
         this.waiting.shift()?.(answer)
       }
     })
-    shell.stdin?.write(HELPER_SCRIPT)
+    if (!this.isMac()) shell.stdin?.write(HELPER_SCRIPT)
     this.shell = shell
   }
 }

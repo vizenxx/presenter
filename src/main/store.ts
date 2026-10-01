@@ -59,8 +59,12 @@ export class Store {
   private previewOfId: OutputId = 'projector'
   /** The content on Projector 1 (before projecting: in the console's current pane); null = nothing. */
   private onAirId: OutputId | null = 'projector'
-  /** Windows: lists program windows the Alt+Tab way and brings them forward. */
-  private readonly windows = new WindowsHelper()
+  /** Lists program windows (minimized ones too) and brings them forward; Windows and macOS. */
+  private readonly windows = new WindowsHelper(
+    process.platform === 'darwin' ? (app.isPackaged ? path.join(process.resourcesPath, 'presenter-window-helper') : path.join(app.getAppPath(), 'build', 'mac-helper', 'presenter-window-helper')) : null
+  )
+  /** macOS: Accessibility is asked for once per start, when the first window content is added. */
+  private askedAccessibility = false
   private readonly iconCache = new Map<string, string>()
   private mainDeck: DeckRef | null = null
   private mainPrepared: PreparedDeck | null = null
@@ -397,6 +401,12 @@ export class Store {
     o.view.webContents.session.setDisplayMediaRequestHandler((_request, callback) => callback({ video: { id: sourceId, name } }))
     // The window is left as it is (minimized or not); it comes forward only when a projector shows it.
     this.paths.loadCapture(o.view)
+    // macOS: raising one exact window (and un-minimizing it) needs Accessibility; ask now, while
+    // setting up, not later in front of the class. Without it the whole program comes forward.
+    if (IS_MAC && !this.askedAccessibility) {
+      this.askedAccessibility = true
+      systemPreferences.isTrustedAccessibilityClient(true)
+    }
     // From the start screen (no deck yet) it is the first content: straight onto Projector 1.
     if (show) this.showOn(id, 1)
     this.emit()
