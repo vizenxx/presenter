@@ -7,7 +7,7 @@ type GuideTab = 'use' | 'prepare'
 
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="rounded-2xl border border-line bg-black/25 p-4">
+    <section className="rounded-card bg-panel-2 p-4">
       <h3 className="mb-2 text-base font-semibold">{title}</h3>
       {children}
     </section>
@@ -19,7 +19,7 @@ function Table({ head, rows, widths }: { head: string[]; rows: string[][]; width
   return (
     <table className="w-full table-fixed border-collapse text-left text-base">
       <thead>
-        <tr className="border-b border-line text-sm text-muted">
+        <tr className="border-b border-line/70 text-sm text-muted">
           {head.map((h, i) => (
             <th key={h} className={`px-3 py-2 font-semibold ${widths[i]}`}>
               {h}
@@ -81,12 +81,12 @@ export function GuideDialog({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-6" onPointerDown={onClose}>
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-6 backdrop-blur-sm" onPointerDown={onClose}>
       {/* The height is capped to the window, so the body scrolls instead of running off screen. */}
-      <div role="dialog" aria-label={t.guideTitle} onPointerDown={(e) => e.stopPropagation()} className="flex max-h-[calc(100vh-3rem)] w-full max-w-4xl flex-col rounded-2xl border-2 border-line bg-panel shadow-2xl">
-        <div className="border-b border-line px-5 pt-3 pb-3">
+      <div role="dialog" aria-label={t.guideTitle} onPointerDown={(e) => e.stopPropagation()} className="flex max-h-[calc(100vh-3rem)] w-full max-w-4xl flex-col overflow-hidden rounded-[22px] bg-panel shadow-2xl ring-1 ring-line/70">
+        <div className="border-b border-line/70 px-5 pt-3 pb-3">
           <div className="flex items-center gap-3">
-            <h2 className="text-lg font-bold">{t.guideTitle}</h2>
+            <h2 className="text-[21px] font-semibold tracking-tight">{t.guideTitle}</h2>
             <span className="ml-auto">
               <Btn tone="quiet" onClick={onClose}>
                 {t.close}
@@ -126,8 +126,8 @@ export function GuideDialog({ onClose }: { onClose: () => void }) {
                   <Btn onClick={() => save('ai-request')}>{t.saveRequest}</Btn>
                 </div>
                 <details className="mt-3">
-                  <summary className="cursor-pointer text-sm text-muted hover:text-ink">{t.showRequest}</summary>
-                  <pre className="mt-2 rounded-xl border border-line bg-black/40 p-3 font-mono text-sm leading-relaxed whitespace-pre-wrap select-text">{request}</pre>
+                  <summary className="cursor-pointer text-sm text-tint">{t.showRequest}</summary>
+                  <pre className="mt-2 rounded-xl bg-page p-3 font-mono text-sm leading-relaxed whitespace-pre-wrap select-text">{request}</pre>
                 </details>
               </Card>
 

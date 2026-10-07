@@ -19,14 +19,14 @@ export function NextPane({ state, next, suspended }: { state: AppState; next: Ou
     <section
       onClick={() => window.presenter.select(next.id)}
       title={selected ? undefined : t.nextSelectTitle}
-      className={`flex min-h-0 flex-1 cursor-pointer flex-col rounded-2xl border-2 bg-panel p-3 ${selected ? 'border-accent' : 'border-line'}`}
+      className={`flex min-h-0 flex-1 cursor-pointer flex-col rounded-card bg-panel p-3 ${selected ? 'ring-2 ring-accent' : 'ring-1 ring-line/60'}`}
     >
       <div className="mb-2 flex items-center gap-2">
         <h2 className="min-w-0 truncate text-sm font-semibold text-muted">
           {t.nextSlide}
           {source ? ` · ${screenLabel(t, source)}` : ''}
         </h2>
-        {selected && <span className="shrink-0 rounded bg-accent px-1.5 text-sm text-black">{t.previewBrowsing}</span>}
+        {selected && <span className="shrink-0 rounded-full bg-accent px-2 text-sm text-white">{t.previewBrowsing}</span>}
         <span className="ml-auto shrink-0 text-sm text-muted">{atEnd ? t.lastSlide : <PageText o={next} />}</span>
       </div>
       <ViewSlot aspect={aspect} suspended={suspended || atEnd} onRect={layoutNext}>

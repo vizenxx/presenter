@@ -35,4 +35,22 @@ describe('timer', () => {
   it('never starts with less than one second', () => {
     expect(T.start(T.initialTimer(), 0, 0).durationSec).toBe(1)
   })
+  it('beeps twice when one minute is left, and once for each of the last five seconds', () => {
+    const run = (sec: number) => ({ status: 'running' as const, remainingSec: sec })
+    expect(T.timerCue(run(61), run(60))).toBe('one-minute')
+    expect(T.timerCue(run(62), run(59))).toBe('one-minute')
+    expect(T.timerCue(run(60), run(59))).toBeNull()
+    expect(T.timerCue(run(6), run(5))).toBe('last-seconds')
+    expect(T.timerCue(run(2), run(1))).toBe('last-seconds')
+    expect(T.timerCue(run(7), run(6))).toBeNull()
+    expect(T.timerCue(run(1), { status: 'done', remainingSec: 0 })).toBeNull()
+  })
+  it('does not beep on a start, a resume, a reset or a pause', () => {
+    const run = (sec: number) => ({ status: 'running' as const, remainingSec: sec })
+    expect(T.timerCue(null, run(60))).toBeNull()
+    expect(T.timerCue({ status: 'idle', remainingSec: 300 }, run(60))).toBeNull()
+    expect(T.timerCue({ status: 'paused', remainingSec: 5 }, run(5))).toBeNull()
+    expect(T.timerCue(run(5), { status: 'paused', remainingSec: 5 })).toBeNull()
+    expect(T.timerCue(run(4), run(60))).toBeNull()
+  })
 })

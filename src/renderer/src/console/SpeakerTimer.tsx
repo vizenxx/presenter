@@ -32,16 +32,16 @@ export function SpeakerTimer({ speaker }: { speaker: SpeakerTimerView }) {
   const started = running || speaker.heldMs > 0
   const shownSec = speakerSeconds(speaker, useNow(running))
   const over = speaker.mode === 'down' && shownSec < 0
-  const SMALL = 'rounded-md px-2 py-1 text-sm'
+  const SMALL = 'rounded-full px-2.5 py-0.5 text-sm'
   return (
-    <section className={`rounded-2xl border-2 px-3 py-2 ${over ? 'border-alarm/60 bg-alarm/10' : 'border-line bg-panel'}`} title={t.myTimerTitle}>
+    <section className={`rounded-card px-4 py-2.5 ${over ? 'bg-alarm/10 ring-2 ring-alarm/60' : 'bg-panel ring-1 ring-line/60'}`} title={t.myTimerTitle}>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <h2 className="text-sm font-semibold text-muted">{t.myTimer}</h2>
-        <span className="flex overflow-hidden rounded-md border border-line">
-          <button type="button" onClick={() => window.presenter.speakerMode('up')} className={`${SMALL} ${speaker.mode === 'up' ? 'bg-accent text-black' : 'text-muted hover:bg-line'}`}>
+        <span className="flex rounded-full bg-panel-2 p-0.5">
+          <button type="button" onClick={() => window.presenter.speakerMode('up')} className={`${SMALL} ${speaker.mode === 'up' ? 'bg-raised text-ink shadow-sm' : 'text-muted hover:text-ink'}`}>
             {t.countUp}
           </button>
-          <button type="button" onClick={() => window.presenter.speakerMode('down')} className={`${SMALL} ${speaker.mode === 'down' ? 'bg-accent text-black' : 'text-muted hover:bg-line'}`}>
+          <button type="button" onClick={() => window.presenter.speakerMode('down')} className={`${SMALL} ${speaker.mode === 'down' ? 'bg-raised text-ink shadow-sm' : 'text-muted hover:text-ink'}`}>
             {t.countDown}
           </button>
         </span>
@@ -53,14 +53,14 @@ export function SpeakerTimer({ speaker }: { speaker: SpeakerTimerView }) {
               max={240}
               value={speaker.minutes}
               onChange={(e) => window.presenter.speakerMinutes(Number(e.target.value))}
-              className="w-12 rounded-md border border-line bg-panel-2 px-1 py-0.5 text-center font-mono text-sm"
+              className="w-14 rounded-full bg-panel-2 px-1 py-1 text-center text-sm tabular-nums"
             />
             <span className="text-sm text-muted">{t.minutes}</span>
           </span>
         )}
         <span className="ml-auto flex items-center gap-2">
           {over && <span className="text-sm font-semibold text-alarm">{t.overTime}</span>}
-          <span className={`font-mono text-2xl font-bold tabular-nums ${over ? 'text-alarm' : running ? 'text-ink' : 'text-muted'}`}>{clock(shownSec)}</span>
+          <span className={`text-[26px] leading-none font-semibold tracking-tight tabular-nums ${over ? 'text-alarm' : running ? 'text-ink' : 'text-muted'}`}>{clock(shownSec)}</span>
           <Btn tone="primary" onClick={() => window.presenter.speakerToggle()}>
             {running ? t.pause : started ? t.resume : t.start}
           </Btn>

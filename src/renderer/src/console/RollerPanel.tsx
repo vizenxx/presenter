@@ -46,8 +46,8 @@ function ListEditor({ draft, onDone }: { draft: Draft; onDone: () => void }) {
   return (
     <div className="flex flex-col gap-2">
       <h3 className="text-sm font-semibold">{draft.id ? t.editList : t.createList}</h3>
-      <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t.listNamePlaceholder} className="rounded-lg border border-line bg-panel-2 px-2 py-1.5 text-sm select-text" />
-      <textarea value={text} onChange={(e) => setText(e.target.value)} rows={14} placeholder={t.listPlaceholder} className="resize-y rounded-lg border border-line bg-panel-2 p-2 font-mono text-sm select-text" />
+      <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t.listNamePlaceholder} className="rounded-xl bg-panel-2 px-3 py-1.5 text-sm select-text" />
+      <textarea value={text} onChange={(e) => setText(e.target.value)} rows={14} placeholder={t.listPlaceholder} className="resize-y rounded-xl bg-panel-2 p-3 font-mono text-sm select-text" />
       <p className="text-sm text-muted">{t.listSummary(count)}</p>
       <div className="flex flex-wrap gap-2">
         <Btn
@@ -83,8 +83,8 @@ export function RollerPanel({ state }: { state: AppState }) {
   const winner = r.roll ? r.people[r.roll.winner] : undefined
   const repeat = face.landed && winner !== undefined && winner.wins > 1
   const audience = state.projecting || state.outputs.some((o) => o.kind === 'window')
-  const faceBox = face.landed ? (repeat ? 'border-gold bg-gold/10' : 'border-link bg-link/10') : 'border-line bg-panel-2'
-  const faceText = face.landed ? 'text-ink' : r.roll ? 'text-accent' : 'text-muted'
+  const faceBox = face.landed ? (repeat ? 'bg-gold/10 ring-2 ring-gold' : 'bg-link/10 ring-2 ring-link') : 'bg-panel-2'
+  const faceText = face.landed ? 'text-ink' : r.roll ? 'text-tint' : 'text-muted'
   // Keep the result hidden in the counts until the highlight lands.
   const winsOf = (i: number): number => (r.roll && i === r.roll.winner && !face.landed ? r.people[i].wins - 1 : r.people[i].wins)
   const pickedCount = r.people.filter((_, i) => winsOf(i) > 0).length
@@ -98,7 +98,7 @@ export function RollerPanel({ state }: { state: AppState }) {
         <select
           value={r.activeListId ?? ''}
           onChange={(e) => window.presenter.rollerSelectList(e.target.value)}
-          className="min-w-0 flex-1 rounded-lg border border-line bg-panel-2 px-2 py-1.5 text-sm"
+          className="min-w-0 flex-1 rounded-full bg-panel-2 px-3 py-1.5 text-sm"
           title={t.chooseList}
         >
           {r.lists.map((l) => (
@@ -113,9 +113,9 @@ export function RollerPanel({ state }: { state: AppState }) {
         <Btn onClick={() => setDraft({ id: null, name: '', text: '' })}>{t.newList}</Btn>
       </div>
 
-      <div className={`rounded-xl border-2 p-4 text-center ${faceBox}`}>
-        <div className={`truncate text-2xl font-bold ${faceText}`}>{face.person ? face.person.name : t.ready}</div>
-        <div className="mt-1 min-h-5 font-mono text-sm text-muted">{face.person ? face.person.id : t.pressToPick}</div>
+      <div className={`rounded-card p-4 text-center ${faceBox}`}>
+        <div className={`truncate text-2xl font-semibold tracking-tight ${faceText}`}>{face.person ? face.person.name : t.ready}</div>
+        <div className="mt-1 min-h-5 text-sm text-muted tabular-nums">{face.person ? face.person.id : t.pressToPick}</div>
         {face.landed && winner && <div className={`mt-1 text-sm font-semibold ${repeat ? 'text-gold' : 'text-link'}`}>{repeat ? t.pickedTimes(winner.wins) : t.picked}</div>}
       </div>
 
@@ -123,7 +123,7 @@ export function RollerPanel({ state }: { state: AppState }) {
         type="button"
         disabled={r.people.length === 0}
         onClick={() => window.presenter.rollerRoll()}
-        className="rounded-xl bg-accent py-3 text-base font-bold text-black transition-colors hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-40"
+        className="rounded-full bg-accent py-3 text-base font-semibold text-white hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-40"
       >
         {t.pickOne}
       </button>
@@ -148,10 +148,10 @@ export function RollerPanel({ state }: { state: AppState }) {
         {r.people.map((p, i) => {
           const wins = winsOf(i)
           return (
-            <li key={`${p.id}-${i}`} className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm">
+            <li key={`${p.id}-${i}`} className="flex items-center gap-2 rounded-xl px-2 py-1 text-sm">
               <span className="min-w-0 flex-1 truncate">{p.name}</span>
-              <span className="font-mono text-muted">{p.id}</span>
-              {wins > 0 && <span className={`rounded px-1.5 font-semibold text-black ${wins > 1 ? 'bg-gold' : 'bg-link'}`}>{wins > 1 ? t.timesShort(wins) : t.picked}</span>}
+              <span className="text-muted tabular-nums">{p.id}</span>
+              {wins > 0 && <span className={`rounded-full px-2 font-semibold ${wins > 1 ? 'bg-gold/15 text-gold' : 'bg-link/15 text-link'}`}>{wins > 1 ? t.timesShort(wins) : t.picked}</span>}
             </li>
           )
         })}

@@ -174,6 +174,9 @@ const en = {
   inkHint: 'Marks show on the projector at once and clear when the slide changes.',
 
   guideButton: '📘 Guide',
+  themeLight: 'Light',
+  themeDark: 'Dark',
+  themeTitle: 'Light or dark look for the console and the floating toolbar. The projector does not change.',
   guideButtonTitle: 'How to use Presenter, and how to prepare decks for it',
   guideLink: 'New here? Open the guide →',
   guideTitle: 'Guide',
@@ -189,7 +192,7 @@ const en = {
     ['See what comes next', 'Next slide (right). Click it to look further ahead: students see no change. Click the current slide to go back.'],
     ['Mark on the slide', 'Bar above the slide: pen (P), highlighter (H), box (R), laser (L), eraser (E). Marks clear on the next page.'],
     ['Read notes or jump to a slide', 'Slides and Notes, above the slide.'],
-    ['Time an activity', 'Class timer: click 1 min, 5 min … or type minutes and click Start. It rings at zero; any key stops it.'],
+    ['Time an activity', 'Class timer: click 1 min, 5 min … or type minutes and click Start. It beeps twice at one minute left and once a second in the last 5 seconds, then rings at zero; any key stops it.'],
     ['Time my own talk', 'My timer (bottom right): count up or count down. Only you see it; it makes no sound.'],
     ['Pick a name at random', '🎲 Name picker in the top bar.'],
     ['Add another deck or window', '＋ Add screen in the bottom bar. It waits (no window opens) until you choose a projector for it. Cards with Linked turn pages together.'],
@@ -197,7 +200,8 @@ const en = {
     ['Use a second projector or TV', 'On a card, Projector ▾ → New projector. It opens full screen on a free display (else as a window); close it from the same menu.'],
     ['Mark on a program window', 'When a window shown on a projector is in front, a small toolbar floats on top: marks (drawn right on the window), ⏱ class timer, 🎲 Roll, and My timer’s time while it runs. The audience never sees the toolbar; ◂ folds it.'],
     ['Show a program window (browser, video …)', '＋ Add screen → A window on this computer (minimized windows are listed too). Choose a projector for it with Projector ▾: the window then comes to the front.'],
-    ['Make the text bigger', `Text size, or ${KEYS.mod} + / ${KEYS.mod} − (HTML decks).`]
+    ['Make the text bigger', `Text size, or ${KEYS.mod} + / ${KEYS.mod} − (HTML decks).`],
+    ['Use a light or dark look', '☀ / ☾ in the top bar. Presenter remembers it. The projector does not change.']
   ] as string[][],
   guidePrepareIntro: 'Most decks need no preparation. Find your kind of deck:',
   guideKind: 'My deck is …',

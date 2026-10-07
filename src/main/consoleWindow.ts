@@ -7,14 +7,14 @@ import { startupLog } from './startupLog'
 export class ConsoleWindow {
   readonly win: BrowserWindow
 
-  constructor(preload: string, load: (win: BrowserWindow) => void, onClosed: () => void) {
+  constructor(preload: string, load: (win: BrowserWindow) => void, onClosed: () => void, background: string) {
     const area = consoleDisplay().workArea
     this.win = new BrowserWindow({
       ...area,
       minWidth: 1024,
       minHeight: 620,
       title: 'Presenter',
-      backgroundColor: '#0b0f17',
+      backgroundColor: background,
       autoHideMenuBar: true,
       show: false,
       webPreferences: { preload, contextIsolation: true, sandbox: true, backgroundThrottling: false }

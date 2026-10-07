@@ -147,6 +147,38 @@ try {
   assert.equal(out(s, 'projector').shownIndex, 5)
   console.log('ok 7 timer alarm and dismiss')
 
+  // 7b. Warning beeps: two at one minute left, one for each of the last five seconds (none at the start).
+  const cues = () => call(() => globalThis.__presenter.projectorWin.overlay.webContents.executeJavaScript('document.body.dataset.cues || ""'))
+  async function waitForCues(label, pred, ms) {
+    const t0 = Date.now()
+    while (Date.now() - t0 < ms) {
+      if (pred(await cues())) return
+      await sleep(150)
+    }
+    throw new Error(`timeout: ${label}: ${await cues()}`)
+  }
+  // Step 7's short timer already beeped; start from an empty record.
+  await call(() => globalThis.__presenter.projectorWin.overlay.webContents.executeJavaScript('delete document.body.dataset.cues'))
+  await call(() => globalThis.__presenter.timerStart(62))
+  await sleep(600)
+  assert.equal((await cues()).trim(), '', 'no beep when the timer starts')
+  await waitForCues('one-minute beep', (c) => c.includes('one-minute'), 5000)
+  await call(() => globalThis.__presenter.timerStart(6))
+  await waitForCues('last-seconds beeps', (c) => (c.match(/last-seconds/g) ?? []).length >= 2, 5000)
+  await call(() => globalThis.__presenter.timerReset())
+  console.log('ok 7b timer warning beeps')
+
+  // 7c. Light or dark look: saved, and the console page follows it.
+  await call(() => globalThis.__presenter.setTheme('light'))
+  s = await waitFor('light look in the state', (s) => s.theme === 'light')
+  const pageTheme = () => call(() => globalThis.__presenter.consoleWin.win.webContents.executeJavaScript('document.documentElement.dataset.theme || ""'))
+  for (let i = 0; i < 40 && (await pageTheme()) !== 'light'; i++) await sleep(100)
+  assert.equal(await pageTheme(), 'light', 'the console page uses the light look')
+  assert.equal(JSON.parse(fs.readFileSync(path.join(USER_DATA, 'theme.json'), 'utf8')).theme, 'light', 'the look is saved')
+  await call(() => globalThis.__presenter.setTheme('dark'))
+  await waitFor('dark look again', (s) => s.theme === 'dark')
+  console.log('ok 7c light and dark look')
+
   // 8. Extra screen with the same deck joins the linked group.
   await call(() => globalThis.__presenter.addScreen(true))
   s = await waitFor('extra detected', (s) => out(s, 'screen-3')?.adapter === 'uxd202')
@@ -218,7 +250,6 @@ try {
     await page.screenshot({ path: path.join(OUT, 'console-uxd202.png') })
     await call(() => globalThis.__presenter.consoleWin.win.moveTop())
     await sleep(800)
-    execFileSync('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', path.join(here, 'capture.ps1'), '-Out', path.join(OUT, 'desktop-console.png')])
 
     // 9b. F5 starts projecting; pages still turn; Esc stops and the deck returns to the console.
     await press('F5')
@@ -258,7 +289,6 @@ try {
     assert.equal(overlayVisible, true)
     await call(() => globalThis.__presenter.projectorWin.win.moveTop())
     await sleep(1200)
-    execFileSync('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', path.join(here, 'capture.ps1'), '-Out', path.join(OUT, 'desktop-overlay.png')])
     await call(() => globalThis.__presenter.timerReset())
     await call(() => globalThis.__presenter.stopProjecting())
     console.log('ok 11 overlay')
@@ -283,7 +313,6 @@ try {
     await press('ArrowRight')
     assert.equal((await state()).roller.showing, true, 'a key during the roll is ignored')
     await sleep(3500)
-    execFileSync('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', path.join(here, 'capture.ps1'), '-Out', path.join(OUT, 'desktop-roller.png')])
     await press('ArrowRight')
     s = await waitFor('roller closed', (s) => !s.roller.showing)
     assert.equal(out(s, 'projector').shownIndex, pageBefore, 'closing key did not turn the page')
@@ -306,7 +335,6 @@ try {
     await call(() => globalThis.__presenter.timerStart(30))
     await sleep(500)
     assert.equal(await call(() => globalThis.__presenter.projectorWin.overlay.getVisible()), true, 'overlay timer for a PPT deck')
-    execFileSync('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', path.join(here, 'capture.ps1'), '-Out', path.join(OUT, 'desktop-pptx.png')])
     await call(() => globalThis.__presenter.timerReset())
     await call(() => globalThis.__presenter.stopProjecting())
     console.log('ok 14 pptx')
@@ -321,7 +349,6 @@ try {
     assert.equal(await call(() => globalThis.__presenter.mirrorVideo), true, 'console mirror uses live video')
     await call(() => globalThis.__presenter.inkOp({ t: 'begin', stroke: { id: 'e2e', tool: 'pen', color: '#ef4444', points: [0.2, 0.2, 0.8, 0.8] } }, 'main'))
     await sleep(600)
-    execFileSync('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', path.join(here, 'capture.ps1'), '-Out', path.join(OUT, 'desktop-ink.png')])
     await press('Escape')
     s = await waitFor('esc leaves the pen', (s) => s.ink.tool === 'pointer' && s.projecting)
     await press('ArrowRight')

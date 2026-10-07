@@ -2,7 +2,7 @@ import type { AppState, OutputView } from '../../../shared/types'
 import { screenLabel, useT } from './i18n'
 import { Menu, MenuItem, ZoomControl, type ConsoleMenu } from './ui'
 
-const SMALL_BTN = 'grid h-7 min-w-7 place-items-center rounded-md px-1.5 text-sm hover:bg-line'
+const SMALL_BTN = 'grid h-7 min-w-7 place-items-center rounded-full px-1.5 text-sm hover:bg-line'
 
 /** Projector numbers in use: 1 always, then the extra ones. */
 function projectorNumbers(state: AppState): number[] {
@@ -44,7 +44,7 @@ function ProjectorPicker(props: { o: OutputView; state: AppState; menu: ConsoleM
         title={t.showOnTitle}
         disabled={!canShow}
         onClick={() => onMenu(menu === menuId ? null : menuId)}
-        className={`flex h-7 items-center gap-1.5 rounded-md px-2 text-sm whitespace-nowrap hover:bg-line disabled:opacity-40 ${on !== null ? 'text-link' : 'text-muted'} ${menu === menuId ? 'bg-line' : ''}`}
+        className={`flex h-7 items-center gap-1.5 rounded-full px-2.5 text-sm whitespace-nowrap hover:bg-line disabled:opacity-40 ${on !== null ? 'text-link' : 'text-muted'} ${menu === menuId ? 'bg-line' : ''}`}
       >
         {on !== null && <span className={`h-2 w-2 rounded-full ${live ? 'bg-link' : 'bg-muted'}`} />}
         {on !== null ? t.projectorN(on) : t.notShown} ▾
@@ -55,7 +55,7 @@ function ProjectorPicker(props: { o: OutputView; state: AppState; menu: ConsoleM
             <MenuItem key={n} onClick={() => pick(n)}>
               {on === n ? '✓ ' : ''}
               {t.projectorN(n)}
-              <span className="text-muted">{occupant(n)}</span>
+              <span className="text-muted group-hover:text-white/75">{occupant(n)}</span>
             </MenuItem>
           ))}
           <MenuItem onClick={() => pick('new')}>＋ {t.newProjector(nextProjectorNumber(state))}</MenuItem>
@@ -102,9 +102,9 @@ function ScreenChip(props: { o: OutputView; state: AppState; menu: ConsoleMenu; 
     <div
       onClick={() => window.presenter.select(o.id)}
       title={tip}
-      className={`relative flex h-10 shrink-0 cursor-pointer items-center gap-1 rounded-lg border-2 pr-1 pl-2.5 ${selected ? 'border-accent bg-accent/10' : 'border-line bg-panel-2'}`}
+      className={`relative flex h-10 shrink-0 cursor-pointer items-center gap-1 rounded-full pr-1.5 pl-3.5 ${selected ? 'bg-accent/15 ring-2 ring-accent' : 'bg-panel-2'}`}
     >
-      <span className="ml-0.5 max-w-44 truncate text-sm font-semibold whitespace-nowrap">{screenLabel(t, o)}</span>
+      <span className="max-w-44 truncate text-sm font-semibold whitespace-nowrap">{screenLabel(t, o)}</span>
       {!capture && (
         <span className="min-w-12 px-1 text-center text-sm text-muted tabular-nums">
           <PageShort o={o} />
@@ -151,7 +151,7 @@ export function ScreensBar({ state, menu, onMenu, onPickWindow }: { state: AppSt
   const t = useT()
   const close = (): void => onMenu(null)
   return (
-    <footer className="flex flex-wrap items-center gap-2 border-t border-line bg-panel px-3 py-2">
+    <footer className="flex flex-wrap items-center gap-2 border-t border-line/70 bg-panel px-3 py-2">
       <span className="mr-1 cursor-help text-sm text-muted" title={t.screensHint}>
         {t.screens}
       </span>
@@ -165,7 +165,7 @@ export function ScreensBar({ state, menu, onMenu, onPickWindow }: { state: AppSt
         <button
           type="button"
           onClick={() => onMenu(menu === 'add' ? null : 'add')}
-          className="h-10 rounded-lg border-2 border-dashed border-line px-3 text-sm whitespace-nowrap text-muted hover:border-muted hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
+          className="h-10 rounded-full border-2 border-dashed border-line px-4 text-sm whitespace-nowrap text-tint hover:border-tint disabled:cursor-not-allowed disabled:opacity-40"
         >
           ＋ {t.addScreen}
         </button>

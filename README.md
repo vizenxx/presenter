@@ -33,7 +33,7 @@ Presenter is a folder you unzip; there is no installer and no administrator pass
 
 | Area | What it does |
 |---|---|
-| Top bar | **Open deck**, **Recent**, **🎲 Name picker**, **📘 Guide**, **▶ Start projecting** |
+| Top bar | **Open deck**, **Recent**, **🎲 Name picker**, **📘 Guide**, **☀ / ☾** (light or dark look), **▶ Start projecting** |
 | Current slide (left) | What Projector 1 shows. Before projecting it is the deck itself; while projecting it is a live copy of what the audience sees. The mark tools are above it. |
 | Next slide (right) | The slide after the selected card's slide. Click it to look further ahead. |
 | Class timer | The countdown the audience sees on the projector. |
@@ -69,7 +69,7 @@ The **📘 Guide** in the app has the same help in two parts: **1 · Use Present
 
 - A clicker, the arrow keys, PageUp / PageDown and Space turn pages. Home and End go to the first and last page.
 - **The selected card turns.** If it is **Linked**, every linked card turns with it; if not, it turns alone.
-- Select a card by clicking it, or by clicking its picture. The selected card has an orange border.
+- Select a card by clicking it, or by clicking its picture. The selected card has a blue border.
 - **−** and **+** on a card move only that card, e.g. to set how many pages two decks are apart.
 - **Next slide** shows the slide after the selected card's slide. Click it to look further ahead: page keys then turn only the preview, and the audience sees no change. Click the current slide or a card to go back.
 
@@ -124,6 +124,7 @@ The bar above the current slide: **Pointer, Pen, Highlighter, Box, Laser, Eraser
 
 - Click a preset (**1 min**, **5 min** …) to start at once, or set minutes and click **Start**.
 - When a deck plans a time for a slide, the timer shows it.
+- With one minute left it beeps twice; in the last 5 seconds it beeps once a second.
 - At zero the alarm rings until you press any key or click. That key does not turn the page.
 - UXD202 decks show the countdown in their own bar; everything else shows it at the bottom right of the projector.
 
@@ -141,6 +142,10 @@ Click **🎲 Name picker** (top bar). Choose a list and click **🎲 Roll**: the
 - **Picked so far: X of Y** counts the picks; **↺ Reset** (after a confirmation) makes everyone unpicked again. Picks last while the app is open.
 - The first start has a sample list: click **Edit** and paste your class (one person per line; a number in front is optional). **New** makes another list. Lists are saved.
 - Without projecting, only you see the roll (in the console, or next to **Roll** on the floating toolbar).
+
+## Light or dark look
+
+**☀ / ☾** in the top bar switches the console and the floating toolbar between a light and a dark look. Presenter remembers the choice; until you choose, it follows the computer's setting. The projector does not change.
 
 ## Text size
 

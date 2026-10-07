@@ -143,6 +143,9 @@ export interface RollerPlay {
   sound: boolean
 }
 
+/** The console's look. */
+export type UiTheme = 'light' | 'dark'
+
 export interface AppState {
   outputs: OutputView[]
   selectedId: OutputId
@@ -176,6 +179,8 @@ export interface AppState {
   deckStatus: DeckStatus
   /** Marking tool and colour, shared by the console toolbar and the projector palette. */
   ink: InkSettings
+  /** Light or dark console; null = follow the computer's setting. */
+  theme: UiTheme | null
 }
 
 export type NavAction =
@@ -203,6 +208,7 @@ export interface ConsoleApi {
   speakerMinutes(minutes: number): void
   speakerToggle(): void
   speakerReset(): void
+  setTheme(theme: UiTheme): void
   /** The floating toolbar page reports its size. */
   toolbarSize(width: number, height: number): void
   closeProjector(n: number): void

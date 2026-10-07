@@ -31,6 +31,15 @@ export function chime(): void {
   }
 }
 
+/** Short clear beeps before the class timer ends: 2 with one minute left, 1 for each of the last five seconds. */
+export function beep(count = 1): void {
+  try {
+    for (let i = 0; i < count; i++) note('sine', 1046.5, 0.32, 0.14, i * 0.22)
+  } catch {
+    // No audio device; the countdown still shows.
+  }
+}
+
 /** A short, quiet click for each step of the 抽人 highlight. */
 export function tick(): void {
   try {

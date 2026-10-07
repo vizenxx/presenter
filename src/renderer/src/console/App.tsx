@@ -46,7 +46,7 @@ export function App() {
       <DeckStatusBar status={state.deckStatus} />
       <main className={`grid min-h-0 flex-1 gap-3 p-3 ${cols}`}>
         {nothingOnProjector ? (
-          <section className="grid min-h-0 place-items-center rounded-2xl border-2 border-dashed border-line bg-panel p-6 text-center text-base text-muted">{t.projector1Empty}</section>
+          <section className="grid min-h-0 place-items-center rounded-card border-2 border-dashed border-line bg-panel p-6 text-center text-base text-muted">{t.projector1Empty}</section>
         ) : (
           <CurrentPane state={state} projector={projector} mirror={mirror} suspended={suspended} drawer={drawer} onDrawer={setDrawer} onGuide={() => setGuide(true)} onPickWindow={() => setPicker('show')} />
         )}

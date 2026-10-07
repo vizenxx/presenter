@@ -56,6 +56,7 @@ export class ProjectorWindow {
   /** Put the deck view under the overlay. */
   attach(view: WebContentsView): void {
     this.content = view
+    view.setBorderRadius(0)
     this.win.contentView.addChildView(view, 0)
     this.layout()
   }

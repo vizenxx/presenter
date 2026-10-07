@@ -1,9 +1,9 @@
 import { useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import type { PreviewRect } from '../../../shared/types'
 
-/** Fits a box with the projector's aspect ratio into the free space; children fill the box. */
+/** Fits a box with the projector's aspect ratio into the free space; children fill the box (black behind a picture by default). */
 export function AspectBox(props: { aspect: number; slotRef?: RefObject<HTMLDivElement | null>; className?: string; children: ReactNode }) {
-  const { aspect, slotRef, className = '', children } = props
+  const { aspect, slotRef, className = 'bg-black', children } = props
   const box = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ width: 0, height: 0 })
 
@@ -23,7 +23,7 @@ export function AspectBox(props: { aspect: number; slotRef?: RefObject<HTMLDivEl
 
   return (
     <div ref={box} className="flex min-h-0 flex-1 items-center justify-center">
-      <div ref={slotRef} style={{ width: size.width, height: size.height }} className={`relative overflow-hidden rounded-lg bg-black ${className}`}>
+      <div ref={slotRef} style={{ width: size.width, height: size.height }} className={`relative overflow-hidden rounded-xl ${className}`}>
         {children}
       </div>
     </div>
@@ -66,7 +66,7 @@ export function ViewSlot(props: { aspect: number; suspended: boolean; onRect: (r
   }, [onRect])
 
   return (
-    <AspectBox aspect={aspect} slotRef={slot} className="grid place-items-center text-sm text-muted">
+    <AspectBox aspect={aspect} slotRef={slot} className="grid place-items-center bg-page text-sm text-muted">
       {children}
     </AspectBox>
   )

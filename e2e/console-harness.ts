@@ -1,19 +1,19 @@
 /**
- * Off-screen layout check of the console page with a sample state (English and Chinese),
+ * Off-screen layout check of the console page with a sample state, in the dark and the light look,
  * at the laptop's console size. No window appears. Build first, then: npm run check:console
  */
 import { app, BrowserWindow } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
 import { aiRequestText } from '../src/shared/guide'
-import type { AppState } from '../src/shared/types'
+import type { AppState, UiTheme } from '../src/shared/types'
 
 const ROOT = path.resolve(__dirname, '..', '..', '..')
 const OUT = path.join(ROOT, 'e2e', 'out')
 const STUB = path.join(OUT, 'harness', 'console-stub-preload.cjs')
 const AI_REQUEST = aiRequestText(fs.readFileSync(path.join(ROOT, 'docs', 'ai-integration.md'), 'utf8'))
 /** Every ConsoleApi method (contextBridge copies plain objects only, so no Proxy). */
-const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "listWindows", "addWindowScreen"]
+const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "listWindows", "addWindowScreen", "setTheme"]
 
 app.disableHardwareAcceleration()
 // Each screenshot closes its window; keep the app alive between them.
@@ -21,7 +21,7 @@ app.on('window-all-closed', () => undefined)
 const wait = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
 
 /** crowd = six extra screens and the next preview selected (checks that the screens bar stays in view). */
-function sampleState(projecting: boolean, crowd = false): AppState {
+function sampleState(projecting: boolean, crowd = false, theme: UiTheme = 'dark'): AppState {
   const deck = { path: 'C:/decks/UXD202 Lecture n1.pptx', name: 'UXD202 Lecture n1' }
   const base = { deck, adapter: 'uxd202' as const, total: 18, linked: true, fullscreen: false, zoomPercent: 100, deckKind: 'slides' as const, captureName: null, shownOn: null as number | null }
   return {
@@ -51,7 +51,8 @@ function sampleState(projecting: boolean, crowd = false): AppState {
     previewSize: { width: 1920, height: 1080 },
     roller: { lists: [{ id: 'l', name: 'Class list', count: 6 }], activeListId: 'l', activeText: '', people: ['Ann Lee', 'Bo Chen', 'Cai Dorji', 'Dema Wangmo', 'Eli Tashi', 'Fay Zangpo'].map((name, i) => ({ id: `1225010${i}`, name, wins: [1, 0, 2, 0, 0, 0][i] })), superLucky: true, roll: null, showing: false },
     deckStatus: { state: 'ready' },
-    ink: { tool: 'pen', color: '#ef4444' }
+    ink: { tool: 'pen', color: '#ef4444' },
+    theme
   }
 }
 
@@ -89,8 +90,8 @@ const OPENERS: Record<string, string> = {
   roller: `[...document.querySelectorAll('header button')].find((x) => x.textContent.includes('🎲'))`
 }
 
-async function shot(projecting: boolean, open: Open = null, page = 'console'): Promise<void> {
-  const state = sampleState(projecting, open === 'crowd')
+async function shot(projecting: boolean, open: Open = null, page = 'console', theme: UiTheme = 'dark'): Promise<void> {
+  const state = sampleState(projecting, open === 'crowd', theme)
   if (open === 'start') {
     // First start: no deck yet (Open deck, or a program window as the first content).
     state.mainDeck = null
@@ -121,7 +122,7 @@ async function shot(projecting: boolean, open: Open = null, page = 'console'): P
     await wait(300)
   }
   const image = await win.webContents.capturePage()
-  const name = `${page}${projecting ? '-projecting' : ''}${open ? `-${open}` : ''}.png`
+  const name = `${page}${projecting ? '-projecting' : ''}${open ? `-${open}` : ''}${theme === 'light' ? '-light' : ''}.png`
   fs.writeFileSync(path.join(OUT, name), image.toPNG())
   const overflow = await win.webContents.executeJavaScript('document.documentElement.scrollWidth > innerWidth || document.documentElement.scrollHeight > innerHeight')
   // A dialog must fit inside the window (its body scrolls instead).
@@ -145,6 +146,15 @@ app.whenReady().then(async () => {
     await shot(false, 'roller')
     await shot(false, 'crowd', 'toolbar')
     await shot(false, 'start')
+    // The light look: the same views that carry the most colours.
+    await shot(false, null, 'console', 'light')
+    await shot(true, null, 'console', 'light')
+    await shot(false, 'crowd', 'console', 'light')
+    await shot(false, 'roller', 'console', 'light')
+    await shot(false, 'guide-prepare', 'console', 'light')
+    await shot(false, 'window-picker', 'console', 'light')
+    await shot(false, 'start', 'console', 'light')
+    await shot(false, 'crowd', 'toolbar', 'light')
     console.log('CONSOLE OK')
   } catch (error) {
     console.error(String(error))

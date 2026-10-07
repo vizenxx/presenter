@@ -1,22 +1,71 @@
 @import "tailwindcss";
 
+/*
+ * The console's look follows Apple's design language (DESIGN.md of apple.com): one blue for every
+ * action and the selection, pill-shaped buttons, 18 px cards, no shadows on cards or buttons,
+ * buttons shrink a little when pressed. Dark values are the default; light values are below.
+ * Status colours (live, picked twice, alarm) are Apple's system green, orange and red.
+ */
 @theme {
-  --font-sans: "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif;
-  --font-mono: "Cascadia Mono", Consolas, ui-monospace, monospace;
-  /* accent = the selected screen and primary actions */
-  --color-accent: #f59e0b;
-  --color-accent-strong: #d97706;
-  /* link = a screen that turns pages together with the selected one */
-  --color-link: #34d399;
-  /* gold = a student picked more than once (抽人, same as Lucky Roller) */
-  --color-gold: #eab308;
-  /* alarm = the timer reached zero */
-  --color-alarm: #ef4444;
-  --color-panel: #111827;
-  --color-panel-2: #1f2937;
-  --color-line: #374151;
-  --color-ink: #f3f4f6;
-  --color-muted: #9ca3af;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", system-ui, sans-serif;
+  --font-mono: "SF Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --radius-card: 18px;
+  --color-page: #000000;
+  --color-panel: #1c1c1e;
+  --color-panel-2: #2c2c2e;
+  --color-line: #3a3a3c;
+  --color-ink: #f5f5f7;
+  --color-muted: #a1a1a6;
+  /* raised = the chosen segment of a segmented control */
+  --color-raised: #636366;
+  /* accent = the selected card and filled primary buttons (white text on it) */
+  --color-accent: #0071e3;
+  --color-accent-strong: #0077ed;
+  /* tint = blue text and icons: links, quiet buttons */
+  --color-tint: #2997ff;
+  /* link = live on a projector, and cards that turn pages together */
+  --color-link: #30d158;
+  /* gold = a person picked more than once; also a paused timer */
+  --color-gold: #ff9f0a;
+  /* alarm = the timer reached zero, or over time */
+  --color-alarm: #ff453a;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --color-page: #f5f5f7;
+  --color-panel: #ffffff;
+  --color-panel-2: #e8e8ed;
+  --color-line: #d2d2d7;
+  --color-ink: #1d1d1f;
+  --color-muted: #6e6e73;
+  --color-raised: #ffffff;
+  --color-tint: #0066cc;
+  --color-link: #248a3d;
+  --color-gold: #c93400;
+  --color-alarm: #e30000;
+}
+
+/* No choice saved yet: follow the computer's setting (same values as above). */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    color-scheme: light;
+    --color-page: #f5f5f7;
+    --color-panel: #ffffff;
+    --color-panel-2: #e8e8ed;
+    --color-line: #d2d2d7;
+    --color-ink: #1d1d1f;
+    --color-muted: #6e6e73;
+    --color-raised: #ffffff;
+    --color-tint: #0066cc;
+    --color-link: #248a3d;
+    --color-gold: #c93400;
+    --color-alarm: #e30000;
+  }
 }
 
 html,
@@ -27,8 +76,47 @@ body,
 
 body {
   margin: 0;
-  background: #0b0f17;
+  background: var(--color-page);
   color: var(--color-ink);
   font-family: var(--font-sans);
+  letter-spacing: -0.011em;
+  -webkit-font-smoothing: antialiased;
   user-select: none;
+}
+
+@layer base {
+  button {
+    transition:
+      transform 120ms ease,
+      background-color 150ms ease,
+      color 150ms ease,
+      box-shadow 150ms ease;
+  }
+
+  /* Apple's press feedback: the button shrinks a little. */
+  button:not(:disabled):active {
+    transform: scale(0.95);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
+/* Thin rounded scroll bars: only the thumb shows. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--color-muted) 45%, transparent);
+  background-clip: content-box;
 }

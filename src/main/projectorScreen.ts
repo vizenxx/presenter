@@ -53,6 +53,7 @@ export class ProjectorScreen {
     if (this.content && this.content !== view) this.win.contentView.removeChildView(this.content)
     this.content = view
     if (view) {
+      view.setBorderRadius(0)
       this.win.contentView.addChildView(view, 0)
       view.setVisible(true)
     }

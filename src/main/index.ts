@@ -1,7 +1,7 @@
 import { app, ipcMain, Menu, type WebContents } from 'electron'
 import path from 'node:path'
 import type { InkOp, InkTool } from '../shared/ink'
-import type { KeyIntent, NavAction, OutputId, PreviewRect } from '../shared/types'
+import type { KeyIntent, NavAction, OutputId, PreviewRect, UiTheme } from '../shared/types'
 import type { ZoomDirection } from '../shared/zoom'
 import type { GuideFile } from '../shared/guide'
 import { registerDeckScheme, setViewerRoot } from './deckProtocol'
@@ -40,6 +40,7 @@ function wireIpc(store: Store): void {
   ipcMain.on('console:speaker-minutes', (_e, minutes: number) => store.speakerMinutes(Number(minutes)))
   ipcMain.on('console:speaker-toggle', () => store.speakerToggle())
   ipcMain.on('console:speaker-reset', () => store.speakerReset())
+  ipcMain.on('console:set-theme', (_e, theme: UiTheme) => store.setTheme(theme))
   ipcMain.on('console:toolbar-size', (_e, width: number, height: number) => store.toolbarSize(Number(width), Number(height)))
   ipcMain.on('console:close-projector', (_e, n: number) => store.closeProjector(Number(n)))
   ipcMain.handle('console:list-windows', () => store.listWindows())

@@ -26,7 +26,7 @@ function Icon({ name }: { name: InkIconName }) {
 export function InkToolbar({ ink, enabled }: { ink: InkSettings; enabled: boolean }) {
   const t = useT()
   return (
-    <div className="mb-2 flex flex-wrap items-center gap-1 rounded-xl bg-panel-2 px-1.5 py-1" title={t.inkHint}>
+    <div className="mb-2 flex flex-wrap items-center gap-1 rounded-[20px] bg-panel-2 px-1.5 py-1" title={t.inkHint}>
       {TOOLS.map(({ tool, key, label }) => (
         <button
           key={tool}
@@ -34,13 +34,13 @@ export function InkToolbar({ ink, enabled }: { ink: InkSettings; enabled: boolea
           disabled={!enabled}
           title={tool === 'pointer' ? t.inkPointerTitle : t.inkToolTitle(label(t), key)}
           onClick={() => window.presenter.setInkTool(tool)}
-          className={`flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm disabled:opacity-40 ${ink.tool === tool ? 'bg-accent font-semibold text-black' : 'text-ink hover:bg-line'}`}
+          className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-sm disabled:opacity-40 ${ink.tool === tool ? 'bg-accent font-semibold text-white' : 'text-ink hover:bg-line'}`}
         >
           <Icon name={tool} />
           {label(t)}
         </button>
       ))}
-      <span className="mx-1 h-6 w-px bg-line" />
+      <span className="mx-1 h-5 w-px bg-line" />
       {INK_COLORS.map((color) => (
         <button
           key={color}
@@ -49,15 +49,15 @@ export function InkToolbar({ ink, enabled }: { ink: InkSettings; enabled: boolea
           title={t.inkColor}
           onClick={() => window.presenter.setInkColor(color)}
           style={{ background: color }}
-          className={`m-0.5 h-6 w-6 rounded-full border-2 border-white/30 disabled:opacity-40 ${ink.color === color ? 'outline-2 outline-offset-2 outline-accent' : ''}`}
+          className={`m-0.5 h-6 w-6 rounded-full ring-1 ring-black/15 ring-inset disabled:opacity-40 ${ink.color === color ? 'outline-2 outline-offset-2 outline-accent' : ''}`}
         />
       ))}
-      <span className="mx-1 h-6 w-px bg-line" />
+      <span className="mx-1 h-5 w-px bg-line" />
       {/* Undo and Clear show icons only (names in the tooltip) so the bar stays on one line. */}
-      <button type="button" disabled={!enabled} title={`${t.inkUndo} · ${t.inkUndoTitle}`} aria-label={t.inkUndo} onClick={() => window.presenter.inkOp({ t: 'undo' }, false)} className="rounded-lg p-1.5 text-ink hover:bg-line disabled:opacity-40">
+      <button type="button" disabled={!enabled} title={`${t.inkUndo} · ${t.inkUndoTitle}`} aria-label={t.inkUndo} onClick={() => window.presenter.inkOp({ t: 'undo' }, false)} className="rounded-full p-1.5 text-ink hover:bg-line disabled:opacity-40">
         <Icon name="undo" />
       </button>
-      <button type="button" disabled={!enabled} title={`${t.inkClear} · ${t.inkClearTitle}`} aria-label={t.inkClear} onClick={() => window.presenter.inkOp({ t: 'clear' }, false)} className="rounded-lg p-1.5 text-ink hover:bg-line disabled:opacity-40">
+      <button type="button" disabled={!enabled} title={`${t.inkClear} · ${t.inkClearTitle}`} aria-label={t.inkClear} onClick={() => window.presenter.inkOp({ t: 'clear' }, false)} className="rounded-full p-1.5 text-ink hover:bg-line disabled:opacity-40">
         <Icon name="clear" />
       </button>
     </div>

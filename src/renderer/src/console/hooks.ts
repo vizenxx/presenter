@@ -9,7 +9,25 @@ import { IS_MAC } from './platform'
 export function useAppState(): AppState | null {
   const [state, setState] = useState<AppState | null>(null)
   useEffect(() => window.presenter.onState(setState), [])
+  // The saved look (light or dark); without one the page follows the computer's setting.
+  const theme = state?.theme ?? null
+  useEffect(() => {
+    if (theme) document.documentElement.dataset['theme'] = theme
+    else delete document.documentElement.dataset['theme']
+  }, [theme])
   return state
+}
+
+/** True when the console looks dark: the saved choice, else the computer's setting. */
+export function useDarkLook(theme: AppState['theme']): boolean {
+  const [systemDark, setSystemDark] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches)
+  useEffect(() => {
+    const query = window.matchMedia('(prefers-color-scheme: dark)')
+    const change = (): void => setSystemDark(query.matches)
+    query.addEventListener('change', change)
+    return () => query.removeEventListener('change', change)
+  }, [])
+  return theme ? theme === 'dark' : systemDark
 }
 
 /** Object URL of the latest projector frame. */

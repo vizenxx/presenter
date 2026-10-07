@@ -31,11 +31,11 @@ export function WindowPicker({ show, onClose }: { show: boolean; onClose: () => 
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-6" onPointerDown={onClose}>
-      <div role="dialog" aria-label={t.pickWindowTitle} onPointerDown={(e) => e.stopPropagation()} className="flex max-h-[calc(100vh-3rem)] w-full max-w-5xl flex-col rounded-2xl border-2 border-line bg-panel shadow-2xl">
-        <div className="border-b border-line px-5 py-3">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-6 backdrop-blur-sm" onPointerDown={onClose}>
+      <div role="dialog" aria-label={t.pickWindowTitle} onPointerDown={(e) => e.stopPropagation()} className="flex max-h-[calc(100vh-3rem)] w-full max-w-5xl flex-col overflow-hidden rounded-[22px] bg-panel shadow-2xl ring-1 ring-line/70">
+        <div className="border-b border-line/70 px-5 py-3">
           <div className="flex items-center gap-3">
-            <h2 className="text-lg font-bold">{t.pickWindowTitle}</h2>
+            <h2 className="text-[21px] font-semibold tracking-tight">{t.pickWindowTitle}</h2>
             <span className="ml-auto">
               <Btn tone="quiet" onClick={onClose}>
                 {t.close}
@@ -50,12 +50,12 @@ export function WindowPicker({ show, onClose }: { show: boolean; onClose: () => 
           {windows !== null && windows.length === 0 && <p className="text-base text-muted">{t.noWindows}</p>}
           <div className="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-3">
             {windows?.map((w) => (
-              <button key={w.id} type="button" title={w.name} onClick={() => choose(w)} className="flex flex-col gap-1.5 rounded-xl border-2 border-line bg-panel-2 p-2 text-left hover:border-accent">
+              <button key={w.id} type="button" title={w.name} onClick={() => choose(w)} className="flex flex-col gap-1.5 rounded-card bg-panel-2 p-2.5 text-left hover:ring-2 hover:ring-accent">
                 {w.thumbnail ? (
-                  <img src={w.thumbnail} alt="" className="aspect-[16/10] w-full rounded-lg bg-black object-contain" />
+                  <img src={w.thumbnail} alt="" className="aspect-[16/10] w-full rounded-xl bg-page object-contain" />
                 ) : (
                   // A minimized window has no picture: its program icon stands in (as in Zoom).
-                  <span className="flex aspect-[16/10] w-full flex-col items-center justify-center gap-2 rounded-lg bg-black/60">
+                  <span className="flex aspect-[16/10] w-full flex-col items-center justify-center gap-2 rounded-xl bg-page">
                     {w.icon ? <img src={w.icon} alt="" className="h-12 w-12" /> : <span className="text-4xl">🪟</span>}
                     {w.minimized && <span className="text-sm text-muted">{t.minimizedWindow}</span>}
                   </span>

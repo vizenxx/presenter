@@ -9,7 +9,7 @@ import { MAIN_STRINGS } from '../shared/lang'
 import { mergeRecent } from '../shared/recentList'
 import * as T from '../shared/timer'
 import { stepZoom, zoomKey, type ZoomDirection } from '../shared/zoom'
-import type { AppState, DeckRef, DeckStatus, KeyIntent, NavAction, OutputId, OutputKind, PreviewRect, RollerPlay, SpeakerTimerView, TimerView, WindowSource } from '../shared/types'
+import type { AppState, DeckRef, DeckStatus, KeyIntent, NavAction, OutputId, OutputKind, PreviewRect, RollerPlay, SpeakerTimerView, TimerView, UiTheme, WindowSource } from '../shared/types'
 import type { GuideFile } from '../shared/guide'
 import { ConsoleWindow } from './consoleWindow'
 import { saveGuideFile } from './guide'
@@ -26,6 +26,7 @@ import { startupLog } from './startupLog'
 import { WindowsHelper, windowHandle } from './windowsHelper'
 import { WindowTools } from './windowTools'
 import { rememberZoom, zoomFor } from './zoomMemory'
+import { loadTheme, saveTheme, themeBackground } from './themeMemory'
 
 export interface StorePaths {
   deckPreload: string
@@ -46,6 +47,8 @@ const TRACK_MS = 250
 const MIRROR_MS = 250
 /** Ignore deck-side "not done" reports this soon after the alarm starts (they are stale echoes). */
 const ALARM_GUARD_MS = 1500
+/** Live decks in the console have the same round corners as their slot (rounded-xl); on a projector they are square. */
+const CONSOLE_VIEW_RADIUS = 12
 /** Ignore deck timer reports this soon after our own timer command. */
 const DECK_TIMER_GUARD_MS = 1000
 
@@ -77,6 +80,7 @@ export class Store {
   private tools!: WindowTools
   private tracking = false
   private speaker: SpeakerTimerView = { mode: 'up', minutes: 45, startedAt: null, heldMs: 0 }
+  private theme: UiTheme | null = null
   /** Projector page the marks belong to; marks clear when it changes. */
   private inkPage = -1
   /** The console shows a live video of the projector; JPEG snapshots are only a fallback. */
@@ -104,10 +108,11 @@ export class Store {
 
   start(): void {
     this.recent = loadRecent()
+    this.theme = loadTheme()
     const projector = this.createOutput('projector', 1, 'projector', 0)
     // The next preview is not a screen: it shows the slide after the selected screen's slide.
     const next = this.createOutput('next', 0, 'preview', 1)
-    this.consoleWin = new ConsoleWindow(this.paths.consolePreload, this.paths.loadConsole, () => this.quit())
+    this.consoleWin = new ConsoleWindow(this.paths.consolePreload, this.paths.loadConsole, () => this.quit(), themeBackground(this.theme))
     this.roller = new RollerController(() => this.strings())
     this.projectorRoller = this.createRollerOverlay()
     this.projectorWin = new ProjectorWindow(this.paths.overlayPreload, this.paths.loadOverlay, () => this.stopProjecting(), this.projectorRoller.view)
@@ -564,6 +569,16 @@ export class Store {
     this.emit()
   }
 
+  // ---------- look ----------
+
+  setTheme(theme: UiTheme): void {
+    if (theme !== 'light' && theme !== 'dark') return
+    this.theme = theme
+    saveTheme(theme)
+    if (!this.consoleWin.win.isDestroyed()) this.consoleWin.win.setBackgroundColor(themeBackground(theme))
+    this.emit()
+  }
+
   isOnAir(o: Output | undefined): boolean {
     return o !== undefined && o.id === this.onAirId
   }
@@ -723,7 +738,8 @@ export class Store {
       speaker: this.speaker,
       toolsFor: this.activeWindowId,
       deckStatus: this.deckStatus,
-      ink: this.inkSettings
+      ink: this.inkSettings,
+      theme: this.theme
     }
   }
 
@@ -1032,6 +1048,7 @@ export class Store {
       return
     }
     next.view.setBounds({ x: Math.round(r.x), y: Math.round(r.y), width: Math.round(r.width), height: Math.round(r.height) })
+    next.view.setBorderRadius(CONSOLE_VIEW_RADIUS)
     next.view.setVisible(true)
     next.setBaseZoom(r.width / Math.max(1, this.layoutSize(this.previewSource()).width))
   }
@@ -1054,6 +1071,7 @@ export class Store {
       return
     }
     onAir.view.setBounds({ x: Math.round(r.x), y: Math.round(r.y), width: Math.round(r.width), height: Math.round(r.height) })
+    onAir.view.setBorderRadius(CONSOLE_VIEW_RADIUS)
     onAir.view.setVisible(true)
     onAir.setBaseZoom(r.width / Math.max(1, this.targetSize().width))
   }

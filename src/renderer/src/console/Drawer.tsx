@@ -23,16 +23,16 @@ function SlideList({ state, current }: { state: AppState; current: number }) {
         const isActive = i === current
         return (
           <Fragment key={i}>
-            {header && <h3 className="mt-2 px-2 text-sm font-semibold text-accent">{header}</h3>}
+            {header && <h3 className="mt-2 px-2 text-sm font-semibold text-tint">{header}</h3>}
             <button
               ref={isActive ? active : undefined}
               type="button"
               onClick={() => goToSlide(i, state.slidesOf)}
-              className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm ${isActive ? 'bg-accent/20 text-ink' : 'text-muted hover:bg-panel-2 hover:text-ink'}`}
+              className={`flex items-center gap-2 rounded-xl px-2 py-1.5 text-left text-sm active:scale-100 ${isActive ? 'bg-accent font-semibold text-white' : 'text-muted hover:bg-panel-2 hover:text-ink'}`}
             >
-              <span className="w-7 shrink-0 font-mono">{i + 1}</span>
+              <span className="w-7 shrink-0 text-right tabular-nums">{i + 1}</span>
               <span className="min-w-0 flex-1 truncate">{s.title || t.slideN(i + 1)}</span>
-              {s.minutes ? <span className="shrink-0 rounded-full border border-line px-1.5">{t.presetMinutes(s.minutes)}</span> : null}
+              {s.minutes ? <span className="shrink-0 rounded-full bg-panel-2 px-2 text-ink">{t.presetMinutes(s.minutes)}</span> : null}
             </button>
           </Fragment>
         )
@@ -54,8 +54,8 @@ export function Drawer({ state, tab, onTab }: { state: AppState; tab: DrawerTab;
   const focus = state.outputs.find((o) => o.id === state.slidesOf)
   const current = focus?.shownIndex ?? 0
   return (
-    <aside className="flex min-h-0 flex-col rounded-2xl border-2 border-line bg-panel">
-      <div className="flex gap-2 border-b border-line p-2">
+    <aside className="flex min-h-0 flex-col overflow-hidden rounded-card bg-panel ring-1 ring-line/60">
+      <div className="flex gap-1.5 border-b border-line/70 p-2">
         <Btn tone={tab === 'list' ? 'primary' : 'default'} onClick={() => onTab('list')}>
           {t.slides}
         </Btn>
@@ -72,7 +72,7 @@ export function Drawer({ state, tab, onTab }: { state: AppState; tab: DrawerTab;
         </span>
       </div>
       {focus && tab !== 'roller' && (
-        <p className="border-b border-line px-3 py-1.5 text-sm text-muted">
+        <p className="border-b border-line/70 px-3 py-1.5 text-sm text-muted">
           {screenLabel(t, focus)}
           {focus.deck ? ` · ${focus.deck.name}` : ''}
         </p>

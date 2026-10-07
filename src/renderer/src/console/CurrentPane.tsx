@@ -10,8 +10,8 @@ const layoutCurrent = (rect: PreviewRect | null): void => window.presenter.layou
 function EmptyState({ state, onGuide, onPickWindow }: { state: AppState; onGuide: () => void; onPickWindow: () => void }) {
   const t = useT()
   return (
-    <section className="flex min-h-0 flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed border-line bg-panel p-6 text-center">
-      <p className="text-2xl font-semibold">{t.dropHere}</p>
+    <section className="flex min-h-0 flex-col items-center justify-center gap-4 rounded-card border-2 border-dashed border-line bg-panel p-6 text-center">
+      <p className="text-[28px] font-semibold tracking-tight">{t.dropHere}</p>
       <p className="text-sm text-muted">{t.supported}</p>
       <div className="flex flex-wrap justify-center gap-2">
         <Btn tone="primary" onClick={() => window.presenter.openDialog()}>
@@ -21,14 +21,14 @@ function EmptyState({ state, onGuide, onPickWindow }: { state: AppState; onGuide
           🪟 {t.firstWindow}
         </Btn>
       </div>
-      <button type="button" onClick={onGuide} className="text-sm text-accent hover:underline">
+      <button type="button" onClick={onGuide} className="text-sm text-tint hover:underline">
         {t.guideLink}
       </button>
       {state.recent.length > 0 && (
         <div className="w-full max-w-xl text-left">
           <h3 className="mb-1 px-3 text-sm text-muted">{t.recentlyOpened}</h3>
           {state.recent.map((d) => (
-            <button key={d.path} type="button" title={d.path} onClick={() => window.presenter.openPath(d.path)} className="block w-full truncate rounded-lg px-3 py-2 text-left text-base hover:bg-panel-2">
+            <button key={d.path} type="button" title={d.path} onClick={() => window.presenter.openPath(d.path)} className="block w-full truncate rounded-xl px-3 py-2 text-left text-base hover:bg-panel-2 active:scale-100">
               {d.name}
             </button>
           ))}
@@ -58,7 +58,7 @@ export function CurrentPane(props: {
   const selected = state.selectedId === projector.id
   const aspect = state.projectorSize.width / Math.max(1, state.projectorSize.height)
   return (
-    <section className={`flex min-h-0 flex-col rounded-2xl border-2 bg-panel p-3 ${selected ? 'border-accent' : 'border-line'}`}>
+    <section className={`flex min-h-0 flex-col rounded-card bg-panel p-3 ${selected ? 'ring-2 ring-accent' : 'ring-1 ring-line/60'}`}>
       <div className="mb-2 flex items-center gap-2">
         <h2 className="truncate text-sm font-semibold text-muted">
           {state.projecting ? t.paneProjecting : t.paneNotProjecting}
@@ -66,7 +66,7 @@ export function CurrentPane(props: {
         </h2>
         <div className="ml-auto flex shrink-0 items-center gap-2">
           <ZoomControl o={projector} />
-          <span className="mx-1 h-6 w-px bg-line" />
+          <span className="mx-1 h-5 w-px bg-line" />
           <Btn tone={drawer === 'list' ? 'primary' : 'default'} onClick={() => onDrawer(drawer === 'list' ? null : 'list')}>
             {t.slides}
           </Btn>
