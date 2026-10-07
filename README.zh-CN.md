@@ -14,14 +14,14 @@ Presenter 是一个解压即用的文件夹。没有安装程序，也不需要�
 
 **Windows**
 
-1. 右键点 `Presenter-0.1.0-win.zip` → **全部解压缩**。文件夹可以放在任何地方，例如“文档”。
+1. 右键点下载的 `Presenter-…-win.zip` → **全部解压缩**。文件夹可以放在任何地方，例如“文档”。
 2. 在文件夹里双击 **Presenter**（带 Presenter 图标的那个文件）。大约 2 秒打开。
 3. 想要桌面图标：右键点 **Presenter** → **显示更多选项 → 发送到 → 桌面快捷方式**。
 4. 程序没有签名。压缩包从网上下载时，Windows 可能显示“Windows 已保护你的电脑”：点 **更多信息 → 仍要运行**，只需要一次。
 
 **Mac**（macOS 13 Ventura 或更新版本，Intel 或 Apple 芯片都可以）
 
-1. 双击 `Presenter-0.1.0-mac.zip`，得到 **Presenter**。双击它打开（放进“应用程序”不是必须的）。
+1. 双击下载的 `Presenter-…-mac.zip`，得到 **Presenter**。双击它打开（放进“应用程序”不是必须的）。
 2. 第一次打开时，macOS 可能提示无法检查这个 App。打开 **系统设置 → 隐私与安全性**，向下滚动，点 **仍要打开**。只需要一次。
 3. PPT 和 PPTX 通过 **Keynote**（每台 Mac 都有，免费）转换。第一次会提示“Presenter 想要控制 Keynote”，点 **好**。转换时 Keynote 会打开一个窗口，转换完自动关闭。没有 Keynote 时，也可以用 LibreOffice。
 4. Mac 快捷键：**⌘ Return** 或 **fn F5** 开始投影；**⌘ +**、**⌘ −**、**⌘ 0** 调字号；**⌘ Z** 撤销标注；**delete** 清空标注。
@@ -36,7 +36,7 @@ Presenter 是一个解压即用的文件夹。没有安装程序，也不需要�
 | 顶部栏 | **Open deck**、**Recent**、**🎲 Name picker**、**📘 Guide**、**☀ / ☾**（浅色或深色界面）、**▶ Start projecting** |
 | 当前页（左） | Projector 1 正在放的内容。投影前直接显示课件；投影时实时显示观众看到的画面。上方是标注工具 |
 | Next slide（右） | 选中卡片的下一页。点它可以继续往后翻看 |
-| Class timer | 课堂计时器，观众在投影上能看到 |
+| Class timer | 课堂计时器，观众在投影上能看到；可以设定提醒时间，到时“滴滴滴”提醒 |
 | My timer | 你自己的计时器，只有你看得到 |
 | Slides / Notes | 选中卡片的目录和讲者备注（按钮在当前页上方） |
 | 底部栏 | 每份内容（课件或程序窗口）一张卡片，卡片上有 **Projector ▾** 按钮。最后是 **＋ Add screen** |
@@ -164,8 +164,8 @@ Presenter 是一个解压即用的文件夹。没有安装程序，也不需要�
 ## 给维护者
 
 - 源码：`src/`。设计文档：`docs/specs/`。实施计划：`docs/superpowers/plans/`。
-- 常用命令：`npm run build`（构建）、`npm test`（单元测试）、`npm run e2e`（端到端测试，17 步；接着第二块屏幕时，它隐藏、静音运行，并跳过投影步骤）。
-- 不开窗口的检查：`npm run check:viewer`（PPT/PDF）、`npm run check:ink`（标注）、`npm run check:frameworks`（Reveal.js、remark、impress.js、Marp、普通 slide 网页、协议示例）、`npm run check:console`（控制台排版、菜单、开始画面、浮动工具条）、`npm run check:start`（隐藏静音启动，逐个启动和 8 个同时启动）。
+- 常用命令：`npm run build`（构建）、`npm test`（单元测试）、`npm run e2e`（端到端测试，17 步）。只有一块屏幕时，它会弹出窗口、发出声音；接着第二块屏幕时，它隐藏、静音运行，并跳过投影步骤。它从不截取屏幕画面。
+- 不开窗口的检查：`npm run check:viewer`（PPT/PDF）、`npm run check:ink`（标注：画笔、框选、橡皮擦、箭头、Shift 形状）、`npm run check:frameworks`（Reveal.js、remark、impress.js、Marp、普通 slide 网页、协议示例）、`npm run check:console`（深色和浅色界面的控制台排版、菜单、开始画面、浮动工具条、计时器输入格打字、按住 A+）、`npm run check:start`（隐藏静音启动，逐个启动和 8 个同时启动）。
 - 真实转换测试：`PRESENTER_CONVERT_IT=libreoffice npm test`（或 `powerpoint`；Mac 上用 `keynote`）。
-- 压缩包：`npm run dist:win`（Windows）、`npm run dist:mac`（只能在 Mac 上运行）。没有 Mac 时，在 GitHub 上运行 **Build app zips** 工作流（`.github/workflows/build.yml`），它同时生成两个压缩包，并替换这个版本的 Releases 页（说明文字：`.github/release-notes.md`）。发新版本时先改 `package.json` 里的 `version`。图标源文件：`build/icon.svg`。
+- 压缩包：`npm run dist:win`（Windows）、`npm run dist:mac`（只能在 Mac 上运行）。没有 Mac 时，在 GitHub 上运行 **Build app zips** 工作流（Actions 页面，或 `gh workflow run build.yml`；只推送不会自动运行），它同时生成两个压缩包，并替换这个版本的 Releases 页（说明文字：`.github/release-notes.md`）。发新版本时先改 `package.json` 里的 `version`。图标源文件：`build/icon.svg`。
 - 在维护者的电脑上，桌面图标启动的是源码版（`Start Presenter.bat`）：修改源码后必须运行 `npm run build`。

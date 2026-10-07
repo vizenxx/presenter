@@ -14,14 +14,14 @@ Presenter is a folder you unzip; there is no installer and no administrator pass
 
 **Windows**
 
-1. Right-click `Presenter-0.1.0-win.zip` → **Extract All**. Put the folder anywhere (for example Documents).
+1. Right-click the downloaded `Presenter-…-win.zip` → **Extract All**. Put the folder anywhere (for example Documents).
 2. In the folder, double-click **Presenter** (the file with the Presenter icon). It opens in about 2 seconds.
 3. For a desktop icon: right-click **Presenter** → **Show more options → Send to → Desktop (create shortcut)**.
 4. The app is not signed. When the zip came from the internet, Windows may show "Windows protected your PC": click **More info → Run anyway** once.
 
 **Mac** (macOS 13 Ventura or later, Intel or Apple silicon)
 
-1. Double-click `Presenter-0.1.0-mac.zip`. It becomes **Presenter**. Double-click it to open (moving it to **Applications** is optional).
+1. Double-click the downloaded `Presenter-…-mac.zip`. It becomes **Presenter**. Double-click it to open (moving it to **Applications** is optional).
 2. The first time, macOS may say it cannot check the app. Open **System Settings → Privacy & Security**, scroll down and click **Open Anyway**. This is needed once.
 3. PPT and PPTX files open through **Keynote** (free on every Mac). The first time, macOS asks "Presenter wants to control Keynote": click **OK**. Keynote opens a window while it converts, then closes. Without Keynote, LibreOffice works too.
 4. Mac shortcuts: **⌘ Return** or **fn F5** starts projecting; **⌘ +**, **⌘ −**, **⌘ 0** set the text size; **⌘ Z** undoes a mark; **delete** clears the marks.
@@ -36,7 +36,7 @@ Presenter is a folder you unzip; there is no installer and no administrator pass
 | Top bar | **Open deck**, **Recent**, **🎲 Name picker**, **📘 Guide**, **☀ / ☾** (light or dark look), **▶ Start projecting** |
 | Current slide (left) | What Projector 1 shows. Before projecting it is the deck itself; while projecting it is a live copy of what the audience sees. The mark tools are above it. |
 | Next slide (right) | The slide after the selected card's slide. Click it to look further ahead. |
-| Class timer | The countdown the audience sees on the projector. |
+| Class timer | The countdown the audience sees on the projector, with warning beeps at a time you choose. |
 | My timer | Your own timer. Only you see it. |
 | Slides / Notes | The slide list and speaker notes of the selected card (buttons above the current slide). |
 | Bottom bar | One card per content (deck or program window), each with its **Projector ▾** button. **＋ Add screen** at the end. |
@@ -164,9 +164,9 @@ Click **🎲 Name picker** (top bar). Choose a list and click **🎲 Roll**: the
 ## For maintainers
 
 - Source: `src/`. Design: `docs/specs/`. Plans: `docs/superpowers/plans/`.
-- `npm run build` (build), `npm test` (unit tests), `npm run e2e` (end-to-end, 17 steps). With a second display connected (a class may be on the projector) the end-to-end test runs hidden and muted, without the projecting steps.
-- Checks that open no window: `npm run check:viewer` (PPT/PDF), `npm run check:ink` (marks), `npm run check:frameworks` (Reveal.js, remark, impress.js, Marp, plain slides, protocol example), `npm run check:console` (console layout, menus, start screen, floating toolbar), `npm run check:start` (starts hidden and muted, one by one and 8 at once).
+- `npm run build` (build), `npm test` (unit tests), `npm run e2e` (end-to-end, 17 steps). With one display it opens windows and plays sounds; with a second display connected (a class may be on the projector) it runs hidden and muted, without the projecting steps. It never takes pictures of the screen.
+- Checks that open no window: `npm run check:viewer` (PPT/PDF), `npm run check:ink` (marks: pen, box, eraser, arrow, Shift shapes), `npm run check:frameworks` (Reveal.js, remark, impress.js, Marp, plain slides, protocol example), `npm run check:console` (console layout in the dark and the light look, menus, start screen, floating toolbar, typing in the timer boxes, holding A+), `npm run check:start` (starts hidden and muted, one by one and 8 at once).
 - Real conversions: `PRESENTER_CONVERT_IT=libreoffice npm test` (or `powerpoint`, or `keynote` on a Mac).
-- Zips: `npm run dist:win` (Windows) and `npm run dist:mac` (only on a Mac). Without a Mac, run the **Build app zips** workflow on GitHub (`.github/workflows/build.yml`): it builds both and replaces the Releases page of this version (text: `.github/release-notes.md`). Raise `version` in `package.json` for a new version. Icon source: `build/icon.svg` (`npx electron tools/make-icon.cjs build`).
+- Zips: `npm run dist:win` (Windows) and `npm run dist:mac` (only on a Mac). Without a Mac, run the **Build app zips** workflow on GitHub (Actions tab, or `gh workflow run build.yml`; a push alone does not start it): it builds both and replaces the Releases page of this version (text: `.github/release-notes.md`). Raise `version` in `package.json` for a new version. Icon source: `build/icon.svg` (`npx electron tools/make-icon.cjs build`).
 - `PRESENTER_EXE=<unzipped folder>/Presenter.exe node e2e/smoke.mjs` runs the end-to-end test on a packaged app.
 - On the maintainer's computer the desktop icon starts the source copy (`Start Presenter.bat`): after any source change run `npm run build`.

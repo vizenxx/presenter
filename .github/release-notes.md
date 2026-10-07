@@ -1,3 +1,10 @@
+## What's new in 0.2.0
+
+- **Light or dark look**: ☀ / ☾ in the top bar. The console has a new, rounder design.
+- **Class timer**: set minutes **:** seconds. It beeps three times at a warning time you choose (1:00 at first; 0:00 = no warning), and once a second in the last 5 seconds.
+- **Marks**: a new **Arrow** tool (A). Hold **Shift** for a straight line, a square box, or an arrow in 45° steps. **Ctrl+Z** (⌘Z) and **Esc** work wherever you draw, also on a program window.
+- **Text size** moves 5 % a step; hold **A−** or **A+** to go fast.
+
 ## Download
 
 Click one file name under **Assets** at the bottom of this page.
