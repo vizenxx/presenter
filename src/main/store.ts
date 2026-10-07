@@ -495,9 +495,27 @@ export class Store {
   setInkTool(tool: InkTool): void {
     if (!INK_TOOLS.includes(tool)) return
     if (this.inkSettings.tool === 'laser' && tool !== 'laser') this.inkOp({ t: 'laser-off' }, 'main')
+    const leaving = tool === 'pointer' && this.inkSettings.tool !== 'pointer'
     this.inkSettings = { ...this.inkSettings, tool }
     this.sendInkSettings()
+    if (leaving) this.returnKeysToWindow()
     this.emit()
+  }
+
+  /**
+   * Drawing on a program window: the floating toolbar takes the keyboard, so Esc and Ctrl+Z
+   * reach the marks and not the program under the pad.
+   */
+  padPointer(): void {
+    const bar = this.tools.toolbar
+    if (this.inkSettings.tool !== 'pointer' && this.activeWindowId && !bar.isDestroyed() && !bar.isFocused()) bar.focus()
+  }
+
+  /** Back to the pointer on a program window: the keyboard goes back to that window. */
+  private returnKeysToWindow(): void {
+    const o = this.activeWindowId ? this.outputs.get(this.activeWindowId) : undefined
+    const bar = this.tools.toolbar
+    if (o?.capture && !bar.isDestroyed() && bar.isFocused()) this.windows.raise(o.capture.sourceId)
   }
 
   /** Picking a colour also picks the pen when no drawing tool is active. */
@@ -778,6 +796,9 @@ export class Store {
       case 'command':
         this.onCommand(e.command)
         break
+      case 'ink-undo':
+        this.inkOp({ t: 'undo' }, 'main')
+        break
       case 'zoom':
         this.zoom(o.id, e.direction)
         break
@@ -862,6 +883,7 @@ export class Store {
   }
 
   private sendInkSettings(): void {
+    Output.inkTool = this.inkSettings.tool
     const onAir = this.onAir()
     for (const o of this.outputs.values()) {
       if (o.kind === 'preview') continue

@@ -1,4 +1,5 @@
 import { WebContentsView, session, shell } from 'electron'
+import { inkKeyAction, type InkTool } from '../shared/ink'
 import { commandKey, keyIntent, type CommandKey } from '../shared/keys'
 import { clampIndex } from '../shared/nav'
 import { zoomKey, type ZoomDirection } from '../shared/zoom'
@@ -8,6 +9,7 @@ import { FRAMEWORK_BRIDGE } from './bridges'
 import type { PreparedDeck } from './convert'
 import { deckUrl } from './deckPaths'
 import { installDeckProtocol, registerDeckFolder } from './deckProtocol'
+import { IS_MAC } from './platform'
 
 /** SLIDE_STATE as sent by the UXD202 FloatingNavbar. */
 export interface DeckStateMsg {
@@ -30,6 +32,7 @@ export interface TimerSync {
 export type OutputEvent =
   | { type: 'key'; intent: KeyIntent }
   | { type: 'command'; command: CommandKey }
+  | { type: 'ink-undo' }
   | { type: 'zoom'; direction: ZoomDirection }
   | { type: 'anykey' }
   | { type: 'state'; msg: DeckStateMsg; userMoved: boolean }
@@ -61,6 +64,8 @@ let sessionSeq = 0
 
 export class Output {
   static readonly byContents = new Map<number, Output>()
+  /** The marking tool in use (set by the store); Esc leaves it on any screen. */
+  static inkTool: InkTool = 'pointer'
 
   readonly id: string
   readonly kind: OutputKind
@@ -129,6 +134,13 @@ export class Output {
         return
       }
       if (this.editing) return
+      // Marks: Ctrl+Z (⌘Z) undoes; Esc leaves a drawing tool, also on a slide in the console before projecting.
+      const ink = inkKeyAction(input.key, input, IS_MAC, Output.inkTool)
+      if (ink?.type === 'undo' || (ink?.type === 'pointer' && input.key === 'Escape')) {
+        event.preventDefault()
+        if (input.type === 'keyDown') this.emit(ink.type === 'undo' ? { type: 'ink-undo' } : { type: 'command', command: 'stop-project' })
+        return
+      }
       const command = commandKey(input.key, input)
       if (command === 'project' || (command === 'stop-project' && this.escapeStops)) {
         event.preventDefault()

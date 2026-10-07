@@ -4,19 +4,25 @@ import { inkSvg, type InkIconName } from '../../../shared/inkIcons'
 import { useT, type Strings } from './i18n'
 import { AspectBox } from './ViewSlot'
 
-const TOOLS: Array<{ tool: InkTool; key: string; label: (t: Strings) => string }> = [
+/** The marking tools in bar order, with their key and what Shift does. Shared with the floating toolbar. */
+export const INK_TOOL_LIST: Array<{ tool: InkTool; key: string; label: (t: Strings) => string; shift?: (t: Strings) => string }> = [
   { tool: 'pointer', key: 'Esc', label: (t) => t.inkPointer },
-  { tool: 'pen', key: 'P', label: (t) => t.inkPen },
-  { tool: 'highlighter', key: 'H', label: (t) => t.inkHighlighter },
-  { tool: 'rect', key: 'R', label: (t) => t.inkRect },
+  { tool: 'pen', key: 'P', label: (t) => t.inkPen, shift: (t) => t.inkShiftLine },
+  { tool: 'highlighter', key: 'H', label: (t) => t.inkHighlighter, shift: (t) => t.inkShiftLine },
+  { tool: 'rect', key: 'R', label: (t) => t.inkRect, shift: (t) => t.inkShiftSquare },
+  { tool: 'arrow', key: 'A', label: (t) => t.inkArrow, shift: (t) => t.inkShiftArrow },
   { tool: 'laser', key: 'L', label: (t) => t.inkLaser },
   { tool: 'eraser', key: 'E', label: (t) => t.inkEraser }
 ]
 
-/** Console shortcuts for the marking tools (no modifier keys). */
-export const INK_KEYS: Record<string, InkTool> = { p: 'pen', h: 'highlighter', r: 'rect', l: 'laser', e: 'eraser' }
+/** The tooltip of a tool button: name, key, and what Shift does. */
+export function inkToolTitle(t: Strings, tool: InkTool): string {
+  if (tool === 'pointer') return t.inkPointerTitle
+  const entry = INK_TOOL_LIST.find((x) => x.tool === tool)
+  return entry ? t.inkToolTitle(entry.label(t), entry.key, entry.shift?.(t)) : tool
+}
 
-const CURSORS: Record<InkTool, string> = { pointer: 'pointer', pen: 'crosshair', highlighter: 'crosshair', rect: 'crosshair', laser: 'none', eraser: 'cell' }
+const CURSORS: Record<InkTool, string> = { pointer: 'pointer', pen: 'crosshair', highlighter: 'crosshair', rect: 'crosshair', arrow: 'crosshair', laser: 'none', eraser: 'cell' }
 
 function Icon({ name }: { name: InkIconName }) {
   return <span className="grid shrink-0 place-items-center" dangerouslySetInnerHTML={{ __html: inkSvg(name, 18) }} />
@@ -26,15 +32,15 @@ function Icon({ name }: { name: InkIconName }) {
 export function InkToolbar({ ink, enabled }: { ink: InkSettings; enabled: boolean }) {
   const t = useT()
   return (
-    <div className="mb-2 flex flex-wrap items-center gap-1 rounded-[20px] bg-panel-2 px-1.5 py-1" title={t.inkHint}>
-      {TOOLS.map(({ tool, key, label }) => (
+    <div className="mb-2 flex flex-wrap items-center gap-0.5 rounded-[20px] bg-panel-2 px-1.5 py-1" title={t.inkHint}>
+      {INK_TOOL_LIST.map(({ tool, label }) => (
         <button
           key={tool}
           type="button"
           disabled={!enabled}
-          title={tool === 'pointer' ? t.inkPointerTitle : t.inkToolTitle(label(t), key)}
+          title={inkToolTitle(t, tool)}
           onClick={() => window.presenter.setInkTool(tool)}
-          className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-sm disabled:opacity-40 ${ink.tool === tool ? 'bg-accent font-semibold text-white' : 'text-ink hover:bg-line'}`}
+          className={`flex items-center gap-1.5 rounded-full px-2 py-1 text-sm disabled:opacity-40 ${ink.tool === tool ? 'bg-accent font-semibold text-white' : 'text-ink hover:bg-line'}`}
         >
           <Icon name={tool} />
           {label(t)}

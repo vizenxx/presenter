@@ -1,16 +1,17 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import '../styles.css'
 import { clock, mmss } from '../../../shared/format'
-import { INK_COLORS, type InkTool } from '../../../shared/ink'
+import { INK_COLORS, INK_TOOLS, inkKeyAction } from '../../../shared/ink'
 import { inkSvg, type InkIconName } from '../../../shared/inkIcons'
 import type { AppState } from '../../../shared/types'
 import { useAppState } from '../console/hooks'
+import { inkToolTitle } from '../console/Ink'
+import { IS_MAC } from '../console/platform'
 import { screenLabel, useT } from '../console/i18n'
 import { useRollFace } from '../console/RollerPanel'
 import { speakerSeconds, useNow } from '../console/SpeakerTimer'
 
-const TOOLS: InkTool[] = ['pointer', 'pen', 'highlighter', 'rect', 'laser', 'eraser']
 const PRESETS = [1, 3, 5, 10, 15, 20]
 const ICON_BTN = 'grid h-8 w-8 place-items-center rounded-full hover:bg-line'
 const SMALL_BTN = 'rounded-full px-2.5 py-1 text-sm hover:bg-line'
@@ -86,6 +87,29 @@ function Toolbar() {
   const now = useNow(running)
   const face = useRollFace(state?.roller ?? { lists: [], activeListId: null, activeText: '', people: [], superLucky: false, roll: null, showing: false })
 
+  // Keys while the toolbar has the keyboard (it takes it while you draw on a window): Esc returns
+  // to the pointer, Ctrl+Z (⌘Z) undoes, Delete clears, P H R A L E pick a tool. Any key stops a ringing alarm.
+  const tool = state?.ink.tool ?? 'pointer'
+  const alarming = state?.timer.alarming ?? false
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.target instanceof HTMLInputElement) return
+      if (alarming) {
+        e.preventDefault()
+        window.presenter.timerDismiss()
+        return
+      }
+      const action = inkKeyAction(e.key, { control: e.ctrlKey, alt: e.altKey, meta: e.metaKey }, IS_MAC, tool)
+      if (!action) return
+      e.preventDefault()
+      if (action.type === 'undo') window.presenter.inkOp({ t: 'undo' }, false)
+      else if (action.type === 'clear') window.presenter.inkOp({ t: 'clear' }, false)
+      else window.presenter.setInkTool(action.type === 'pointer' ? 'pointer' : action.tool)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [tool, alarming])
+
   // The window is exactly as big as the bar; it tells the main process whenever that changes.
   useLayoutEffect(() => {
     const el = root.current
@@ -106,7 +130,6 @@ function Toolbar() {
   const mine = speaker ? speakerSeconds(speaker, now) : 0
   // My timer shows only once the teacher has started it (running or paused).
   const mineSet = !!speaker && (speaker.startedAt !== null || speaker.heldMs > 0)
-  const tool = state?.ink.tool ?? 'pointer'
   const timer = state?.timer
   const timerOn = !!timer && (timer.status !== 'idle' || timer.alarming)
   // The roll shows on the audience screens; with none, only this bar and the console show it.
@@ -125,8 +148,8 @@ function Toolbar() {
         ) : (
           <>
             <span className="flex items-center gap-0.5" title={target ? t.toolbarFor(screenLabel(t, target)) : undefined}>
-              {TOOLS.map((name) => (
-                <button key={name} type="button" onClick={() => window.presenter.setInkTool(name)} className={`${ICON_BTN} ${tool === name ? 'bg-accent text-white' : ''}`}>
+              {INK_TOOLS.map((name) => (
+                <button key={name} type="button" title={inkToolTitle(t, name)} onClick={() => window.presenter.setInkTool(name)} className={`${ICON_BTN} ${tool === name ? 'bg-accent text-white' : ''}`}>
                   <Icon name={name} />
                 </button>
               ))}

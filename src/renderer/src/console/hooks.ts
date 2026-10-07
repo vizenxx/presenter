@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
 import { commandKey, keyIntent } from '../../../shared/keys'
 import { zoomKey } from '../../../shared/zoom'
-import type { InkTool } from '../../../shared/ink'
+import { INK_KEYS, type InkTool } from '../../../shared/ink'
 import type { AppState } from '../../../shared/types'
-import { INK_KEYS } from './Ink'
 import { IS_MAC } from './platform'
 
 export function useAppState(): AppState | null {
@@ -51,7 +50,7 @@ const isTextField = (el: EventTarget | null): boolean =>
   (el instanceof HTMLElement && el.isContentEditable)
 
 /**
- * Console keys: page turns, F5/Esc, text size, marking tools (P H R L E, Ctrl+Z, Delete).
+ * Console keys: page turns, F5/Esc, text size, marking tools (P H R A L E, Ctrl+Z, Delete).
  * Esc first leaves a marking tool, then stops projecting. Any key stops a ringing alarm.
  */
 export function useConsoleKeys(alarming: boolean, inkTool: InkTool): void {

@@ -101,6 +101,7 @@ The **📘 Guide** in the app has the same help in two parts: **1 · Use Present
 While a program window shown on a projector is in front, a small toolbar floats at the top of the screen:
 
 - The mark tools. With a drawing tool you draw right on the window; the marks show on the projector over the window's picture. With the pointer, you use the window as usual.
+- While you draw on a window, the toolbar takes the keyboard: **Ctrl+Z** (⌘Z) undoes a mark, **Esc** returns to the pointer and gives the keyboard back to the window.
 - **⏱**: the class timer. It shows the time left while it runs; click it for the timer's settings.
 - **🎲 Roll**: picks a name; the name shows next to the button.
 - **Mine**: My timer's time, once you started it in the console.
@@ -110,13 +111,16 @@ The audience never sees the toolbar. It hides when you switch to the console or 
 
 ## Marks
 
-The bar above the current slide: **Pointer, Pen, Highlighter, Box, Laser, Eraser**, six colours, **Undo** and **Clear**.
+The bar above the current slide: **Pointer, Pen, Highlighter, Box, Arrow, Laser, Eraser**, six colours, **Undo** and **Clear**.
 
 - Draw on the console's slide picture or directly on the projector; both show the same marks at once.
 - While projecting, moving the mouse on the projector shows a small tool palette at its bottom left (it hides after a few seconds).
 - Marks on a deck clear when the page changes. Marks on a program window stay until you clear them or the window leaves its projector.
-- Keys in the console: **P** pen, **H** highlighter, **R** box, **L** laser, **E** eraser, **Ctrl+Z** (⌘Z) undo, **Delete** clear.
-- **Esc** first returns to the pointer; a second **Esc** stops projecting.
+- **Arrow**: drag from where the arrow starts to where it points. The tip has an open V head.
+- Hold **Shift** while you draw: the pen and the highlighter draw one straight line (any angle), the box becomes a square, the arrow turns in 45° steps.
+- Keys in the console and on the floating toolbar: **P** pen, **H** highlighter, **R** box, **A** arrow, **L** laser, **E** eraser, **Ctrl+Z** (⌘Z) undo, **Delete** clear.
+- **Ctrl+Z** and **Esc** also work after you click on a slide (in the console or on the projector).
+- **Esc** leaves any drawing tool (back to the pointer); in the console a second **Esc** stops projecting.
 
 ## Timers
 

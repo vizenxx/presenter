@@ -1,13 +1,32 @@
 /**
- * Marks on the projected slide (pen, highlighter, box, laser, eraser).
+ * Marks on the projected slide (pen, highlighter, box, arrow, laser, eraser).
  * Coordinates are fractions of the slide area (0..1), so the projector and the
  * console draw the same picture at any size. Every surface keeps an InkScene and
  * applies the same small operations; nothing is sent as pixels.
  */
 
-export type InkTool = 'pointer' | 'pen' | 'highlighter' | 'rect' | 'laser' | 'eraser'
-export const INK_TOOLS: InkTool[] = ['pointer', 'pen', 'highlighter', 'rect', 'laser', 'eraser']
-export type StrokeTool = 'pen' | 'highlighter' | 'rect'
+export type InkTool = 'pointer' | 'pen' | 'highlighter' | 'rect' | 'arrow' | 'laser' | 'eraser'
+export const INK_TOOLS: InkTool[] = ['pointer', 'pen', 'highlighter', 'rect', 'arrow', 'laser', 'eraser']
+export type StrokeTool = 'pen' | 'highlighter' | 'rect' | 'arrow'
+
+/** Tool keys (no modifier), the same in the console and on the floating toolbar. */
+export const INK_KEYS: Record<string, InkTool> = { p: 'pen', h: 'highlighter', r: 'rect', a: 'arrow', l: 'laser', e: 'eraser' }
+
+export type InkKeyAction = { type: 'tool'; tool: InkTool } | { type: 'undo' } | { type: 'clear' } | { type: 'pointer' }
+
+/**
+ * What a key does to the marks: Ctrl+Z (⌘Z) undoes, Esc leaves a drawing tool, Delete clears
+ * (the Mac "delete" key sends Backspace), a letter picks a tool or, pressed again, the pointer.
+ */
+export function inkKeyAction(key: string, mods: { control?: boolean; alt?: boolean; meta?: boolean }, mac: boolean, tool: InkTool): InkKeyAction | null {
+  if ((mods.control || mods.meta) && !mods.alt && key.toLowerCase() === 'z') return { type: 'undo' }
+  if (mods.control || mods.alt || mods.meta) return null
+  if (key === 'Escape') return tool === 'pointer' ? null : { type: 'pointer' }
+  if (key === 'Delete' || (mac && key === 'Backspace')) return { type: 'clear' }
+  const picked = INK_KEYS[key.toLowerCase()]
+  if (!picked) return null
+  return picked === tool ? { type: 'pointer' } : { type: 'tool', tool: picked }
+}
 
 /** red, yellow, green, blue, white, black */
 export const INK_COLORS = ['#ef4444', '#facc15', '#22c55e', '#3b82f6', '#ffffff', '#111111']
@@ -16,7 +35,7 @@ export interface InkStroke {
   id: string
   tool: StrokeTool
   color: string
-  /** Flat x,y pairs; a box has exactly two corners. */
+  /** Flat x,y pairs; a box has exactly two corners, an arrow its start and its tip. */
   points: number[]
 }
 
@@ -28,6 +47,7 @@ export interface InkLaser {
 export type InkOp =
   | { t: 'begin'; stroke: InkStroke }
   | { t: 'extend'; id: string; points: number[] }
+  /** Replaces all points: the free corner of a box, the tip of an arrow, the end of a straight line. */
   | { t: 'rect'; id: string; points: number[] }
   | { t: 'erase'; ids: string[] }
   | { t: 'undo' }
@@ -41,8 +61,45 @@ export interface InkSettings {
 }
 
 /** Line width as a fraction of the slide height. */
-export const STROKE_WIDTH: Record<StrokeTool, number> = { pen: 0.005, highlighter: 0.026, rect: 0.0045 }
+export const STROKE_WIDTH: Record<StrokeTool, number> = { pen: 0.005, highlighter: 0.026, rect: 0.0045, arrow: 0.006 }
 const LASER_RADIUS = 0.009
+/** Arrow head: the two lines of the V, as a fraction of the slide height, and their angle to the shaft. */
+const ARROW_HEAD = 0.035
+const ARROW_SPREAD = Math.PI / 6
+
+// ---------- Shift: straight lines, squares, 45° steps ----------
+
+/**
+ * The free corner of a square box that starts at (x0, y0) and follows the pointer (x, y).
+ * aspect = slide width / height, so the box is square on the real slide. It stays on the slide.
+ */
+export function squareCorner(x0: number, y0: number, x: number, y: number, aspect: number): [number, number] {
+  const dx = (x - x0) * aspect
+  const dy = y - y0
+  const sx = dx < 0 ? -1 : 1
+  const sy = dy < 0 ? -1 : 1
+  const roomX = (sx > 0 ? 1 - x0 : x0) * aspect
+  const roomY = sy > 0 ? 1 - y0 : y0
+  const side = Math.min(Math.max(Math.abs(dx), Math.abs(dy)), roomX, roomY)
+  return [x0 + (sx * side) / aspect, y0 + sy * side]
+}
+
+/** The end of a line from (x0, y0) toward (x, y), turned to the nearest 45° step. It stays on the slide. */
+export function snapLine(x0: number, y0: number, x: number, y: number, aspect: number): [number, number] {
+  const dx = (x - x0) * aspect
+  const dy = y - y0
+  let length = Math.hypot(dx, dy)
+  if (length === 0) return [x, y]
+  const step = Math.PI / 4
+  const angle = Math.round(Math.atan2(dy, dx) / step) * step
+  const ux = Math.abs(Math.cos(angle)) < 1e-9 ? 0 : Math.cos(angle)
+  const uy = Math.abs(Math.sin(angle)) < 1e-9 ? 0 : Math.sin(angle)
+  if (ux > 0) length = Math.min(length, ((1 - x0) * aspect) / ux)
+  if (ux < 0) length = Math.min(length, (x0 * aspect) / -ux)
+  if (uy > 0) length = Math.min(length, (1 - y0) / uy)
+  if (uy < 0) length = Math.min(length, y0 / -uy)
+  return [x0 + (ux * length) / aspect, y0 + uy * length]
+}
 
 export class InkScene {
   strokes: InkStroke[] = []
@@ -151,6 +208,19 @@ function drawStroke(ctx: CanvasRenderingContext2D, w: number, h: number, s: InkS
       const r = Math.min(0.012 * h, Math.abs(p[2] - p[0]) * w / 2, Math.abs(p[3] - p[1]) * h / 2)
       ctx.roundRect(x, y, Math.abs(p[2] - p[0]) * w, Math.abs(p[3] - p[1]) * h, r)
     }
+  } else if (s.tool === 'arrow') {
+    // A straight shaft with an open V head at the tip.
+    if (p.length >= 4) {
+      const [x0, y0, x1, y1] = [p[0] * w, p[1] * h, p[2] * w, p[3] * h]
+      const length = Math.hypot(x1 - x0, y1 - y0)
+      const head = Math.min(length * 0.5, ARROW_HEAD * h)
+      const angle = Math.atan2(y1 - y0, x1 - x0)
+      ctx.moveTo(x0, y0)
+      ctx.lineTo(x1, y1)
+      ctx.moveTo(x1 - head * Math.cos(angle - ARROW_SPREAD), y1 - head * Math.sin(angle - ARROW_SPREAD))
+      ctx.lineTo(x1, y1)
+      ctx.lineTo(x1 - head * Math.cos(angle + ARROW_SPREAD), y1 - head * Math.sin(angle + ARROW_SPREAD))
+    }
   } else if (p.length === 2) {
     // A tap: a dot.
     ctx.moveTo(p[0] * w, p[1] * h)
@@ -204,11 +274,14 @@ export interface InkInputOptions {
 }
 
 const ERASER_RADIUS = 0.015
+/** A box, an arrow or a straight line shorter than this (fraction of the slide height) is dropped: it was a click. */
+const MIN_SHAPE = 0.006
 let idSeq = 0
 
 export function attachInkInput(opts: InkInputOptions): () => void {
   const { element, settings, scene, onOp } = opts
-  let current: { id: string; tool: StrokeTool; start: [number, number] } | null = null
+  // straight = a pen or highlighter stroke held with Shift: one line from where it started.
+  let current: { id: string; tool: StrokeTool; start: [number, number]; end: [number, number]; straight: boolean } | null = null
   let erasing = false
 
   const at = (e: PointerEvent): [number, number] => {
@@ -231,10 +304,11 @@ export function attachInkInput(opts: InkInputOptions): () => void {
     e.preventDefault()
     element.setPointerCapture(e.pointerId)
     const [x, y] = at(e)
-    if (tool === 'pen' || tool === 'highlighter' || tool === 'rect') {
+    if (tool === 'pen' || tool === 'highlighter' || tool === 'rect' || tool === 'arrow') {
       const id = `${Date.now().toString(36)}-${(idSeq++).toString(36)}-${Math.random().toString(36).slice(2, 6)}`
-      current = { id, tool, start: [x, y] }
-      onOp({ t: 'begin', stroke: { id, tool, color, points: tool === 'rect' ? [x, y, x, y] : [x, y] } })
+      const twoPoints = tool === 'rect' || tool === 'arrow'
+      current = { id, tool, start: [x, y], end: [x, y], straight: e.shiftKey && !twoPoints }
+      onOp({ t: 'begin', stroke: { id, tool, color, points: twoPoints || current.straight ? [x, y, x, y] : [x, y] } })
     } else if (tool === 'eraser') {
       erasing = true
       erase(x, y)
@@ -256,9 +330,19 @@ export function attachInkInput(opts: InkInputOptions): () => void {
       return
     }
     if (!current) return
-    if (current.tool === 'rect') {
+    const [sx, sy] = current.start
+    // Shift: a square box, an arrow in 45° steps, a straight pen or highlighter line (any angle).
+    if (current.tool === 'rect' || current.tool === 'arrow') {
       const [x, y] = at(e)
-      onOp({ t: 'rect', id: current.id, points: [current.start[0], current.start[1], x, y] })
+      const fit = current.tool === 'rect' ? squareCorner : snapLine
+      current.end = e.shiftKey ? fit(sx, sy, x, y, aspect()) : [x, y]
+      onOp({ t: 'rect', id: current.id, points: [sx, sy, ...current.end] })
+      return
+    }
+    if (e.shiftKey && !current.straight) current.straight = true
+    if (current.straight) {
+      current.end = at(e)
+      onOp({ t: 'rect', id: current.id, points: [sx, sy, ...current.end] })
       return
     }
     // Coalesced events keep fast strokes smooth.
@@ -268,6 +352,12 @@ export function attachInkInput(opts: InkInputOptions): () => void {
   }
 
   const up = (): void => {
+    // A click with the box, arrow or straight-line tool leaves nothing behind (an empty mark would make Undo look broken).
+    const c = current
+    if (c && (c.tool === 'rect' || c.tool === 'arrow' || c.straight)) {
+      const a = aspect()
+      if (Math.hypot((c.end[0] - c.start[0]) * a, c.end[1] - c.start[1]) < MIN_SHAPE) onOp({ t: 'erase', ids: [c.id] })
+    }
     current = null
     erasing = false
   }

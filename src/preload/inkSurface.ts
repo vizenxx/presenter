@@ -4,7 +4,7 @@
  * main process as small operations; strokes made on the console arrive the same way.
  */
 import { ipcRenderer } from 'electron'
-import { attachInkInput, drawInk, INK_COLORS, InkScene, type InkOp, type InkSettings, type InkStroke, type InkTool } from '../shared/ink'
+import { attachInkInput, drawInk, INK_COLORS, INK_TOOLS, InkScene, type InkOp, type InkSettings, type InkStroke, type InkTool } from '../shared/ink'
 import { inkSvg, type InkIconName } from '../shared/inkIcons'
 
 interface SurfaceSettings extends InkSettings {
@@ -15,21 +15,20 @@ interface SurfaceSettings extends InkSettings {
 }
 
 const PALETTE_IDLE_MS = 2500
-const CURSORS: Record<InkTool, string> = { pointer: 'default', pen: 'crosshair', highlighter: 'crosshair', rect: 'crosshair', laser: 'none', eraser: 'cell' }
-const TOOLS: InkTool[] = ['pointer', 'pen', 'highlighter', 'rect', 'laser', 'eraser']
+const CURSORS: Record<InkTool, string> = { pointer: 'default', pen: 'crosshair', highlighter: 'crosshair', rect: 'crosshair', arrow: 'crosshair', laser: 'none', eraser: 'cell' }
 
 const CSS = `
   :host { all: initial; }
   canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; touch-action: none; }
-  .palette { position: fixed; left: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 16px;
-    background: rgba(17, 24, 39, 0.86); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  .palette { position: fixed; left: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 22px;
+    background: rgba(28, 28, 30, 0.88); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); opacity: 0; pointer-events: none; transition: opacity 0.2s; }
   .palette.show { opacity: 1; pointer-events: auto; }
   .row { display: flex; gap: 4px; }
-  button { all: unset; box-sizing: border-box; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 10px; color: #e5e7eb; cursor: pointer; }
+  button { all: unset; box-sizing: border-box; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 999px; color: #f5f5f7; cursor: pointer; }
   button:hover { background: rgba(255, 255, 255, 0.12); }
-  button.on { background: #f59e0b; color: #111; }
-  .swatch { width: 28px; height: 28px; margin: 6px; border-radius: 999px; border: 2px solid rgba(255, 255, 255, 0.35); }
-  .swatch.on { outline: 3px solid #f59e0b; outline-offset: 2px; }
+  button.on { background: #0071e3; color: #fff; }
+  .swatch { width: 28px; height: 28px; margin: 6px; border-radius: 999px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2); }
+  .swatch.on { outline: 3px solid #0071e3; outline-offset: 2px; }
 `
 
 export function mountInkSurface(): void {
@@ -42,8 +41,8 @@ export function mountInkSurface(): void {
   const tool = (name: InkTool): string => `<button data-tool="${name}" title="${name}">${inkSvg(name as InkIconName)}</button>`
   root.innerHTML = `<style>${CSS}</style><canvas></canvas>
     <div class="palette">
-      <div class="row">${TOOLS.slice(0, 3).map(tool).join('')}</div>
-      <div class="row">${TOOLS.slice(3).map(tool).join('')}</div>
+      <div class="row">${INK_TOOLS.slice(0, 4).map(tool).join('')}</div>
+      <div class="row">${INK_TOOLS.slice(4).map(tool).join('')}</div>
       <div class="row">${INK_COLORS.slice(0, 3).map((c) => `<button class="swatch" data-color="${c}" style="background:${c}"></button>`).join('')}</div>
       <div class="row">${INK_COLORS.slice(3).map((c) => `<button class="swatch" data-color="${c}" style="background:${c}"></button>`).join('')}</div>
       <div class="row"><button data-action="undo">${inkSvg('undo')}</button><button data-action="clear">${inkSvg('clear')}</button></div>

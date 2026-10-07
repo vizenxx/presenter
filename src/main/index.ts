@@ -54,6 +54,7 @@ function wireIpc(store: Store): void {
   ipcMain.on('deck:pointer', (e) => {
     const o = outputOf(e.sender)
     if (o) store.onPointer(o.id)
+    else if (store.isPad(e.sender)) store.padPointer()
   })
   ipcMain.on('overlay:pointer', () => store.onProjectorPointer())
   // Marks: only the projector deck page may send them.

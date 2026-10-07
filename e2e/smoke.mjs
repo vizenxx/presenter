@@ -179,6 +179,39 @@ try {
   await waitFor('dark look again', (s) => s.theme === 'dark')
   console.log('ok 7c light and dark look')
 
+  // 7d. Marking keys on a slide and on the floating toolbar: Ctrl+Z undoes, Esc leaves the drawing tool.
+  const keyTo = (target, keyCode, modifiers = []) =>
+    call((_electron, a) => {
+      const wc = a.target === 'toolbar' ? globalThis.__presenter.tools.toolbar.webContents : globalThis.__presenter.outputs.get(a.target).view.webContents
+      wc.sendInputEvent({ type: 'keyDown', keyCode: a.keyCode, modifiers: a.modifiers })
+      wc.sendInputEvent({ type: 'keyUp', keyCode: a.keyCode, modifiers: a.modifiers })
+    }, { target, keyCode, modifiers })
+  const marks = () => call(() => globalThis.__presenter.scene('projector').strokes.length)
+  const markOnce = (id) => call((_electron, id) => globalThis.__presenter.inkOp({ t: 'begin', stroke: { id, tool: 'pen', color: '#ef4444', points: [0.2, 0.2, 0.4, 0.4] } }, 'main'), id)
+  async function waitUntil(label, check, ms = 3000) {
+    const t0 = Date.now()
+    while (Date.now() - t0 < ms) {
+      if (await check()) return
+      await sleep(100)
+    }
+    throw new Error(`timeout: ${label}`)
+  }
+  await call(() => globalThis.__presenter.setInkTool('pen'))
+  await markOnce('key-1')
+  assert.equal(await marks(), 1, 'one mark on the slide')
+  await keyTo('projector', 'Z', ['control'])
+  await waitUntil('Ctrl+Z on the slide undoes', async () => (await marks()) === 0)
+  await keyTo('projector', 'Escape')
+  s = await waitFor('Esc on the slide leaves the pen', (s) => s.ink.tool === 'pointer')
+  assert.equal(s.projecting, false, 'Esc while drawing does not stop or start anything else')
+  await call(() => globalThis.__presenter.setInkTool('arrow'))
+  await markOnce('key-2')
+  await keyTo('toolbar', 'Z', ['control'])
+  await waitUntil('Ctrl+Z on the floating toolbar undoes', async () => (await marks()) === 0)
+  await keyTo('toolbar', 'Escape')
+  await waitFor('Esc on the floating toolbar leaves the arrow', (s) => s.ink.tool === 'pointer')
+  console.log('ok 7d Ctrl+Z and Esc on a slide and on the floating toolbar')
+
   // 8. Extra screen with the same deck joins the linked group.
   await call(() => globalThis.__presenter.addScreen(true))
   s = await waitFor('extra detected', (s) => out(s, 'screen-3')?.adapter === 'uxd202')

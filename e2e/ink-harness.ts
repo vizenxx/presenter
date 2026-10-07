@@ -68,6 +68,22 @@ app.whenReady().then(async () => {
     wc.sendInputEvent({ type: 'mouseUp', x: to[0], y: to[1], button: 'left', clickCount: 1 })
     await wait(250)
   }
+  /** A drag along several points; Shift held when shift is true. */
+  const dragPath = async (points: Array<[number, number]>, shift: boolean): Promise<void> => {
+    const modifiers: Array<'shift'> = shift ? ['shift'] : []
+    const [first, ...rest] = points
+    wc.sendInputEvent({ type: 'mouseDown', x: first[0], y: first[1], button: 'left', clickCount: 1, modifiers })
+    let from = first
+    for (const to of rest) {
+      for (let i = 1; i <= 8; i++) {
+        wc.sendInputEvent({ type: 'mouseMove', x: from[0] + ((to[0] - from[0]) * i) / 8, y: from[1] + ((to[1] - from[1]) * i) / 8, button: 'left', modifiers })
+        await wait(16)
+      }
+      from = to
+    }
+    wc.sendInputEvent({ type: 'mouseUp', x: from[0], y: from[1], button: 'left', clickCount: 1, modifiers })
+    await wait(250)
+  }
   const shot = async (name: string): Promise<NativeImage> => {
     await wait(250)
     const image = await wc.capturePage()
@@ -126,6 +142,52 @@ app.whenReady().then(async () => {
     const remote = await shot('remote')
     if (!redAt(remote, 0.3 * 1280 * scale, 0.8 * 720 * scale)) throw new Error('console stroke not drawn on the projector page')
     console.log('ok console stroke drawn on the projector page')
+
+    // 6. Pen with Shift: one straight line from start to end, whatever path the mouse takes.
+    wc.send('ink:op', { t: 'clear' })
+    ops.length = 0
+    tool('pen')
+    await wait(100)
+    await dragPath([[200, 500], [300, 650], [600, 500]], true)
+    const line = await shot('shift-line')
+    if (!redAt(line, 400 * scale, 500 * scale)) throw new Error('Shift pen: no straight line between start and end')
+    if (redAt(line, 300 * scale, 650 * scale)) throw new Error('Shift pen: the line follows the mouse path')
+    console.log('ok Shift pen draws a straight line')
+
+    // 7. Box with Shift: a square (the longer side of the drag wins).
+    wc.send('ink:op', { t: 'clear' })
+    tool('rect')
+    await wait(100)
+    await dragPath([[100, 100], [500, 200]], true)
+    const square = await shot('shift-square')
+    if (!redAt(square, 100 * scale, 450 * scale) || !redAt(square, 300 * scale, 500 * scale)) throw new Error('Shift box: not a 400 x 400 square')
+    console.log('ok Shift box draws a square')
+
+    // 8. Arrow: a straight shaft and an open V head at the tip.
+    wc.send('ink:op', { t: 'clear' })
+    ops.length = 0
+    tool('arrow')
+    await wait(100)
+    await drag([700, 600], [1100, 600])
+    const arrow = await shot('arrow')
+    const begin = ops.find((o) => o.t === 'begin')
+    if (!begin || begin.t !== 'begin' || begin.stroke.tool !== 'arrow') throw new Error('arrow ops missing')
+    if (!redAt(arrow, 900 * scale, 600 * scale)) throw new Error('arrow shaft not drawn')
+    // The two arms of the V, halfway along them (head 25 px long, 30° from the shaft).
+    if (!redAt(arrow, 1089 * scale, 606.3 * scale) || !redAt(arrow, 1089 * scale, 593.7 * scale)) throw new Error('arrow head (V) not drawn')
+    console.log('ok arrow with a V head')
+
+    // 9. Arrow with Shift: turned to the nearest 45° step (here: level).
+    await dragPath([[200, 300], [420, 330]], true)
+    const level = await shot('shift-arrow')
+    if (!redAt(level, 320 * scale, 300 * scale) || redAt(level, 320 * scale, 316 * scale)) throw new Error('Shift arrow: not turned to level')
+    console.log('ok Shift arrow snaps to 45° steps')
+
+    // 10. A click with the arrow leaves no empty mark behind.
+    ops.length = 0
+    await drag([640, 100], [640, 100])
+    if (!ops.some((o) => o.t === 'erase')) throw new Error('a click with the arrow left an empty mark')
+    console.log('ok a click with the arrow leaves nothing')
     console.log('INK OK')
   } catch (error) {
     console.error(String(error))
