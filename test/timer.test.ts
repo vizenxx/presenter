@@ -35,7 +35,7 @@ describe('timer', () => {
   it('never starts with less than one second', () => {
     expect(T.start(T.initialTimer(), 0, 0).durationSec).toBe(1)
   })
-  it('beeps twice when one minute is left, and once for each of the last five seconds', () => {
+  it('warns when one minute is left, and once for each of the last five seconds', () => {
     const run = (sec: number) => ({ status: 'running' as const, remainingSec: sec })
     expect(T.timerCue(run(61), run(60))).toBe('one-minute')
     expect(T.timerCue(run(62), run(59))).toBe('one-minute')

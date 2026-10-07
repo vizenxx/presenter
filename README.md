@@ -126,9 +126,9 @@ The bar above the current slide: **Pointer, Pen, Highlighter, Box, Arrow, Laser,
 
 **Class timer** (the audience sees it)
 
-- Click a preset (**1 min**, **5 min** …) to start at once, or set minutes and click **Start**.
+- Click a preset (**1 min**, **5 min** …) to start at once, or type minutes **:** seconds and click **Start** (or press Enter). **−** and **+** change the minutes; hold them to go fast. A box can be emptied while you type.
 - When a deck plans a time for a slide, the timer shows it.
-- With one minute left it beeps twice; in the last 5 seconds it beeps once a second.
+- With one minute left it beeps three times; in the last 5 seconds it beeps once a second.
 - At zero the alarm rings until you press any key or click. That key does not turn the page.
 - UXD202 decks show the countdown in their own bar; everything else shows it at the bottom right of the projector.
 
@@ -153,7 +153,7 @@ Click **🎲 Name picker** (top bar). Choose a list and click **🎲 Roll**: the
 
 ## Text size
 
-**Text size** (Ctrl + / Ctrl − / Ctrl 0; ⌘ on a Mac) enlarges an HTML deck and is remembered per deck file. It is above the current slide for Projector 1 and in a card's **⋯** menu for the others. PPT and PDF show whole pages, so it does not apply to them.
+**Text size** (Ctrl + / Ctrl − / Ctrl 0; ⌘ on a Mac) enlarges an HTML deck in steps of 5 % and is remembered per deck file. Hold **A−** or **A+** to change it fast. It is above the current slide for Projector 1 and in a card's **⋯** menu for the others. PPT and PDF show whole pages, so it does not apply to them.
 
 ## If something goes wrong
 

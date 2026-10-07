@@ -132,11 +132,11 @@ try {
   }, id)
   await press('Control+Equal')
   await press('Control+Equal')
-  s = await waitFor('zoom 125', (s) => out(s, 'projector').zoomPercent === 125 && out(s, 'next').zoomPercent === 125)
-  assert.ok(Math.abs((await zoomRatio('projector')) - 1.25) < 0.02, 'projector really zoomed')
-  assert.ok(Math.abs((await zoomRatio('next')) - 1.25) < 0.02, 'preview follows projector')
+  s = await waitFor('zoom 110', (s) => out(s, 'projector').zoomPercent === 110 && out(s, 'next').zoomPercent === 110)
+  assert.ok(Math.abs((await zoomRatio('projector')) - 1.1) < 0.02, 'projector really zoomed')
+  assert.ok(Math.abs((await zoomRatio('next')) - 1.1) < 0.02, 'preview follows projector')
   await call(() => globalThis.__presenter.zoom('next', 'out'))
-  s = await waitFor('zoom via preview goes to its screen', (s) => out(s, 'projector').zoomPercent === 110 && out(s, 'next').zoomPercent === 110)
+  s = await waitFor('zoom via preview goes to its screen', (s) => out(s, 'projector').zoomPercent === 105 && out(s, 'next').zoomPercent === 105)
   console.log('ok 6b zoom')
 
   // 7. Timer: rings at zero; a key stops the alarm and does not turn the page.
@@ -147,7 +147,7 @@ try {
   assert.equal(out(s, 'projector').shownIndex, 5)
   console.log('ok 7 timer alarm and dismiss')
 
-  // 7b. Warning beeps: two at one minute left, one for each of the last five seconds (none at the start).
+  // 7b. Warning beeps: three at one minute left, one for each of the last five seconds (none at the start).
   const cues = () => call(() => globalThis.__presenter.projectorWin.overlay.webContents.executeJavaScript('document.body.dataset.cues || ""'))
   async function waitForCues(label, pred, ms) {
     const t0 = Date.now()
@@ -328,7 +328,7 @@ try {
 
     // 12. Zoom is remembered per deck file.
     await call((_e, p) => globalThis.__presenter.openMainDeck(p), UXD_DECK)
-    s = await waitFor('zoom remembered', (s) => out(s, 'projector').zoomPercent === 110 && out(s, 'next').zoomPercent === 110)
+    s = await waitFor('zoom remembered', (s) => out(s, 'projector').zoomPercent === 105 && out(s, 'next').zoomPercent === 105)
     await press('Control+Digit0')
     s = await waitFor('zoom reset', (s) => out(s, 'projector').zoomPercent === 100)
     console.log('ok 12 zoom memory')
@@ -459,7 +459,23 @@ try {
     await call(() => globalThis.__presenter.inkOp({ t: 'begin', stroke: { id: 'w1', tool: 'pen', color: '#ef4444', points: [0.1, 0.1, 0.5, 0.5] } }, 'pad'))
     assert.equal(await call((_e, id) => globalThis.__presenter.scene(id).strokes.length, wid), 1, 'the mark belongs to the window content')
     assert.equal(await call(() => globalThis.__presenter.scene('projector').strokes.length), 0, 'the deck has no marks')
-    await call(() => globalThis.__presenter.setInkTool('pointer'))
+    // Drawing on the window gives the toolbar the keyboard (Esc and Ctrl+Z must not reach the program);
+    // Esc there returns to the pointer and gives the keyboard back to the window.
+    await call(() => globalThis.__presenter.padPointer())
+    await sleep(600)
+    assert.equal(await call(() => globalThis.__presenter.tools.toolbar.isFocused()), true, 'the toolbar takes the keyboard while drawing on the window')
+    await call(() => {
+      const wc = globalThis.__presenter.tools.toolbar.webContents
+      wc.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' })
+      wc.sendInputEvent({ type: 'keyUp', keyCode: 'Escape' })
+    })
+    await waitFor('Esc on the toolbar leaves the pen', (s) => s.ink.tool === 'pointer')
+    let windowHasKeys = false
+    for (let i = 0; i < 20 && !windowHasKeys; i++) {
+      windowHasKeys = await call(() => globalThis.__e2eWin.isFocused())
+      if (!windowHasKeys) await sleep(150)
+    }
+    assert.ok(windowHasKeys, 'the window gets the keyboard back after Esc')
     // Using the toolbar (it becomes the window in front) must keep the tools up.
     await call(() => globalThis.__presenter.tools.toolbar.focus())
     await sleep(800)
@@ -471,7 +487,7 @@ try {
     s = await waitFor('roll from the toolbar', (s) => s.roller.roll !== null, 4000)
     assert.equal(await clickBar('Timer'), true, 'the toolbar has a Timer button')
     await sleep(400)
-    assert.equal(await call(() => globalThis.__presenter.tools.toolbar.webContents.executeJavaScript('!!document.querySelector("input[type=number]")')), true, 'Timer opens its settings')
+    assert.equal(await call(() => globalThis.__presenter.tools.toolbar.webContents.executeJavaScript('!!document.querySelector("input[title=Minutes]")')), true, 'Timer opens its settings')
     await sleep(3500)
     await call(() => globalThis.__presenter.rollerHide())
     await call(() => globalThis.__presenter.rollerReset())

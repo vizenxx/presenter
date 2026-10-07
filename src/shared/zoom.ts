@@ -2,13 +2,16 @@ import type { KeyMods } from './keys'
 
 export type ZoomDirection = 'in' | 'out' | 'reset'
 
-/** Chrome's page-zoom steps, in percent. */
-export const ZOOM_STEPS = [50, 67, 75, 80, 90, 100, 110, 125, 150, 175, 200, 250, 300]
+/** Text size moves in steps of 5 %, from 50 % to 300 %. */
+export const ZOOM_STEP = 5
+export const ZOOM_MIN = 50
+export const ZOOM_MAX = 300
 
+/** One step in or out; a value between steps goes to the next step in that direction. */
 export function stepZoom(current: number, direction: ZoomDirection): number {
   if (direction === 'reset') return 100
-  if (direction === 'in') return ZOOM_STEPS.find((z) => z > current) ?? ZOOM_STEPS[ZOOM_STEPS.length - 1]
-  return [...ZOOM_STEPS].reverse().find((z) => z < current) ?? ZOOM_STEPS[0]
+  const next = direction === 'in' ? Math.floor(current / ZOOM_STEP) * ZOOM_STEP + ZOOM_STEP : Math.ceil(current / ZOOM_STEP) * ZOOM_STEP - ZOOM_STEP
+  return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, next))
 }
 
 /** Browser shortcuts: Ctrl + / Ctrl − / Ctrl 0. */

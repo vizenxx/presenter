@@ -11,11 +11,10 @@ import { IS_MAC } from '../console/platform'
 import { screenLabel, useT } from '../console/i18n'
 import { useRollFace } from '../console/RollerPanel'
 import { speakerSeconds, useNow } from '../console/SpeakerTimer'
+import { CustomTime, PRESETS } from '../console/TimerPanel'
 
-const PRESETS = [1, 3, 5, 10, 15, 20]
 const ICON_BTN = 'grid h-8 w-8 place-items-center rounded-full hover:bg-line'
 const SMALL_BTN = 'rounded-full px-2.5 py-1 text-sm hover:bg-line'
-const clampMinutes = (m: number): number => Math.min(180, Math.max(1, Math.round(Number.isFinite(m) ? m : 1)))
 
 function Icon({ name }: { name: InkIconName }) {
   return <span className="grid place-items-center" dangerouslySetInnerHTML={{ __html: inkSvg(name, 18) }} />
@@ -29,7 +28,6 @@ function Group({ children }: { children: ReactNode }) {
 function TimerDetails({ state }: { state: AppState }) {
   const t = useT()
   const timer = state.timer
-  const [custom, setCustom] = useState(state.plannedMinutes ?? 5)
   return (
     <div className="flex flex-wrap items-center gap-1 border-t border-line pt-1.5">
       <span className="text-sm text-muted">{t.timer}</span>
@@ -47,26 +45,7 @@ function TimerDetails({ state }: { state: AppState }) {
         </button>
       ))}
       <span className="mx-1 h-5 w-px bg-line" />
-      <button type="button" className={SMALL_BTN} onClick={() => setCustom((c) => clampMinutes(c - 1))}>
-        −
-      </button>
-      <input
-        type="number"
-        min={1}
-        max={180}
-        value={custom}
-        onChange={(e) => setCustom(clampMinutes(Number(e.target.value)))}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') window.presenter.timerStart(custom * 60)
-        }}
-        className="w-14 rounded-full bg-panel-2 px-1 py-1 text-center text-sm tabular-nums"
-      />
-      <button type="button" className={SMALL_BTN} onClick={() => setCustom((c) => clampMinutes(c + 1))}>
-        +
-      </button>
-      <button type="button" className={`${SMALL_BTN} bg-accent/15 text-tint`} onClick={() => window.presenter.timerStart(custom * 60)}>
-        {t.startCustom}
-      </button>
+      <CustomTime planned={state.plannedMinutes} buttonClass={SMALL_BTN} />
     </div>
   )
 }

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { clock } from '../../../shared/format'
 import type { SpeakerTimerView } from '../../../shared/types'
 import { useT } from './i18n'
-import { Btn } from './ui'
+import { Btn, NumberField } from './ui'
 
 /** Seconds to show: time so far (count up) or time left, below zero when over (count down). */
 export function speakerSeconds(s: SpeakerTimerView, now: number): number {
@@ -47,14 +47,7 @@ export function SpeakerTimer({ speaker }: { speaker: SpeakerTimerView }) {
         </span>
         {speaker.mode === 'down' && !started && (
           <span className="flex items-center gap-1">
-            <input
-              type="number"
-              min={1}
-              max={240}
-              value={speaker.minutes}
-              onChange={(e) => window.presenter.speakerMinutes(Number(e.target.value))}
-              className="w-14 rounded-full bg-panel-2 px-1 py-1 text-center text-sm tabular-nums"
-            />
+            <NumberField value={speaker.minutes} min={1} max={240} onChange={(m) => window.presenter.speakerMinutes(m)} onEnter={() => window.presenter.speakerToggle()} title={t.minutesBox} className="w-14" />
             <span className="text-sm text-muted">{t.minutes}</span>
           </span>
         )}

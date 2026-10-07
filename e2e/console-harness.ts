@@ -65,8 +65,10 @@ function writeStub(state: AppState): void {
     `const { contextBridge } = require('electron')
 const state = ${JSON.stringify(state)}
 const noop = () => {}
+const calls = []
 const api = {}
-for (const key of ${JSON.stringify(API_METHODS)}) api[key] = noop
+for (const key of ${JSON.stringify(API_METHODS)}) api[key] = (...args) => { calls.push([key, ...args]) }
+api.__calls = () => JSON.parse(JSON.stringify(calls))
 api.onState = (cb) => setTimeout(() => cb(state), 50)
 api.onInkOp = () => noop
 api.inkSnapshot = () => Promise.resolve([])
@@ -133,9 +135,69 @@ async function shot(projecting: boolean, open: Open = null, page = 'console', th
   await wait(300)
 }
 
+/** Real typing and holding in the console page: number boxes empty fully, seconds start, A+ repeats while held. */
+async function inputs(): Promise<void> {
+  // An HTML deck: Text size works only for HTML.
+  const state = sampleState(false)
+  state.outputs = state.outputs.map((o) => (o.deck ? { ...o, deckKind: 'html' as const } : o))
+  writeStub(state)
+  const win = new BrowserWindow({ show: false, width: 1536, height: 864, useContentSize: true, webPreferences: { preload: STUB, contextIsolation: true, sandbox: true, offscreen: true } })
+  await win.loadFile(path.join(ROOT, 'out', 'renderer', 'console.html'))
+  await wait(1200)
+  const wc = win.webContents
+  const js = <T>(code: string): Promise<T> => wc.executeJavaScript(code) as Promise<T>
+  const key = async (keyCode: string): Promise<void> => {
+    wc.sendInputEvent({ type: 'keyDown', keyCode })
+    if (keyCode.length === 1) wc.sendInputEvent({ type: 'char', keyCode })
+    wc.sendInputEvent({ type: 'keyUp', keyCode })
+    await wait(60)
+  }
+  const field = (title: string): string => `document.querySelector('input[title="${title}"]')`
+  const calls = (): Promise<unknown[][]> => js('window.presenter.__calls()')
+
+  // Minutes: empty the box completely, then type 0.
+  await js(`${field('Minutes')}.focus()`)
+  await js(`${field('Minutes')}.setSelectionRange(9, 9)`)
+  await key('Backspace')
+  const emptied = await js<string>(`${field('Minutes')}.value`)
+  if (emptied !== '') throw new Error(`the minutes box keeps "${emptied}" after Backspace`)
+  await key('0')
+  // Seconds: empty both digits, type 30, Enter starts a 30-second timer.
+  await js(`${field('Seconds')}.focus()`)
+  await js(`${field('Seconds')}.setSelectionRange(9, 9)`)
+  await key('Backspace')
+  await key('Backspace')
+  if ((await js<string>(`${field('Seconds')}.value`)) !== '') throw new Error('the seconds box does not empty')
+  await key('3')
+  await key('0')
+  await key('Enter')
+  const started = (await calls()).filter((c) => c[0] === 'timerStart')
+  if (started.length !== 1 || started[0][1] !== 30) throw new Error(`Enter should start 30 s: ${JSON.stringify(started)}`)
+  console.log('ok timer boxes: empty fully, 0 min 30 s starts 30 s')
+
+  // A+ held for one second repeats (one step at once, then every 80 ms after 400 ms).
+  const r = await js<number[]>(`(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === 'A+'); const r = b.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2] })()`)
+  wc.sendInputEvent({ type: 'mouseDown', x: Math.round(r[0]), y: Math.round(r[1]), button: 'left', clickCount: 1 })
+  await wait(1000)
+  wc.sendInputEvent({ type: 'mouseUp', x: Math.round(r[0]), y: Math.round(r[1]), button: 'left', clickCount: 1 })
+  await wait(300)
+  const steps = (await calls()).filter((c) => c[0] === 'zoom' && c[2] === 'in').length
+  if (steps < 5) throw new Error(`holding A+ gave only ${steps} steps`)
+  // A short click is one step.
+  wc.sendInputEvent({ type: 'mouseDown', x: Math.round(r[0]), y: Math.round(r[1]), button: 'left', clickCount: 1 })
+  wc.sendInputEvent({ type: 'mouseUp', x: Math.round(r[0]), y: Math.round(r[1]), button: 'left', clickCount: 1 })
+  await wait(600)
+  const after = (await calls()).filter((c) => c[0] === 'zoom' && c[2] === 'in').length
+  if (after !== steps + 1) throw new Error(`a click on A+ gave ${after - steps} steps`)
+  console.log(`ok A+ repeats while held (${steps} steps in 1 s), a click is one step`)
+  win.destroy()
+  await wait(300)
+}
+
 app.whenReady().then(async () => {
   let code = 0
   try {
+    await inputs()
     await shot(false)
     await shot(true)
     await shot(false, 'guide')

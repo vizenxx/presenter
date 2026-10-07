@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type { AppState, DeckStatus, OutputView } from '../../../shared/types'
 import { useT } from './i18n'
 
@@ -21,6 +21,89 @@ export function Btn(props: { children: ReactNode; onClick?: () => void; tone?: T
     >
       {children}
     </button>
+  )
+}
+
+const HOLD_DELAY_MS = 400
+const HOLD_EVERY_MS = 80
+
+/**
+ * A button that repeats while it is held down (like a keyboard key): one step at once, then,
+ * after a short pause, a step every 80 ms until the mouse is released. A keyboard press is one step.
+ */
+export function HoldBtn(props: { children: ReactNode; onStep: () => void; title?: string; disabled?: boolean; className: string }) {
+  const { children, onStep, title, disabled, className } = props
+  const step = useRef(onStep)
+  step.current = onStep
+  const timer = useRef<number | null>(null)
+  const stop = (): void => {
+    if (timer.current !== null) window.clearTimeout(timer.current)
+    if (timer.current !== null) window.clearInterval(timer.current)
+    timer.current = null
+  }
+  useEffect(() => stop, [])
+  return (
+    <button
+      type="button"
+      title={title}
+      disabled={disabled}
+      onPointerDown={(e) => {
+        if (e.button !== 0 || disabled) return
+        stop()
+        step.current()
+        timer.current = window.setTimeout(() => {
+          timer.current = window.setInterval(() => step.current(), HOLD_EVERY_MS)
+        }, HOLD_DELAY_MS)
+      }}
+      onPointerUp={stop}
+      onPointerLeave={stop}
+      onPointerCancel={stop}
+      onClick={(e) => {
+        // detail 0 = Enter or Space; mouse clicks already stepped on pointer down.
+        if (e.detail === 0) step.current()
+      }}
+      className={className}
+    >
+      {children}
+    </button>
+  )
+}
+
+/**
+ * A number box that can be emptied while typing. It keeps the last valid value; leaving the box
+ * (or Enter) puts a value into range, and an empty box shows the last value again.
+ */
+export function NumberField(props: { value: number; min: number; max: number; onChange: (n: number) => void; onEnter?: (n: number) => void; digits?: number; title?: string; className?: string }) {
+  const { value, min, max, onChange, onEnter, digits = 0, title, className = '' } = props
+  const [draft, setDraft] = useState<string | null>(null)
+  const shown = draft ?? String(value).padStart(digits, '0')
+  const commit = (): number => {
+    const n = draft === null || draft === '' ? value : Math.min(max, Math.max(min, Number(draft)))
+    if (n !== value) onChange(n)
+    setDraft(null)
+    return n
+  }
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      title={title}
+      value={shown}
+      onFocus={() => setDraft(String(value))}
+      onChange={(e) => {
+        const text = e.target.value.replace(/\D/g, '').slice(0, String(max).length)
+        setDraft(text)
+        const n = Number(text)
+        if (text !== '' && n >= min && n <= max) onChange(n)
+      }}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key !== 'Enter') return
+        const n = commit()
+        onEnter?.(n)
+      }}
+      className={`rounded-full bg-panel-2 px-1 py-1 text-center text-sm tabular-nums ${className}`}
+    />
   )
 }
 
@@ -57,7 +140,9 @@ export function MenuItem({ children, onClick, title }: { children: ReactNode; on
   )
 }
 
-/** Text size (字号): page zoom for one screen, like Ctrl + / Ctrl − in a browser. */
+const ZOOM_BTN = `rounded-full px-3.5 py-1.5 text-sm whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-40 ${TONES.default}`
+
+/** Text size (字号): page zoom for one screen in 5 % steps, like Ctrl + / Ctrl − in a browser. */
 export function ZoomControl({ o }: { o: OutputView }) {
   const t = useT()
   const whole = o.deckKind !== null && o.deckKind !== 'html'
@@ -65,15 +150,15 @@ export function ZoomControl({ o }: { o: OutputView }) {
   return (
     <div className="flex items-center gap-1" title={whole ? t.textSizeWholePage : t.textSizeTitle}>
       <span className="text-sm text-muted">{t.textSize}</span>
-      <Btn disabled={off} onClick={() => window.presenter.zoom(o.id, 'out')}>
+      <HoldBtn disabled={off} title={t.holdToRepeat} onStep={() => window.presenter.zoom(o.id, 'out')} className={ZOOM_BTN}>
         A−
-      </Btn>
+      </HoldBtn>
       <button type="button" disabled={off} title={t.backTo100} onClick={() => window.presenter.zoom(o.id, 'reset')} className="w-14 rounded-full py-1.5 text-center text-sm tabular-nums hover:bg-panel-2 disabled:opacity-40">
         {o.zoomPercent}%
       </button>
-      <Btn disabled={off} onClick={() => window.presenter.zoom(o.id, 'in')}>
+      <HoldBtn disabled={off} title={t.holdToRepeat} onStep={() => window.presenter.zoom(o.id, 'in')} className={ZOOM_BTN}>
         A+
-      </Btn>
+      </HoldBtn>
     </div>
   )
 }

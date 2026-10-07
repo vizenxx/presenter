@@ -31,10 +31,10 @@ export function chime(): void {
   }
 }
 
-/** Short clear beeps before the class timer ends: 2 with one minute left, 1 for each of the last five seconds. */
+/** Short clear beeps before the class timer ends: 3 with one minute left, 1 for each of the last five seconds. */
 export function beep(count = 1): void {
   try {
-    for (let i = 0; i < count; i++) note('sine', 1046.5, 0.32, 0.14, i * 0.22)
+    for (let i = 0; i < count; i++) note('sine', 1046.5, 0.32, 0.14, i * 0.44)
   } catch {
     // No audio device; the countdown still shows.
   }

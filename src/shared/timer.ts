@@ -60,7 +60,7 @@ export function remainingSec(s: TimerState): number {
   return Math.ceil(s.remainingMs / 1000)
 }
 
-/** A warning sound before the end: two beeps with one minute left, one beep for each of the last five seconds. */
+/** A warning sound before the end: three beeps with one minute left, one beep for each of the last five seconds. */
 export type TimerCue = 'one-minute' | 'last-seconds' | null
 
 /** The cue for a change of the shown time. A start, a resume or a reset never beeps. */

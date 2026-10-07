@@ -13,7 +13,7 @@ window.overlay.onTimer((t) => {
   // The overlay plays the class timer's sounds even when a deck shows the countdown itself.
   const cue = timerCue(last, t)
   last = t
-  if (cue === 'one-minute') beep(2)
+  if (cue === 'one-minute') beep(3)
   if (cue === 'last-seconds') beep(1)
   // The end-to-end test reads which beeps played.
   if (cue) document.body.dataset['cues'] = `${document.body.dataset['cues'] ?? ''}${cue} `

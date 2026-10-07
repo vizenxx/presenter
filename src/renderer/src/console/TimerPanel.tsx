@@ -2,20 +2,50 @@ import { useEffect, useState } from 'react'
 import { mmss } from '../../../shared/format'
 import type { AppState } from '../../../shared/types'
 import { useT } from './i18n'
-import { Btn } from './ui'
+import { Btn, HoldBtn, NumberField } from './ui'
 
-const PRESETS = [1, 3, 5, 10, 15, 20]
-const clampMinutes = (m: number): number => Math.min(180, Math.max(1, Math.round(Number.isFinite(m) ? m : 1)))
+export const PRESETS = [1, 3, 5, 10, 15, 20]
+const MAX_MINUTES = 180
 const SMALL = 'rounded-full bg-panel-2 px-2.5 py-1 text-sm hover:bg-line'
+
+/**
+ * Minutes and seconds for the class timer, then Start (Enter in either box starts too).
+ * − and + change the minutes and repeat while held. A slide's planned time fills it in.
+ */
+export function CustomTime({ planned, buttonClass = SMALL }: { planned: number | null; buttonClass?: string }) {
+  const t = useT()
+  const [minutes, setMinutes] = useState(planned ?? 5)
+  const [seconds, setSeconds] = useState(0)
+  useEffect(() => {
+    if (!planned) return
+    setMinutes(planned)
+    setSeconds(0)
+  }, [planned])
+  const start = (m = minutes, s = seconds): void => {
+    if (m * 60 + s > 0) window.presenter.timerStart(m * 60 + s)
+  }
+  return (
+    <span className="flex items-center gap-1">
+      <HoldBtn title={t.holdToRepeat} onStep={() => setMinutes((m) => Math.max(0, m - 1))} className={buttonClass}>
+        −
+      </HoldBtn>
+      <NumberField value={minutes} min={0} max={MAX_MINUTES} onChange={setMinutes} onEnter={(m) => start(m, seconds)} title={t.minutesBox} className="w-11" />
+      <span className="text-sm text-muted">:</span>
+      <NumberField value={seconds} min={0} max={59} digits={2} onChange={setSeconds} onEnter={(s) => start(minutes, s)} title={t.secondsBox} className="w-11" />
+      <HoldBtn title={t.holdToRepeat} onStep={() => setMinutes((m) => Math.min(MAX_MINUTES, m + 1))} className={buttonClass}>
+        +
+      </HoldBtn>
+      <button type="button" disabled={minutes * 60 + seconds === 0} className={`${buttonClass} bg-accent/15 text-tint disabled:opacity-40`} onClick={() => start()}>
+        {t.startCustom}
+      </button>
+    </span>
+  )
+}
 
 /** The class timer (students see it on the projector), kept to two short rows. */
 export function TimerPanel({ state }: { state: AppState }) {
   const t = useT()
   const timer = state.timer
-  const [custom, setCustom] = useState(5)
-  useEffect(() => {
-    if (state.plannedMinutes) setCustom(state.plannedMinutes)
-  }, [state.plannedMinutes])
   const label = timer.alarming ? t.stopAlarm : timer.status === 'running' ? t.pause : timer.status === 'paused' ? t.resume : t.start
   const color = timer.alarming ? 'text-alarm' : timer.status === 'running' ? 'text-ink' : timer.status === 'paused' ? 'text-gold' : 'text-muted'
   return (
@@ -38,27 +68,8 @@ export function TimerPanel({ state }: { state: AppState }) {
             {t.presetMinutes(m)}
           </button>
         ))}
-        <span className="ml-auto flex items-center gap-1">
-          <button type="button" className={SMALL} onClick={() => setCustom((c) => clampMinutes(c - 1))}>
-            −
-          </button>
-          <input
-            type="number"
-            min={1}
-            max={180}
-            value={custom}
-            onChange={(e) => setCustom(clampMinutes(Number(e.target.value)))}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') window.presenter.timerStart(custom * 60)
-            }}
-            className="w-14 rounded-full bg-panel-2 px-1 py-1 text-center text-sm tabular-nums"
-          />
-          <button type="button" className={SMALL} onClick={() => setCustom((c) => clampMinutes(c + 1))}>
-            +
-          </button>
-          <button type="button" className={`${SMALL} bg-accent/15 text-tint`} onClick={() => window.presenter.timerStart(custom * 60)}>
-            {t.startCustom}
-          </button>
+        <span className="ml-auto">
+          <CustomTime planned={state.plannedMinutes} />
         </span>
       </div>
     </section>
