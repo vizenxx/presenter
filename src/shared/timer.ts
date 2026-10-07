@@ -60,14 +60,18 @@ export function remainingSec(s: TimerState): number {
   return Math.ceil(s.remainingMs / 1000)
 }
 
-/** A warning sound before the end: three beeps with one minute left, one beep for each of the last five seconds. */
-export type TimerCue = 'one-minute' | 'last-seconds' | null
+/** A warning sound before the end: three beeps when the warning time is left, one beep for each of the last five seconds. */
+export type TimerCue = 'warning' | 'last-seconds' | null
 
-/** The cue for a change of the shown time. A start, a resume or a reset never beeps. */
-export function timerCue(before: { status: TimerStatus; remainingSec: number } | null, now: { status: TimerStatus; remainingSec: number }): TimerCue {
+/** The warning time until the teacher sets another one; 0 = no warning. */
+export const DEFAULT_WARN_SEC = 60
+export const MAX_WARN_SEC = 60 * 60
+
+/** The cue for a change of the shown time. A start, a resume or a reset never beeps. warnSec = 0: no warning. */
+export function timerCue(before: { status: TimerStatus; remainingSec: number } | null, now: { status: TimerStatus; remainingSec: number }, warnSec = DEFAULT_WARN_SEC): TimerCue {
   if (!before || before.status !== 'running' || now.status !== 'running') return null
   if (now.remainingSec >= before.remainingSec) return null
   if (now.remainingSec >= 1 && now.remainingSec <= 5) return 'last-seconds'
-  if (before.remainingSec > 60 && now.remainingSec <= 60) return 'one-minute'
+  if (warnSec > 0 && before.remainingSec > warnSec && now.remainingSec <= warnSec) return 'warning'
   return null
 }

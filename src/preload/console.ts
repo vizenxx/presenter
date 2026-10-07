@@ -49,6 +49,7 @@ const api: ConsoleApi = {
   timerToggle: () => ipcRenderer.send('console:timer-toggle'),
   timerReset: () => ipcRenderer.send('console:timer-reset'),
   timerDismiss: () => ipcRenderer.send('console:timer-dismiss'),
+  timerWarn: (seconds) => ipcRenderer.send('console:timer-warn', seconds),
   layoutPreview: (rect) => ipcRenderer.send('console:layout-preview', rect),
   layoutCurrent: (rect) => ipcRenderer.send('console:layout-current', rect),
   startProjecting: () => ipcRenderer.send('console:start-projecting'),

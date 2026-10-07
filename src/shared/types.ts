@@ -98,6 +98,8 @@ export interface TimerView {
   remainingSec: number
   durationSec: number
   alarming: boolean
+  /** Three warning beeps when this many seconds are left; 0 = no warning. */
+  warnSec: number
 }
 
 export interface RollerListInfo {
@@ -230,6 +232,8 @@ export interface ConsoleApi {
   timerToggle(): void
   timerReset(): void
   timerDismiss(): void
+  /** When the class timer warns (seconds left; 0 = never). Remembered. */
+  timerWarn(seconds: number): void
   layoutPreview(rect: PreviewRect | null): void
   layoutCurrent(rect: PreviewRect | null): void
   startProjecting(): void

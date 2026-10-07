@@ -13,7 +13,7 @@ const OUT = path.join(ROOT, 'e2e', 'out')
 const STUB = path.join(OUT, 'harness', 'console-stub-preload.cjs')
 const AI_REQUEST = aiRequestText(fs.readFileSync(path.join(ROOT, 'docs', 'ai-integration.md'), 'utf8'))
 /** Every ConsoleApi method (contextBridge copies plain objects only, so no Proxy). */
-const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "listWindows", "addWindowScreen", "setTheme"]
+const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "listWindows", "addWindowScreen", "setTheme", "timerWarn"]
 
 app.disableHardwareAcceleration()
 // Each screenshot closes its window; keep the app alive between them.
@@ -42,7 +42,7 @@ function sampleState(projecting: boolean, crowd = false, theme: UiTheme = 'dark'
     previewOf: 'projector',
     slides: Array.from({ length: 18 }, (_, i) => ({ title: `Slide title ${i + 1}`, notes: i === 2 ? 'Ask the class first.' : '' })),
     milestones: [],
-    timer: { status: 'running', remainingSec: 297, durationSec: 300, alarming: false },
+    timer: { status: 'running', remainingSec: 297, durationSec: 300, alarming: false, warnSec: 60 },
     plannedMinutes: null,
     recent: [deck],
     hasExternalDisplay: true,
@@ -174,6 +174,22 @@ async function inputs(): Promise<void> {
   const started = (await calls()).filter((c) => c[0] === 'timerStart')
   if (started.length !== 1 || started[0][1] !== 30) throw new Error(`Enter should start 30 s: ${JSON.stringify(started)}`)
   console.log('ok timer boxes: empty fully, 0 min 30 s starts 30 s')
+
+  // The warning time: type 2 : 30 and it is sent as 150 seconds.
+  await js(`${field('Warning: minutes left')}.focus()`)
+  await js(`${field('Warning: minutes left')}.setSelectionRange(9, 9)`)
+  await key('Backspace')
+  await key('2')
+  await js(`${field('Warning: seconds left')}.focus()`)
+  await js(`${field('Warning: seconds left')}.setSelectionRange(9, 9)`)
+  await key('Backspace')
+  await key('Backspace')
+  await key('3')
+  await key('0')
+  const warns = (await calls()).filter((c) => c[0] === 'timerWarn').map((c) => c[1])
+  // The stub state stays at 1:00, so each box joins the other box's old value: 2:00 = 120 s, then 1:30 = 90 s.
+  if (!warns.includes(120) || !warns.includes(90)) throw new Error(`warning time not sent: ${JSON.stringify(warns)}`)
+  console.log('ok warning time boxes send seconds left')
 
   // A+ held for one second repeats (one step at once, then every 80 ms after 400 ms).
   const r = await js<number[]>(`(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === 'A+'); const r = b.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2] })()`)

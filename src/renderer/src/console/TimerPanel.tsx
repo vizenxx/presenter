@@ -42,7 +42,23 @@ export function CustomTime({ planned, buttonClass = SMALL }: { planned: number |
   )
 }
 
-/** The class timer (students see it on the projector), kept to two short rows. */
+/** When the class timer warns with three beeps: minutes : seconds left (0 : 00 = no warning). Presenter remembers it. */
+function WarnSetting({ warnSec }: { warnSec: number }) {
+  const t = useT()
+  const minutes = Math.floor(warnSec / 60)
+  const seconds = warnSec % 60
+  return (
+    <div className="mt-1.5 flex items-center gap-1 text-sm text-muted" title={t.warnTitle}>
+      <span>🔔 {t.warnAt}</span>
+      <NumberField value={minutes} min={0} max={60} onChange={(m) => window.presenter.timerWarn(m * 60 + seconds)} title={t.warnMinutes} className="w-11 text-ink" />
+      <span>:</span>
+      <NumberField value={seconds} min={0} max={59} digits={2} onChange={(s) => window.presenter.timerWarn(minutes * 60 + s)} title={t.warnSeconds} className="w-11 text-ink" />
+      <span>{warnSec === 0 ? t.warnOff : t.warnLeft}</span>
+    </div>
+  )
+}
+
+/** The class timer (students see it on the projector): the time, presets and own time, and the warning time. */
 export function TimerPanel({ state }: { state: AppState }) {
   const t = useT()
   const timer = state.timer
@@ -72,6 +88,7 @@ export function TimerPanel({ state }: { state: AppState }) {
           <CustomTime planned={state.plannedMinutes} />
         </span>
       </div>
+      <WarnSetting warnSec={timer.warnSec} />
     </section>
   )
 }

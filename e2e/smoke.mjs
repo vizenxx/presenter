@@ -147,7 +147,7 @@ try {
   assert.equal(out(s, 'projector').shownIndex, 5)
   console.log('ok 7 timer alarm and dismiss')
 
-  // 7b. Warning beeps: three at one minute left, one for each of the last five seconds (none at the start).
+  // 7b. Warning beeps: three at the warning time (set here to 0:08, then remembered), one for each of the last five seconds (none at the start).
   const cues = () => call(() => globalThis.__presenter.projectorWin.overlay.webContents.executeJavaScript('document.body.dataset.cues || ""'))
   async function waitForCues(label, pred, ms) {
     const t0 = Date.now()
@@ -159,10 +159,16 @@ try {
   }
   // Step 7's short timer already beeped; start from an empty record.
   await call(() => globalThis.__presenter.projectorWin.overlay.webContents.executeJavaScript('delete document.body.dataset.cues'))
-  await call(() => globalThis.__presenter.timerStart(62))
+  s = await state()
+  assert.equal(s.timer.warnSec, 60, 'the warning time starts at 1:00')
+  await call(() => globalThis.__presenter.timerWarn(8))
+  s = await waitFor('warning time set', (s) => s.timer.warnSec === 8)
+  assert.equal(JSON.parse(fs.readFileSync(path.join(USER_DATA, 'timer.json'), 'utf8')).warnSec, 8, 'the warning time is remembered')
+  await call(() => globalThis.__presenter.timerStart(10))
   await sleep(600)
   assert.equal((await cues()).trim(), '', 'no beep when the timer starts')
-  await waitForCues('one-minute beep', (c) => c.includes('one-minute'), 5000)
+  await waitForCues('warning beeps at 0:08', (c) => c.includes('warning'), 5000)
+  await call(() => globalThis.__presenter.timerWarn(60))
   await call(() => globalThis.__presenter.timerStart(6))
   await waitForCues('last-seconds beeps', (c) => (c.match(/last-seconds/g) ?? []).length >= 2, 5000)
   await call(() => globalThis.__presenter.timerReset())

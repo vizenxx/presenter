@@ -11,9 +11,9 @@ window.overlay.onTimer((t) => {
   pill.textContent = mmss(t.remainingSec)
   pill.dataset['state'] = t.alarming ? 'alarm' : t.status
   // The overlay plays the class timer's sounds even when a deck shows the countdown itself.
-  const cue = timerCue(last, t)
+  const cue = timerCue(last, t, t.warnSec)
   last = t
-  if (cue === 'one-minute') beep(3)
+  if (cue === 'warning') beep(3)
   if (cue === 'last-seconds') beep(1)
   // The end-to-end test reads which beeps played.
   if (cue) document.body.dataset['cues'] = `${document.body.dataset['cues'] ?? ''}${cue} `

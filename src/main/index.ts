@@ -91,6 +91,7 @@ function wireIpc(store: Store): void {
   ipcMain.on('console:timer-toggle', () => store.timerToggle())
   ipcMain.on('console:timer-reset', () => store.timerReset())
   ipcMain.on('console:timer-dismiss', () => store.dismissAlarm())
+  ipcMain.on('console:timer-warn', (_e, seconds: number) => store.timerWarn(seconds))
   ipcMain.on('console:layout-preview', (_e, rect: PreviewRect | null) => store.layoutPreview(rect))
   ipcMain.on('console:layout-current', (_e, rect: PreviewRect | null) => store.layoutCurrent(rect))
   ipcMain.on('console:start-projecting', () => store.startProjecting())
