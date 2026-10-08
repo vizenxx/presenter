@@ -45,7 +45,7 @@ Presenter 是一个解压即用的文件夹。没有安装程序，也不需要�
 
 ## 开始
 
-1. 把课件文件拖进控制台窗口，或者点 **Open deck**。没有课件时，在开始画面点 **Show a program window…**，把浏览器、视频或任何打开的程序窗口直接放到 Projector 1。
+1. 把课件文件拖进控制台窗口，或者点 **Open deck**（它从你上次打开的课件所在的文件夹开始）。没有课件时，在开始画面点 **Show a program window…**，把浏览器、视频或任何打开的程序窗口直接放到 Projector 1。
 2. 点右上角的 **▶ Start projecting**，或者按 **F5**。Projector 1 全屏显示到投影仪上。
 3. 点 **■ Stop projecting**，或者按 **Esc**。投影关闭，控制台里的内容都还在。
 4. 投影仪必须设为“扩展”模式。没有接投影仪时，投影会以一个普通窗口显示，适合在家练习。
@@ -164,7 +164,7 @@ Presenter 是一个解压即用的文件夹。没有安装程序，也不需要�
 ## 给维护者
 
 - 源码：`src/`。设计文档：`docs/specs/`。实施计划：`docs/superpowers/plans/`。
-- 常用命令：`npm run build`（构建）、`npm test`（单元测试）、`npm run e2e`（端到端测试，17 步）。只有一块屏幕时，它会弹出窗口、发出声音；接着第二块屏幕时，它隐藏、静音运行，并跳过投影步骤。它从不截取屏幕画面。
+- 常用命令：`npm run build`（构建）、`npm test`（单元测试）、`npm run e2e`（端到端测试，17 步）。只有一块屏幕时，它会弹出窗口、发出声音；接着第二块屏幕时，它隐藏、静音运行，并跳过投影步骤。它从不截取屏幕画面。`PRESENTER_E2E_HIDDEN=1 npm run e2e` 在只有一块屏幕时也隐藏、静音运行。
 - 不开窗口的检查：`npm run check:viewer`（PPT/PDF）、`npm run check:ink`（标注：画笔、框选、橡皮擦、箭头、Shift 形状）、`npm run check:frameworks`（Reveal.js、remark、impress.js、Marp、普通 slide 网页、协议示例）、`npm run check:console`（深色和浅色界面的控制台排版、菜单、开始画面、浮动工具条、计时器输入格打字、按住 A+）、`npm run check:start`（隐藏静音启动，逐个启动和 8 个同时启动）。
 - 真实转换测试：`PRESENTER_CONVERT_IT=libreoffice npm test`（或 `powerpoint`；Mac 上用 `keynote`）。
 - 压缩包：`npm run dist:win`（Windows）、`npm run dist:mac`（只能在 Mac 上运行）。没有 Mac 时，在 GitHub 上运行 **Build app zips** 工作流（Actions 页面，或 `gh workflow run build.yml`；只推送不会自动运行），它同时生成两个压缩包，并替换这个版本的 Releases 页（说明文字：`.github/release-notes.md`）。发新版本时先改 `package.json` 里的 `version`。图标源文件：`build/icon.svg`。

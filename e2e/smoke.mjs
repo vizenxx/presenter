@@ -21,12 +21,13 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 // Safety: the full test opens full-screen windows and plays the alarm. With a second display
 // connected, a class may be on the projector, so the app runs hidden and muted and only the
-// steps without projecting run (1-8), unless explicitly allowed.
+// steps without projecting run (1-8), unless explicitly allowed. PRESENTER_E2E_HIDDEN=1 asks for the
+// hidden mode on one display too (no window, no sound while someone works at the computer).
 const screenCount = Number(
   execFileSync('powershell', ['-NoProfile', '-Command', 'Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Screen]::AllScreens.Count']).toString().trim()
 )
-const HEADLESS = screenCount > 1 && process.env.PRESENTER_E2E_ALLOW_MULTI !== '1'
-if (HEADLESS) console.log(`${screenCount} displays connected: hidden mode, steps 1-8 only (no window, no sound).`)
+const HEADLESS = process.env.PRESENTER_E2E_HIDDEN === '1' || (screenCount > 1 && process.env.PRESENTER_E2E_ALLOW_MULTI !== '1')
+if (HEADLESS) console.log(`${screenCount} display(s): hidden mode, steps 1-8 only (no window, no sound).`)
 // PRESENTER_EXE = a packaged app (e.g. dist/win-unpacked/Presenter.exe); default: this source folder.
 const EXE = process.env.PRESENTER_EXE
 const app = await electron.launch({
@@ -71,6 +72,9 @@ try {
   const projectorInConsole = () =>
     call(() => globalThis.__presenter.consoleWin.win.contentView.children.includes(globalThis.__presenter.outputs.get('projector').view))
   assert.equal(s.projecting, false, 'not projecting at start')
+  // Open deck starts in the folder of the deck opened last (remembered across restarts).
+  assert.equal(path.resolve(await call(() => globalThis.__presenter.deckFolder())), path.resolve(path.dirname(UXD_DECK)), 'Open deck starts in the last deck folder')
+  assert.equal(path.resolve(JSON.parse(fs.readFileSync(path.join(USER_DATA, 'folder.json'), 'utf8')).folder), path.resolve(path.dirname(UXD_DECK)), 'the folder is remembered')
   assert.equal(await projectorVisible(), false, 'projector window hidden at start')
   assert.equal(await projectorInConsole(), true, 'deck shown in the console before projecting')
   console.log('ok 1 detect', out(s, 'projector').total, 'slides; projector hidden until asked')

@@ -28,6 +28,7 @@ import { WindowTools } from './windowTools'
 import { rememberZoom, zoomFor } from './zoomMemory'
 import { loadTheme, saveTheme, themeBackground } from './themeMemory'
 import { clampWarn, loadWarn, saveWarn } from './timerMemory'
+import { loadFolder, saveFolder } from './folderMemory'
 
 export interface StorePaths {
   deckPreload: string
@@ -83,6 +84,8 @@ export class Store {
   private speaker: SpeakerTimerView = { mode: 'up', minutes: 45, startedAt: null, heldMs: 0 }
   private theme: UiTheme | null = null
   private warnSec = T.DEFAULT_WARN_SEC
+  /** Folder of the deck opened last; Open deck starts there. */
+  private lastFolder: string | null = null
   /** Projector page the marks belong to; marks clear when it changes. */
   private inkPage = -1
   /** The console shows a live video of the projector; JPEG snapshots are only a fallback. */
@@ -112,6 +115,7 @@ export class Store {
     this.recent = loadRecent()
     this.theme = loadTheme()
     this.warnSec = loadWarn()
+    this.lastFolder = loadFolder()
     const projector = this.createOutput('projector', 1, 'projector', 0)
     // The next preview is not a screen: it shows the slide after the selected screen's slide.
     const next = this.createOutput('next', 0, 'preview', 1)
@@ -1251,8 +1255,25 @@ export class Store {
   }
 
   private async pickDeck(title: string): Promise<DeckRef | null> {
-    const r = await dialog.showOpenDialog(this.consoleWin.win, { title, properties: ['openFile'], filters: [{ name: this.strings().deckFilter, extensions: DECK_EXTENSIONS }] })
-    return r.canceled || !r.filePaths[0] ? null : this.toDeck(r.filePaths[0])
+    const r = await dialog.showOpenDialog(this.consoleWin.win, { title, defaultPath: this.deckFolder(), properties: ['openFile'], filters: [{ name: this.strings().deckFilter, extensions: DECK_EXTENSIONS }] })
+    if (r.canceled || !r.filePaths[0]) return null
+    const deck = this.toDeck(r.filePaths[0])
+    this.rememberFolder(deck.path)
+    return deck
+  }
+
+  /** Where Open deck starts: the folder of the deck opened last (any way: dialog, drop, Recent). */
+  deckFolder(): string | undefined {
+    if (this.lastFolder && fs.existsSync(this.lastFolder)) return this.lastFolder
+    const recent = this.recent[0]?.path
+    return recent ? path.dirname(recent) : undefined
+  }
+
+  private rememberFolder(deckPath: string): void {
+    const folder = path.dirname(deckPath)
+    if (folder === this.lastFolder) return
+    this.lastFolder = folder
+    saveFolder(folder)
   }
 
   /** One spelling per file (C:/a vs C:\a), so the recent list and zoom memory see the same deck. */
@@ -1264,6 +1285,7 @@ export class Store {
   private remember(deck: DeckRef): void {
     this.recent = mergeRecent(this.recent, deck)
     saveRecent(this.recent)
+    this.rememberFolder(deck.path)
   }
 
   private projector(): Output {

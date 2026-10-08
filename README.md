@@ -45,7 +45,7 @@ The **📘 Guide** in the app has the same help in two parts: **1 · Use Present
 
 ## Start
 
-1. Drop a deck file on the console, or click **Open deck**. No deck? Click **Show a program window…** on the start screen: a browser, a video or any open program window goes on Projector 1 instead.
+1. Drop a deck file on the console, or click **Open deck** (it starts in the folder of the deck you opened last). No deck? Click **Show a program window…** on the start screen: a browser, a video or any open program window goes on Projector 1 instead.
 2. Click **▶ Start projecting** (top right) or press **F5**. Projector 1 goes full screen on the projector.
 3. Click **■ Stop projecting** or press **Esc**. The projector closes; the console keeps everything.
 4. Set the projector to **Extend** mode. Without a projector, projecting opens a normal window (good for practice at home).
@@ -164,7 +164,7 @@ Click **🎲 Name picker** (top bar). Choose a list and click **🎲 Roll**: the
 ## For maintainers
 
 - Source: `src/`. Design: `docs/specs/`. Plans: `docs/superpowers/plans/`.
-- `npm run build` (build), `npm test` (unit tests), `npm run e2e` (end-to-end, 17 steps). With one display it opens windows and plays sounds; with a second display connected (a class may be on the projector) it runs hidden and muted, without the projecting steps. It never takes pictures of the screen.
+- `npm run build` (build), `npm test` (unit tests), `npm run e2e` (end-to-end, 17 steps). With one display it opens windows and plays sounds; with a second display connected (a class may be on the projector) it runs hidden and muted, without the projecting steps. It never takes pictures of the screen. `PRESENTER_E2E_HIDDEN=1 npm run e2e` runs it hidden and muted on one display too.
 - Checks that open no window: `npm run check:viewer` (PPT/PDF), `npm run check:ink` (marks: pen, box, eraser, arrow, Shift shapes), `npm run check:frameworks` (Reveal.js, remark, impress.js, Marp, plain slides, protocol example), `npm run check:console` (console layout in the dark and the light look, menus, start screen, floating toolbar, typing in the timer boxes, holding A+), `npm run check:start` (starts hidden and muted, one by one and 8 at once).
 - Real conversions: `PRESENTER_CONVERT_IT=libreoffice npm test` (or `powerpoint`, or `keynote` on a Mac).
 - Zips: `npm run dist:win` (Windows) and `npm run dist:mac` (only on a Mac). Without a Mac, run the **Build app zips** workflow on GitHub (Actions tab, or `gh workflow run build.yml`; a push alone does not start it): it builds both and replaces the Releases page of this version (text: `.github/release-notes.md`). Raise `version` in `package.json` for a new version. Icon source: `build/icon.svg` (`npx electron tools/make-icon.cjs build`).
