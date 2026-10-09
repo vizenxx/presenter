@@ -74,6 +74,7 @@ The **📘 Guide** in the app has the same help in two parts: **1 · Use Present
 - A clicker, the arrow keys, PageUp / PageDown and Space turn pages. Home and End go to the first and last page.
 - **The selected card turns.** If it is **Linked**, every linked card turns with it; if not, it turns alone.
 - Select a card by clicking it, or by clicking its picture. The selected card has a blue border.
+- Type a slide number and press **Enter** to jump there (the number shows in the top bar; **Esc** drops it).
 - **−** and **+** on a card move only that card, e.g. to set how many pages two decks are apart.
 - **Next slide** shows the slide after the selected card's slide. Click it to look further ahead: page keys then turn only the preview, and the audience sees no change. Click the current slide or a card to go back.
 

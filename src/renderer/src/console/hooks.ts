@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { blankKey, commandKey, keyIntent } from '../../../shared/keys'
 import { zoomKey } from '../../../shared/zoom'
 import { INK_KEYS, type InkTool } from '../../../shared/ink'
@@ -53,8 +53,21 @@ const isTextField = (el: EventTarget | null): boolean =>
  * Console keys: page turns, F5/Esc, text size, marking tools (P H R A L E, Ctrl+Z, Delete), B / W (black or white projectors).
  * Esc first leaves a marking tool, then stops projecting. Any key stops a ringing alarm.
  */
-export function useConsoleKeys(alarming: boolean, inkTool: InkTool, blank: boolean, audience: boolean): void {
+/** How long typed slide digits wait for Enter. */
+const JUMP_WAIT_MS = 3000
+
+/** Returns the slide number being typed (digits, then Enter jumps; Esc drops them), or ''. */
+export function useConsoleKeys(alarming: boolean, inkTool: InkTool, blank: boolean, audience: boolean): string {
+  const [jump, setJump] = useState('')
+  const typed = useRef('')
+  const jumpTimer = useRef<number | null>(null)
   useEffect(() => {
+    const setTyped = (text: string): void => {
+      typed.current = text
+      setJump(text)
+      if (jumpTimer.current !== null) window.clearTimeout(jumpTimer.current)
+      jumpTimer.current = text ? window.setTimeout(() => setTyped(''), JUMP_WAIT_MS) : null
+    }
     const onKey = (e: KeyboardEvent): void => {
       const mods = { control: e.ctrlKey, alt: e.altKey, meta: e.metaKey }
       const zoom = zoomKey(e.key, mods)
@@ -68,6 +81,21 @@ export function useConsoleKeys(alarming: boolean, inkTool: InkTool, blank: boole
       if (blank && !['Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) {
         e.preventDefault()
         window.presenter.setBlank(null)
+        return
+      }
+      // A slide number, then Enter: jump there (as in PowerPoint's show). Esc drops the number.
+      const plain = !e.ctrlKey && !e.altKey && !e.metaKey
+      if (plain && /^[0-9]$/.test(e.key)) {
+        e.preventDefault()
+        setTyped((typed.current + e.key).replace(/^0+/, '').slice(0, 4))
+        return
+      }
+      if (typed.current && plain && (e.key === 'Enter' || e.key === 'Escape' || e.key === 'Backspace')) {
+        e.preventDefault()
+        const n = Number(typed.current)
+        if (e.key === 'Backspace') setTyped(typed.current.slice(0, -1))
+        else setTyped('')
+        if (e.key === 'Enter' && n > 0) window.presenter.navigate({ type: 'goto', index: n - 1 })
         return
       }
       const blankKind = audience ? blankKey(e.key, mods) : null
@@ -122,6 +150,7 @@ export function useConsoleKeys(alarming: boolean, inkTool: InkTool, blank: boole
       window.removeEventListener('pointerup', onPointerUp)
     }
   }, [alarming, inkTool, blank, audience])
+  return jump
 }
 
 export function useFileDrop(): void {

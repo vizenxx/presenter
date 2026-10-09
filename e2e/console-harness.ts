@@ -258,6 +258,17 @@ async function inputs(): Promise<void> {
   await wait(150)
   console.log('ok change the time: a pop-up from ± on each timer; − 0:30 on My timer; a stopped class timer is not changed')
 
+  // A slide number, then Enter: jump there; the number shows in the top bar while you type.
+  await js(`document.body.focus()`)
+  await key('1')
+  await key('2')
+  if (!(await js<boolean>(`document.querySelector('header').textContent.includes('Go to slide 12')`))) throw new Error('the typed slide number does not show')
+  await key('Enter')
+  const jumps = (await calls()).filter((c) => c[0] === 'navigate').map((c) => JSON.stringify(c[1]))
+  if (!jumps.includes('{"type":"goto","index":11}')) throw new Error(`12 Enter did not jump to slide 12: ${JSON.stringify(jumps)}`)
+  if (await js<boolean>(`document.querySelector('header').textContent.includes('Go to slide')`)) throw new Error('the number stays after Enter')
+  console.log('ok typed slide number + Enter jumps')
+
   // A+ held for one second repeats (one step at once, then every 80 ms after 400 ms).
   const r = await js<number[]>(`(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === 'A+'); const r = b.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2] })()`)
   wc.sendInputEvent({ type: 'mouseDown', x: Math.round(r[0]), y: Math.round(r[1]), button: 'left', clickCount: 1 })

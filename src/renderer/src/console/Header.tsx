@@ -56,13 +56,15 @@ function canProject(state: AppState): boolean {
 /** menu = the console menu that is open; native deck views hide while one is open. */
 export function Header(props: {
   state: AppState
+  /** A slide number being typed (Enter jumps there). */
+  jump: string
   menu: ConsoleMenu
   onMenu: (m: ConsoleMenu) => void
   rollerOpen: boolean
   onRoller: () => void
   onGuide: () => void
 }) {
-  const { state, menu, onMenu, rollerOpen, onRoller, onGuide } = props
+  const { state, jump, menu, onMenu, rollerOpen, onRoller, onGuide } = props
   const t = useT()
   const close = (): void => onMenu(null)
   return (
@@ -71,6 +73,11 @@ export function Header(props: {
       <span className="max-w-[22rem] truncate text-sm" title={state.mainDeck?.path}>
         {state.mainDeck?.name ?? t.noDeck}
       </span>
+      {jump && (
+        <span className="shrink-0 rounded-full bg-accent px-3 py-1 text-sm font-semibold text-white tabular-nums" role="status">
+          {t.jumpTo(jump)}
+        </span>
+      )}
       <Btn tone={state.mainDeck ? 'default' : 'primary'} onClick={() => window.presenter.openDialog()}>
         {t.openDeck}
       </Btn>
