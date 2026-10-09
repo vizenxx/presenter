@@ -36,9 +36,8 @@ Presenter is a folder you unzip; there is no installer and no administrator pass
 | Top bar | **Open deck**, **Recent**, **🎲 Name picker**, **📘 Guide**, **☀ / ☾** (light or dark look), **▶ Start projecting** |
 | Current slide (left) | What Projector 1 shows. Before projecting it is the deck itself; while projecting it is a live copy of what the audience sees. The mark tools are above it. |
 | Next slide (right) | The slide after the selected card's slide. Click it to look further ahead. |
-| Class timer | The countdown the audience sees on the projector, with warning bells at times you choose. |
+| Class timer | The countdown the audience sees on the projector. **🔔** next to its name: its warning bells. **±**: give it more or less time. |
 | My timer | Your own timer. Only you see it. |
-| ⚙ Timer tools | One line under My timer; click it to open **Change the time** and the **warning bells**. It shows how many bells are set, and Presenter remembers open or folded. |
 | Slides / Notes | The slide list and speaker notes of the selected card (buttons above the current slide). |
 | Bottom bar | One card per content (deck or program window), each with its **Projector ▾** button. **＋ Add screen** at the end. |
 
@@ -127,9 +126,9 @@ The bar above the current slide: **Pointer, Pen, Highlighter, Box, Arrow, Laser,
 
 **Class timer** (the audience sees it)
 
-- Click a preset (**1 min**, **5 min** …) to start at once, or type minutes **:** seconds and click **Start** (or press Enter). **−** and **+** change the minutes; hold them to go fast. A box can be emptied while you type.
+- Click a preset (**1 min**, **5 min** …) to start at once. Or type the time in **Set** (minutes **:** seconds): the big time shows it, and the one **Start** button starts it (Enter in a box starts too). **−** and **+** change the minutes; hold them to go fast. A box can be emptied while you type. While the timer runs, **Set** rests: use **±**, or **Reset** to set a new time.
 - When a deck plans a time for a slide, the timer shows it.
-- **🔔 Warning bells** (in **⚙ Timer tools**, under My timer): each bell beeps its own number of times (1–9) when its time is left (minutes : seconds). The bells are listed in the order they ring. **＋ Add a bell** adds one (up to 5); **✕** removes one. At first there is one bell: 1:00 left, 3 beeps. Presenter remembers the bells. In the last 5 seconds it always beeps once a second.
+- **🔔 Warning bells**: the 🔔 button next to the class timer's name (it shows how many bells are set) opens them in a pop-up: each bell beeps its own number of times (1–9) when its time is left (minutes : seconds). The bells are listed in the order they ring. **＋ Add a bell** adds one (up to 5); **✕** removes one. At first there is one bell: 1:00 left, 3 beeps. Presenter remembers the bells. In the last 5 seconds it always beeps once a second.
 - At zero the alarm rings until you press any key or click. That key does not turn the page.
 - UXD202 decks show the countdown in their own bar; everything else shows it at the bottom right of the projector.
 
@@ -139,9 +138,9 @@ The bar above the current slide: **Pointer, Pen, Highlighter, Box, Arrow, Laser,
 - A countdown keeps going past zero as **Over time**, in red.
 - The floating toolbar shows its time while it runs.
 
-**Change the time** (in **⚙ Timer tools**, under My timer)
+**Change the time** (**±** on either timer)
 
-- Choose **Class timer** or **My timer**, type an amount (minutes : seconds), then click **− 1:00** to take it away or **+ 1:00** to add it.
+- **±** opens a pop-up for that timer (you can still switch to the other one there). Type an amount (minutes : seconds), then click **− 1:00** to take it away or **+ 1:00** to add it.
 - It changes a timer that runs or is paused; a timer that has not started stays as it is.
 - The class timer keeps at least one second, so taking away too much makes it ring a second later. After it rang, **+** makes it run again for that time (for example "two more minutes").
 - Taking time away past a warning bell's time rings that bell.

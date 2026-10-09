@@ -213,6 +213,8 @@ export interface ConsoleApi {
   speakerReset(): void
   /** Adds seconds to My timer (negative: takes them away). */
   speakerAdjust(deltaSec: number): void
+  /** Sets the class timer's time while it is stopped. */
+  timerSet(sec: number): void
   /** Adds seconds to the class timer (negative: takes them away). */
   timerAdjust(deltaSec: number): void
   setTheme(theme: UiTheme): void

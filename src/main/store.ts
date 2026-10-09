@@ -712,6 +712,15 @@ export class Store {
     this.syncTimer(true)
   }
 
+  /** Sets the class timer's time while it is stopped (not running or paused); Start then uses it. */
+  timerSet(sec: number): void {
+    if (this.timer.status === 'running' || this.timer.status === 'paused') return
+    const seconds = Math.round(Number(sec))
+    if (!(seconds >= 1)) return
+    this.timer = T.reset(this.timer, Math.min(180 * 60 + 59, seconds))
+    this.syncTimer(true)
+  }
+
   /** Adds time to the class timer (below zero: takes time away) while it runs, is paused, or has rung. */
   timerAdjust(deltaSec: number): void {
     const next = T.adjust(this.timer, Number(deltaSec) || 0, Date.now())
@@ -725,7 +734,7 @@ export class Store {
       this.dismissAlarm()
       return
     }
-    this.timer = T.toggle(this.timer, Date.now(), this.defaultDuration())
+    this.timer = T.toggle(this.timer, Date.now(), this.timer.durationSec)
     this.syncTimer(true)
   }
 

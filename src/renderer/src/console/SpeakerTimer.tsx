@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { clock } from '../../../shared/format'
 import { speakerStarted } from '../../../shared/timer'
-import type { SpeakerTimerView } from '../../../shared/types'
+import type { AppState, SpeakerTimerView } from '../../../shared/types'
 import { useT } from './i18n'
-import { Btn, NumberField } from './ui'
+import { AdjustButton } from './TimerPanel'
+import { Btn, NumberField, type ConsoleMenu } from './ui'
 
 /** Seconds to show: time so far (count up) or time left, below zero when over (count down). */
 export function speakerSeconds(s: SpeakerTimerView, now: number): number {
@@ -27,8 +28,9 @@ export function useNow(running: boolean): number {
  * The speaker's own timer, for pacing the talk. The audience never sees it and it makes no
  * sound; the class timer is separate. The console and the floating toolbar show the same one.
  */
-export function SpeakerTimer({ speaker }: { speaker: SpeakerTimerView }) {
+export function SpeakerTimer({ state, menu, onMenu }: { state: AppState; menu: ConsoleMenu; onMenu: (m: ConsoleMenu) => void }) {
   const t = useT()
+  const speaker = state.speaker
   const running = speaker.startedAt !== null
   const started = speakerStarted(speaker)
   const shownSec = speakerSeconds(speaker, useNow(running))
@@ -61,6 +63,7 @@ export function SpeakerTimer({ speaker }: { speaker: SpeakerTimerView }) {
           <Btn disabled={!started} onClick={() => window.presenter.speakerReset()}>
             {t.reset}
           </Btn>
+          <AdjustButton state={state} target="mine" menu={menu} onMenu={onMenu} />
         </span>
       </div>
     </section>

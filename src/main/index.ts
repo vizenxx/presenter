@@ -42,6 +42,7 @@ function wireIpc(store: Store): void {
   ipcMain.on('console:speaker-reset', () => store.speakerReset())
   ipcMain.on('console:speaker-adjust', (_e, deltaSec: number) => store.speakerAdjust(deltaSec))
   ipcMain.on('console:timer-adjust', (_e, deltaSec: number) => store.timerAdjust(deltaSec))
+  ipcMain.on('console:timer-set', (_e, sec: number) => store.timerSet(sec))
   ipcMain.on('console:set-theme', (_e, theme: UiTheme) => store.setTheme(theme))
   ipcMain.on('console:toolbar-size', (_e, width: number, height: number) => store.toolbarSize(Number(width), Number(height)))
   ipcMain.on('console:close-projector', (_e, n: number) => store.closeProjector(Number(n)))

@@ -13,7 +13,7 @@ const OUT = path.join(ROOT, 'e2e', 'out')
 const STUB = path.join(OUT, 'harness', 'console-stub-preload.cjs')
 const AI_REQUEST = aiRequestText(fs.readFileSync(path.join(ROOT, 'docs', 'ai-integration.md'), 'utf8'))
 /** Every ConsoleApi method (contextBridge copies plain objects only, so no Proxy). */
-const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "listWindows", "addWindowScreen", "setTheme", "timerWarnings", "speakerAdjust", "timerAdjust"]
+const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "listWindows", "addWindowScreen", "setTheme", "timerWarnings", "speakerAdjust", "timerAdjust", "timerSet"]
 
 app.disableHardwareAcceleration()
 // Each screenshot closes its window; keep the app alive between them.
@@ -77,13 +77,11 @@ api.guide = () => Promise.resolve({ aiRequest: ${JSON.stringify(AI_REQUEST)} })
 api.saveGuideFile = () => Promise.resolve(null)
 api.listWindows = () => Promise.resolve(${JSON.stringify(SAMPLE_WINDOWS)})
 contextBridge.exposeInMainWorld('presenter', api)
-// Every page starts with Timer tools folded (the open state is remembered in the page's storage).
-try { localStorage.removeItem('presenter.timerTools.open') } catch {}
 `
   )
 }
 
-type Open = 'guide' | 'guide-prepare' | 'window-picker' | 'start' | 'screen-menu' | 'add-menu' | 'crowd' | 'roller' | 'bells' | null
+type Open = 'guide' | 'guide-prepare' | 'window-picker' | 'start' | 'screen-menu' | 'add-menu' | 'crowd' | 'roller' | 'bells' | 'adjust' | null
 /** Clicks the button that opens each pop-up. */
 const OPENERS: Record<string, string> = {
   guide: `[...document.querySelectorAll('header button')].find((x) => x.textContent.includes('📘'))`,
@@ -92,7 +90,8 @@ const OPENERS: Record<string, string> = {
   'window-picker': `(() => { [...document.querySelectorAll('footer button')].find((x) => x.textContent.includes('＋')).click(); return new Promise((r) => setTimeout(() => r([...document.querySelectorAll('button')].find((x) => x.textContent.startsWith('A window'))), 300)) })()`,
   'add-menu': `[...document.querySelectorAll('footer button')].find((x) => x.textContent.includes('＋'))`,
   roller: `[...document.querySelectorAll('header button')].find((x) => x.textContent.includes('🎲'))`,
-  bells: `(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.includes('Timer tools')); return b.getAttribute('aria-expanded') === 'true' ? { click() {} } : b })()`
+  bells: `[...document.querySelectorAll('button')].find((x) => x.textContent.trim().startsWith('🔔'))`,
+  adjust: `[...document.querySelectorAll('button')].find((x) => x.textContent.trim() === '±')`
 }
 
 async function shot(projecting: boolean, open: Open = null, page = 'console', theme: UiTheme = 'dark'): Promise<void> {
@@ -145,6 +144,8 @@ async function inputs(): Promise<void> {
   // An HTML deck: Text size works only for HTML.
   const state = sampleState(false)
   state.outputs = state.outputs.map((o) => (o.deck ? { ...o, deckKind: 'html' as const } : o))
+  // A stopped class timer: Set works only then.
+  state.timer = { status: 'idle', remainingSec: 300, durationSec: 300, alarming: false, warnings: [{ sec: 60, beeps: 3 }] }
   writeStub(state)
   const win = new BrowserWindow({ show: false, width: 1536, height: 864, useContentSize: true, webPreferences: { preload: STUB, contextIsolation: true, sandbox: true, offscreen: true } })
   await win.loadFile(path.join(ROOT, 'out', 'renderer', 'console.html'))
@@ -162,6 +163,11 @@ async function inputs(): Promise<void> {
   const leave = (title: string): Promise<unknown> => js(`${field(title)}.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))`)
   const calls = (): Promise<unknown[][]> => js('window.presenter.__calls()')
 
+  const clickText = (text: string): Promise<boolean> => js(`(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === ${JSON.stringify(text)}); if (b) b.click(); return !!b })()`)
+
+  // One Start in the class timer: Set only sets the time; the Start button starts it.
+  const starts = await js<number>(`[...document.querySelectorAll('section')].filter((x) => x.textContent.includes('Class timer · students see it')).flatMap((x) => [...x.querySelectorAll('button')]).filter((b) => b.textContent.trim() === 'Start').length`)
+  if (starts !== 1) throw new Error(`the class timer has ${starts} Start buttons`)
   // Minutes: empty the box completely, then type 0.
   await js(`${field('Minutes')}.focus()`)
   await js(`${field('Minutes')}.setSelectionRange(9, 9)`)
@@ -169,7 +175,7 @@ async function inputs(): Promise<void> {
   const emptied = await js<string>(`${field('Minutes')}.value`)
   if (emptied !== '') throw new Error(`the minutes box keeps "${emptied}" after Backspace`)
   await key('0')
-  // Seconds: empty both digits, type 30, Enter starts a 30-second timer.
+  // Seconds: empty both digits, type 30: the time is set to 0:30 (0:00 on the way is not sent); Enter starts it.
   await js(`${field('Seconds')}.focus()`)
   await js(`${field('Seconds')}.setSelectionRange(9, 9)`)
   await key('Backspace')
@@ -177,20 +183,19 @@ async function inputs(): Promise<void> {
   if ((await js<string>(`${field('Seconds')}.value`)) !== '') throw new Error('the seconds box does not empty')
   await key('3')
   await key('0')
+  const set = (await calls()).filter((c) => c[0] === 'timerSet').map((c) => c[1])
+  if (set[set.length - 1] !== 30 || set.includes(0)) throw new Error(`Set should end at 30 s and never send 0: ${JSON.stringify(set)}`)
+  if ((await calls()).some((c) => c[0] === 'timerStart')) throw new Error('typing in Set started the timer')
   await key('Enter')
   const started = (await calls()).filter((c) => c[0] === 'timerStart')
   if (started.length !== 1 || started[0][1] !== 30) throw new Error(`Enter should start 30 s: ${JSON.stringify(started)}`)
-  console.log('ok timer boxes: empty fully, 0 min 30 s starts 30 s')
+  console.log('ok class timer: one Start; Set empties fully, sets 0:30, Enter starts it')
 
-  // Timer tools: folded at first (one line with the number of bells), then opened.
-  const toolsText = await js<string>(`[...document.querySelectorAll('button')].find((x) => x.textContent.includes('Timer tools')).textContent`)
-  if (!toolsText.includes('1 warning bell')) throw new Error(`folded Timer tools does not show the bells: ${toolsText}`)
-  if (await js<boolean>(`!!document.querySelector('input[title="Bell: minutes left"]')`)) throw new Error('Timer tools is not folded at first')
-  await js(`[...document.querySelectorAll('button')].find((x) => x.textContent.includes('Timer tools')).click()`)
+  // 🔔 next to the class timer's name opens its warning bells in a pop-up; Esc closes it.
+  if ((await js<string>(`[...document.querySelectorAll('button')].find((x) => x.textContent.trim().startsWith('🔔')).textContent.trim()`)) !== '🔔 1') throw new Error('the bell button does not show 1 bell')
+  await js(`[...document.querySelectorAll('button')].find((x) => x.textContent.trim().startsWith('🔔')).click()`)
   await wait(150)
-  if (!(await js<boolean>(`!!document.querySelector('input[title="Bell: minutes left"]') && !!document.querySelector('input[title="Change by: minutes"]')`))) throw new Error('opened Timer tools lacks the bells or Change the time')
-  console.log('ok Timer tools: folded at first with the number of bells, opens to Change the time and the bells')
-
+  if (!(await js<boolean>(`document.body.textContent.includes('Warning bells · Class timer')`))) throw new Error('the bells pop-up does not say it is for the class timer')
   // Warning bells: add one, change the minutes and the beeps of the first, remove it (the stub state stays at one bell 1:00 / 3 beeps).
   const sent = async (): Promise<string[]> => (await calls()).filter((c) => c[0] === 'timerWarnings').map((c) => JSON.stringify(c[1]))
   await js(`[...document.querySelectorAll('button')].find((x) => x.textContent.includes('Add a bell')).click()`)
@@ -213,12 +218,19 @@ async function inputs(): Promise<void> {
   // Each box sends once, when you leave it (not on every key).
   const want = ['[{"sec":60,"beeps":3},{"sec":30,"beeps":1}]', '[{"sec":120,"beeps":3}]', '[{"sec":60,"beeps":5}]', '[]']
   if (JSON.stringify(bells) !== JSON.stringify(want)) throw new Error(`warning bells sent ${JSON.stringify(bells)}, expected ${JSON.stringify(want)}`)
-  console.log('ok warning bells: add, change time and beeps, remove')
+  await js(`document.body.focus()`)
+  await key('Escape')
+  await wait(150)
+  if (await js<boolean>(`document.body.textContent.includes('Warning bells · Class timer')`)) throw new Error('Esc does not close the bells pop-up')
+  if ((await calls()).some((c) => c[0] === 'stopProjecting' || c[0] === 'setInkTool')) throw new Error('Esc in a pop-up did more than close it')
+  console.log('ok warning bells: a pop-up from 🔔 at the class timer; add, change, remove; Esc closes only it')
 
-  // Change the time: + 1:00 on the class timer; then My timer, 0:30, − 0:30.
-  const clickText = (text: string): Promise<boolean> => js(`(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === ${JSON.stringify(text)}); if (b) b.click(); return !!b })()`)
-  if (!(await clickText('+ 1:00'))) throw new Error('no "+ 1:00" button')
-  if (!(await clickText('My timer'))) throw new Error('no "My timer" choice')
+  // ± on My timer opens Change the time for My timer; the class timer (stopped) cannot be changed.
+  const plusMinus = await js<number>(`[...document.querySelectorAll('button')].filter((x) => x.textContent.trim() === '±').length`)
+  if (plusMinus !== 2) throw new Error(`expected ± on both timers, found ${plusMinus}`)
+  await js(`[...document.querySelectorAll('button')].filter((x) => x.textContent.trim() === '±')[1].click()`)
+  await wait(150)
+  if ((await js<string | null>(`[...document.querySelectorAll('button[aria-pressed]')].find((x) => x.textContent.trim() === 'My timer')?.getAttribute('aria-pressed') ?? null`)) !== 'true') throw new Error('± on My timer does not choose My timer')
   await js(`${field('Change by: minutes')}.focus()`)
   await js(`${field('Change by: minutes')}.setSelectionRange(9, 9)`)
   await key('Backspace')
@@ -229,12 +241,17 @@ async function inputs(): Promise<void> {
   await key('Backspace')
   await key('3')
   await key('0')
-  await js(`${field('Change by: seconds')}.blur()`)
   await wait(100)
   if (!(await clickText('− 0:30'))) throw new Error('no "− 0:30" button after typing 0:30')
+  if (!(await clickText('Class timer'))) throw new Error('no "Class timer" choice')
+  await wait(100)
+  if (!(await js<boolean>(`[...document.querySelectorAll('button')].find((x) => x.textContent.trim() === '+ 0:30').disabled`))) throw new Error('a stopped class timer can be changed')
   const changes = (await calls()).filter((c) => c[0] === 'timerAdjust' || c[0] === 'speakerAdjust').map((c) => `${c[0]} ${c[1]}`)
-  if (changes.join('|') !== 'timerAdjust 60|speakerAdjust -30') throw new Error(`change the time sent: ${JSON.stringify(changes)}`)
-  console.log('ok change the time: + 1:00 on the class timer, − 0:30 on My timer')
+  if (changes.join('|') !== 'speakerAdjust -30') throw new Error(`change the time sent: ${JSON.stringify(changes)}`)
+  await js(`document.body.focus()`)
+  await key('Escape')
+  await wait(150)
+  console.log('ok change the time: a pop-up from ± on each timer; − 0:30 on My timer; a stopped class timer is not changed')
 
   // A+ held for one second repeats (one step at once, then every 80 ms after 400 ms).
   const r = await js<number[]>(`(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === 'A+'); const r = b.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2] })()`)
@@ -280,6 +297,8 @@ app.whenReady().then(async () => {
     await shot(false, 'crowd', 'toolbar', 'light')
     await shot(false, 'bells')
     await shot(false, 'bells', 'console', 'light')
+    await shot(false, 'adjust')
+    await shot(false, 'adjust', 'console', 'light')
     console.log('CONSOLE OK')
   } catch (error) {
     console.error(String(error))

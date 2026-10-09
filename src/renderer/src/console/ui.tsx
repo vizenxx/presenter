@@ -74,8 +74,8 @@ export function HoldBtn(props: { children: ReactNode; onStep: () => void; title?
  * (or Enter) puts a value into range, and an empty box shows the last value again.
  * live = false: the value goes out only when you leave the box or press Enter (a sorted list must not move while you type).
  */
-export function NumberField(props: { value: number; min: number; max: number; onChange: (n: number) => void; onEnter?: (n: number) => void; digits?: number; title?: string; className?: string; live?: boolean }) {
-  const { value, min, max, onChange, onEnter, digits = 0, title, className = '', live = true } = props
+export function NumberField(props: { value: number; min: number; max: number; onChange: (n: number) => void; onEnter?: (n: number) => void; digits?: number; title?: string; className?: string; live?: boolean; disabled?: boolean }) {
+  const { value, min, max, onChange, onEnter, digits = 0, title, className = '', live = true, disabled = false } = props
   const [draft, setDraft] = useState<string | null>(null)
   const shown = draft ?? String(value).padStart(digits, '0')
   const commit = (): number => {
@@ -89,6 +89,7 @@ export function NumberField(props: { value: number; min: number; max: number; on
       type="text"
       inputMode="numeric"
       title={title}
+      disabled={disabled}
       value={shown}
       onFocus={() => setDraft(String(value))}
       onChange={(e) => {
@@ -103,31 +104,42 @@ export function NumberField(props: { value: number; min: number; max: number; on
         const n = commit()
         onEnter?.(n)
       }}
-      className={`rounded-full bg-panel-2 px-1 py-1 text-center text-sm tabular-nums ${className}`}
+      className={`rounded-full bg-panel-2 px-1 py-1 text-center text-sm tabular-nums disabled:cursor-not-allowed disabled:opacity-40 ${className}`}
     />
   )
 }
 
 /** Menus that can be open in the console; native deck views step aside while one is. */
-export type ConsoleMenu = 'recent' | 'add' | `screen:${string}` | `show:${string}` | null
+export type ConsoleMenu = 'recent' | 'add' | 'bells' | 'adjust-class' | 'adjust-mine' | `screen:${string}` | `show:${string}` | null
 
 /**
- * A pop-up menu below (or above) its button. A press anywhere else closes it; the button
- * itself toggles it (presses inside the menu's parent do not count as "elsewhere").
+ * A pop-up menu below (or above) its button, from its left edge (or, align right, its right edge).
+ * A press anywhere else or Esc closes it (Esc then does nothing else, e.g. it does not stop
+ * projecting); the button itself toggles it (presses inside the menu's parent do not count as "elsewhere").
  */
-export function Menu(props: { children: ReactNode; onClose: () => void; up?: boolean; width?: string }) {
-  const { children, onClose, up = false, width = 'w-96' } = props
+export function Menu(props: { children: ReactNode; onClose: () => void; up?: boolean; width?: string; align?: 'left' | 'right' }) {
+  const { children, onClose, up = false, width = 'w-96', align = 'left' } = props
   const box = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const close = (e: PointerEvent): void => {
       if (box.current?.parentElement?.contains(e.target as Node)) return
       onClose()
     }
+    const escape = (e: KeyboardEvent): void => {
+      if (e.key !== 'Escape') return
+      e.preventDefault()
+      e.stopImmediatePropagation()
+      onClose()
+    }
     window.addEventListener('pointerdown', close)
-    return () => window.removeEventListener('pointerdown', close)
+    window.addEventListener('keydown', escape, true)
+    return () => {
+      window.removeEventListener('pointerdown', close)
+      window.removeEventListener('keydown', escape, true)
+    }
   }, [onClose])
   return (
-    <div ref={box} onClick={(e) => e.stopPropagation()} className={`absolute left-0 z-20 rounded-2xl bg-panel p-1.5 shadow-xl ring-1 ring-line/70 ${up ? 'bottom-full mb-2' : 'top-full mt-2'} ${width}`}>
+    <div ref={box} onClick={(e) => e.stopPropagation()} className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} z-20 rounded-2xl bg-panel p-1.5 shadow-xl ring-1 ring-line/70 ${up ? 'bottom-full mb-2' : 'top-full mt-2'} ${width}`}>
       {children}
     </div>
   )

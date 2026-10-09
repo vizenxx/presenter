@@ -225,7 +225,17 @@ try {
   await waitFor('Esc on the floating toolbar leaves the arrow', (s) => s.ink.tool === 'pointer')
   console.log('ok 7d Ctrl+Z and Esc on a slide and on the floating toolbar')
 
-  // 7e. Change the time of a running timer: add, take away (one second stays), and give a rung timer more time.
+  // 7e. Set is the time the one Start button uses (only while stopped); then change the time of a
+  // running timer: add, take away (one second stays), and give a rung timer more time.
+  await call(() => globalThis.__presenter.timerReset())
+  await call(() => globalThis.__presenter.timerSet(150))
+  s = await waitFor('Set 2:30', (s) => s.timer.status === 'idle' && s.timer.durationSec === 150 && s.timer.remainingSec === 150)
+  await call(() => globalThis.__presenter.timerToggle())
+  s = await waitFor('Start uses the set time', (s) => s.timer.status === 'running' && s.timer.remainingSec >= 148 && s.timer.remainingSec <= 150)
+  await call(() => globalThis.__presenter.timerSet(30))
+  s = await state()
+  assert.ok(s.timer.remainingSec > 100, 'Set does nothing while the timer runs')
+  await call(() => globalThis.__presenter.timerReset())
   await call(() => globalThis.__presenter.timerStart(120))
   await call(() => globalThis.__presenter.timerAdjust(60))
   s = await waitFor('class timer + 1:00', (s) => s.timer.remainingSec >= 177 && s.timer.remainingSec <= 180)

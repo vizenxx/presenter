@@ -12,7 +12,7 @@ import { IS_MAC } from '../console/platform'
 import { screenLabel, useT } from '../console/i18n'
 import { useRollFace } from '../console/RollerPanel'
 import { speakerSeconds, useNow } from '../console/SpeakerTimer'
-import { CustomTime, PRESETS } from '../console/TimerPanel'
+import { PRESETS, SetTime } from '../console/TimerPanel'
 
 const ICON_BTN = 'grid h-8 w-8 place-items-center rounded-full hover:bg-line'
 const SMALL_BTN = 'rounded-full px-2.5 py-1 text-sm hover:bg-line'
@@ -46,7 +46,7 @@ function TimerDetails({ state }: { state: AppState }) {
         </button>
       ))}
       <span className="mx-1 h-5 w-px bg-line" />
-      <CustomTime planned={state.plannedMinutes} buttonClass={SMALL_BTN} />
+      <SetTime timer={state.timer} buttonClass={`${SMALL_BTN} disabled:opacity-40`} />
     </div>
   )
 }

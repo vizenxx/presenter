@@ -29,6 +29,7 @@ const api: ConsoleApi = {
   speakerReset: () => ipcRenderer.send('console:speaker-reset'),
   speakerAdjust: (deltaSec) => ipcRenderer.send('console:speaker-adjust', deltaSec),
   timerAdjust: (deltaSec) => ipcRenderer.send('console:timer-adjust', deltaSec),
+  timerSet: (sec) => ipcRenderer.send('console:timer-set', sec),
   setTheme: (theme) => ipcRenderer.send('console:set-theme', theme),
   toolbarSize: (width, height) => ipcRenderer.send('console:toolbar-size', width, height),
   closeProjector: (n) => ipcRenderer.send('console:close-projector', n),
