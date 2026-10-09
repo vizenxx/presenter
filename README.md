@@ -48,7 +48,9 @@ The **📘 Guide** in the app has the same help in two parts: **1 · Use Present
 1. Drop a deck file on the console, or click **Open deck** (it starts in the folder of the deck you opened last). No deck? Click **Show a program window…** on the start screen: a browser, a video or any open program window goes on Projector 1 instead.
 2. Click **▶ Start projecting** (top right) or press **F5**. Projector 1 goes full screen on the projector.
 3. Click **■ Stop projecting** or press **Esc**. The projector closes; the console keeps everything.
-4. Set the projector to **Extend** mode. Without a projector, projecting opens a normal window (good for practice at home).
+4. **B** makes the projectors black, **W** white (also **⬛ Black screen** in the top bar, and the "blank" button of many clickers). The same key, any other key or a click shows the slides again; that key does not turn the page.
+5. While you project, while a projector is open or while a timer runs, Presenter keeps the laptop and the projector from going to sleep.
+6. Set the projector to **Extend** mode. Without a projector, projecting opens a normal window (good for practice at home).
 
 ### Other people's HTML decks
 

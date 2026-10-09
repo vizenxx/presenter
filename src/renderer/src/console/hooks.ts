@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { commandKey, keyIntent } from '../../../shared/keys'
+import { blankKey, commandKey, keyIntent } from '../../../shared/keys'
 import { zoomKey } from '../../../shared/zoom'
 import { INK_KEYS, type InkTool } from '../../../shared/ink'
 import type { AppState } from '../../../shared/types'
@@ -50,10 +50,10 @@ const isTextField = (el: EventTarget | null): boolean =>
   (el instanceof HTMLElement && el.isContentEditable)
 
 /**
- * Console keys: page turns, F5/Esc, text size, marking tools (P H R A L E, Ctrl+Z, Delete).
+ * Console keys: page turns, F5/Esc, text size, marking tools (P H R A L E, Ctrl+Z, Delete), B / W (black or white projectors).
  * Esc first leaves a marking tool, then stops projecting. Any key stops a ringing alarm.
  */
-export function useConsoleKeys(alarming: boolean, inkTool: InkTool): void {
+export function useConsoleKeys(alarming: boolean, inkTool: InkTool, blank: boolean, audience: boolean): void {
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       const mods = { control: e.ctrlKey, alt: e.altKey, meta: e.metaKey }
@@ -64,6 +64,18 @@ export function useConsoleKeys(alarming: boolean, inkTool: InkTool): void {
         return
       }
       if (isTextField(e.target)) return
+      // Black or white projectors: any key brings the slides back (and does nothing else).
+      if (blank && !['Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) {
+        e.preventDefault()
+        window.presenter.setBlank(null)
+        return
+      }
+      const blankKind = audience ? blankKey(e.key, mods) : null
+      if (blankKind) {
+        e.preventDefault()
+        window.presenter.setBlank(blankKind)
+        return
+      }
       const command = commandKey(e.key, mods)
       if (command) {
         e.preventDefault()
@@ -109,7 +121,7 @@ export function useConsoleKeys(alarming: boolean, inkTool: InkTool): void {
       window.removeEventListener('keydown', onKey)
       window.removeEventListener('pointerup', onPointerUp)
     }
-  }, [alarming, inkTool])
+  }, [alarming, inkTool, blank, audience])
 }
 
 export function useFileDrop(): void {

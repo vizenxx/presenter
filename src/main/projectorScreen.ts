@@ -1,4 +1,4 @@
-import { BaseWindow, screen, type Display, type WebContentsView } from 'electron'
+import { BaseWindow, View, screen, type Display, type WebContentsView } from 'electron'
 import { HEADLESS } from './headless'
 import { IS_MAC } from './platform'
 
@@ -13,6 +13,8 @@ export class ProjectorScreen {
   readonly win: BaseWindow
   private content: WebContentsView | null = null
   private fullscreen = false
+  /** Black or white over everything (B / W). */
+  private readonly cover = new View()
 
   constructor(
     readonly number: number,
@@ -27,6 +29,8 @@ export class ProjectorScreen {
     const bounds = display ? display.bounds : { x: area.x + 80 + 40 * number, y: area.y + 80 + 30 * number, ...WINDOWED }
     this.win = new BaseWindow({ ...bounds, title, backgroundColor: '#000000', autoHideMenuBar: true, show: !HEADLESS })
     this.win.contentView.addChildView(roller)
+    this.cover.setVisible(false)
+    this.win.contentView.addChildView(this.cover)
     this.win.on('resize', () => {
       this.layout()
       onResize()
@@ -75,6 +79,13 @@ export class ProjectorScreen {
     return { width: b.width, height: b.height }
   }
 
+  /** Black or white over the whole screen (null = show it again). */
+  setBlank(kind: 'black' | 'white' | null): void {
+    if (this.win.isDestroyed()) return
+    if (kind) this.cover.setBackgroundColor(kind === 'white' ? '#ffffff' : '#000000')
+    this.cover.setVisible(kind !== null)
+  }
+
   toggleFullscreen(): void {
     this.setFullscreen(!this.fullscreen)
   }
@@ -103,6 +114,7 @@ export class ProjectorScreen {
     const b = this.win.getContentBounds()
     this.content?.setBounds({ x: 0, y: 0, width: b.width, height: b.height })
     this.roller.setBounds({ x: 0, y: 0, width: b.width, height: b.height })
+    this.cover.setBounds({ x: 0, y: 0, width: b.width, height: b.height })
     this.win.setTitle(this.content ? this.title : `${this.title} · nothing shown`)
   }
 }

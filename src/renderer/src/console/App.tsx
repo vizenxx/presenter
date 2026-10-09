@@ -23,7 +23,7 @@ export function App() {
   // 'wait' = the window becomes a waiting content (＋ Add screen); 'show' = the start screen's first content, on Projector 1.
   const [picker, setPicker] = useState<'wait' | 'show' | null>(null)
   const closePicker = useCallback(() => setPicker(null), [])
-  useConsoleKeys(state?.timer.alarming ?? false, state?.ink.tool ?? 'pointer')
+  useConsoleKeys(state?.timer.alarming ?? false, state?.ink.tool ?? 'pointer', !!state?.blank, !!state && (state.projecting || state.projectors.length > 0))
   useFileDrop()
   if (!state) return <div className="grid h-full place-items-center text-base text-muted">{t.starting}</div>
   // The current pane shows what is on Projector 1 (it can be another content than the main deck).

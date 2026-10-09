@@ -198,6 +198,8 @@ export interface AppState {
   ink: InkSettings
   /** Light or dark console; null = follow the computer's setting. */
   theme: UiTheme | null
+  /** The projectors are black or white (B / W); null = the slides show. */
+  blank: 'black' | 'white' | null
 }
 
 export type NavAction =
@@ -234,6 +236,8 @@ export interface ConsoleApi {
   /** Adds seconds to the class timer (negative: takes them away). */
   timerAdjust(deltaSec: number): void
   setTheme(theme: UiTheme): void
+  /** Black or white projectors (null = show the slides again). The same kind again also shows them again. */
+  setBlank(kind: 'black' | 'white' | null): void
   /** The floating toolbar page reports its size. */
   toolbarSize(width: number, height: number): void
   closeProjector(n: number): void

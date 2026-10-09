@@ -179,6 +179,9 @@ const en = {
 
   guideButton: '📘 Guide',
   themeLight: 'Light',
+  blankOn: '⬛ Black screen (B)',
+  blankOff: '▶ Show slides again',
+  blankTitle: 'Black out the projectors (B), or make them white (W). The same key, any other key or a click shows the slides again.',
   holdToRepeat: 'Hold to repeat',
   adjustTitle: 'Change the time',
   adjustWhich: 'Timer',
@@ -239,6 +242,7 @@ const en = {
   guideUseRows: [
     ['Open a deck', 'Drop the file on this window, or click Open deck.'],
     ['Show it to the class', `Click ▶ Start projecting, or press ${KEYS.project}. Esc stops.`],
+    ['Black out the projector', 'Press B (black) or W (white), or click ⬛ Black screen in the top bar while projecting. Any key or click shows the slides again; that key does not turn the page.'],
     ['Turn pages', 'Clicker, arrow keys, PageUp / PageDown or Space. Home and End go to the first and last page.'],
     ['See what comes next', 'Next slide (right). Click it to look further ahead: students see no change. Click the current slide to go back.'],
     ['Mark on the slide', `Bar above the slide: pen (P), highlighter (H), box (R), arrow (A), laser (L), eraser (E). Hold Shift for a straight line or a square. ${KEYS.mod}+Z undoes; Esc returns to the pointer. Marks clear on the next page.`],

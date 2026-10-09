@@ -96,6 +96,11 @@ export function Header(props: {
       </Btn>
       <ThemeSwitch theme={state.theme} />
       <ProjectStatus state={state} />
+      {(state.projecting || state.projectors.length > 0) && (
+        <Btn tone={state.blank ? 'primary' : 'default'} title={t.blankTitle} onClick={() => window.presenter.setBlank(state.blank ? null : 'black')}>
+          {state.blank ? t.blankOff : t.blankOn}
+        </Btn>
+      )}
       {state.projecting ? (
         <Btn title={t.stopProjectingTitle} onClick={() => window.presenter.stopProjecting()}>
           {t.stopProjecting}

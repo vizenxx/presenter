@@ -9,6 +9,17 @@ export interface KeyMods {
 
 export type CommandKey = 'project' | 'stop-project'
 
+/** A black or white projector (PowerPoint's B and W keys). */
+export type BlankKind = 'black' | 'white'
+
+/** PowerPoint convention, also sent by many clickers' "blank screen" button: B or . = black, W or , = white. */
+export function blankKey(key: string, mods: KeyMods = {}): BlankKind | null {
+  if (mods.control || mods.alt || mods.meta) return null
+  if (key === 'b' || key === 'B' || key === '.') return 'black'
+  if (key === 'w' || key === 'W' || key === ',') return 'white'
+  return null
+}
+
 /**
  * PowerPoint convention (and most clickers' show button): F5 starts projecting, Esc stops it.
  * Mac keyboards need fn for F5, so ⌘ Return also starts (as in PowerPoint for Mac).

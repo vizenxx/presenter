@@ -1,6 +1,6 @@
 import { WebContentsView, session, shell } from 'electron'
 import { inkKeyAction, type InkTool } from '../shared/ink'
-import { commandKey, keyIntent, type CommandKey } from '../shared/keys'
+import { blankKey, commandKey, keyIntent, type BlankKind, type CommandKey } from '../shared/keys'
 import { clampIndex } from '../shared/nav'
 import { zoomKey, type ZoomDirection } from '../shared/zoom'
 import type { AdapterKind, DeckRef, KeyIntent, Milestone, OutputKind, OutputView, SlideMeta } from '../shared/types'
@@ -33,6 +33,7 @@ export type OutputEvent =
   | { type: 'key'; intent: KeyIntent }
   | { type: 'command'; command: CommandKey }
   | { type: 'ink-undo' }
+  | { type: 'blank'; kind: BlankKind }
   | { type: 'zoom'; direction: ZoomDirection }
   | { type: 'anykey' }
   | { type: 'state'; msg: DeckStateMsg; userMoved: boolean }
@@ -139,6 +140,13 @@ export class Output {
       if (ink?.type === 'undo' || (ink?.type === 'pointer' && input.key === 'Escape')) {
         event.preventDefault()
         if (input.type === 'keyDown') this.emit(ink.type === 'undo' ? { type: 'ink-undo' } : { type: 'command', command: 'stop-project' })
+        return
+      }
+      // B / W on a projector: black or white screen (as in PowerPoint).
+      const blank = this.escapeStops ? blankKey(input.key, input) : null
+      if (blank) {
+        event.preventDefault()
+        if (input.type === 'keyDown') this.emit({ type: 'blank', kind: blank })
         return
       }
       const command = commandKey(input.key, input)

@@ -32,6 +32,7 @@ const api: ConsoleApi = {
   timerAdjust: (deltaSec) => ipcRenderer.send('console:timer-adjust', deltaSec),
   timerSet: (sec) => ipcRenderer.send('console:timer-set', sec),
   setTheme: (theme) => ipcRenderer.send('console:set-theme', theme),
+  setBlank: (kind) => ipcRenderer.send('console:set-blank', kind),
   toolbarSize: (width, height) => ipcRenderer.send('console:toolbar-size', width, height),
   closeProjector: (n) => ipcRenderer.send('console:close-projector', n),
   listWindows: () => ipcRenderer.invoke('console:list-windows'),

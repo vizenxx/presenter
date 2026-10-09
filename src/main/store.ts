@@ -1,7 +1,7 @@
-import { app, desktopCapturer, dialog, screen, session, systemPreferences, type BrowserWindow, type Rectangle, type WebContents, type WebContentsView } from 'electron'
+import { app, desktopCapturer, dialog, powerSaveBlocker, screen, session, systemPreferences, type BrowserWindow, type Rectangle, type WebContents, type WebContentsView } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
-import { commandKey, intentToAction, keyIntent, type CommandKey } from '../shared/keys'
+import { blankKey, commandKey, intentToAction, keyIntent, type BlankKind, type CommandKey } from '../shared/keys'
 import { planMove, type NavOutput } from '../shared/nav'
 import { DECK_EXTENSIONS, deckKind, deckTitle } from '../shared/deckKinds'
 import { INK_COLORS, INK_TOOLS, InkScene, type InkOp, type InkSettings, type InkStroke, type InkTool } from '../shared/ink'
@@ -85,6 +85,10 @@ export class Store {
   private speaker: SpeakerTimerView = { mode: 'up', minutes: 45, startedAt: null, heldMs: 0, periods: T.cleanPeriods(T.DEFAULT_PERIODS), clockExtra: null }
   private theme: UiTheme | null = null
   private warnings: T.TimerWarning[] = T.DEFAULT_WARNINGS.map((w) => ({ ...w }))
+  /** Black or white projectors (B / W); null = the slides show. */
+  private blank: BlankKind | null = null
+  /** Keeps the screens from sleeping while a class needs them. */
+  private awakeId: number | null = null
   /** Folder of the deck opened last; Open deck starts there. */
   private lastFolder: string | null = null
   /** Projector page the marks belong to; marks clear when it changes. */
@@ -142,6 +146,12 @@ export class Store {
       const zoom = zoomKey(input.key, input)
       const command = commandKey(input.key, input)
       const intent = keyIntent(input.key, input)
+      const blank = blankKey(input.key, input)
+      if (blank) {
+        event.preventDefault()
+        if (input.type === 'keyDown') this.setBlank(blank)
+        return
+      }
       if (!zoom && !command && !intent) return
       event.preventDefault()
       if (input.type !== 'keyDown') return
@@ -307,6 +317,7 @@ export class Store {
   stopProjecting(): void {
     if (!this.projecting) return
     if (this.roller.showing) this.rollerHide()
+    if (this.blank) this.setBlank(null)
     this.projecting = false
     const onAir = this.onAir()
     this.projectorWin.close()
@@ -429,6 +440,10 @@ export class Store {
   onCommand(command: CommandKey): void {
     if (this.timer.alarming) {
       this.dismissAlarm()
+      return
+    }
+    if (this.blank) {
+      this.setBlank(null)
       return
     }
     if (this.roller.showing) {
@@ -663,6 +678,11 @@ export class Store {
       this.dismissAlarm()
       return
     }
+    // A key while the projectors are black or white brings the slide back; it does not turn the page.
+    if (this.blank) {
+      this.setBlank(null)
+      return
+    }
     // A page key first closes the 抽人 picture; it does not also turn the page.
     if (this.roller.showing) {
       this.closeRollerByUser()
@@ -721,7 +741,49 @@ export class Store {
 
   onPointer(id: OutputId): void {
     if (this.timer.alarming) this.dismissAlarm()
+    // A click on a black or white projector brings the slide back.
+    if (this.blank && this.shownOnAny(id)) this.setBlank(null)
     this.select(id)
+  }
+
+  /**
+   * Black or white projectors (B / W, like PowerPoint): all audience screens go black or white;
+   * the same key again, any other key, or a click brings the slides back. Only while something is
+   * shown to the audience.
+   */
+  setBlank(kind: BlankKind | null): void {
+    const audience = this.projecting || this.extras.size > 0
+    const next = kind === null || kind === this.blank || !audience ? null : kind
+    if (next === this.blank) return
+    this.blank = next
+    this.projectorWin.setBlank(next)
+    for (const x of this.extras.values()) x.screen.setBlank(next)
+    this.emit()
+  }
+
+  private shownOnAny(id: OutputId): boolean {
+    const o = this.outputs.get(id)
+    return !!o && this.shownOn(o) !== null && (this.projecting || this.shownOn(o) !== 1)
+  }
+
+  /** True while the screens are kept awake (for the end-to-end test). */
+  keepsAwake(): boolean {
+    return this.awakeId !== null && powerSaveBlocker.isStarted(this.awakeId)
+  }
+
+  /**
+   * Keeps the laptop and projector screens from turning off while a class needs them: while
+   * projecting, while a projector is open, or while a timer runs (also My timer's class period).
+   */
+  private updateKeepAwake(): void {
+    const s = this.speaker
+    const myTimer = s.startedAt !== null || (s.mode === 'clock' && T.clockNow(s, Date.now()).phase === 'during')
+    const need = this.projecting || this.extras.size > 0 || this.timer.status === 'running' || this.timer.alarming || myTimer
+    if (need && this.awakeId === null) this.awakeId = powerSaveBlocker.start('prevent-display-sleep')
+    if (!need && this.awakeId !== null) {
+      powerSaveBlocker.stop(this.awakeId)
+      this.awakeId = null
+    }
   }
 
   // ---------- timer ----------
@@ -813,7 +875,8 @@ export class Store {
       toolsFor: this.activeWindowId,
       deckStatus: this.deckStatus,
       ink: this.inkSettings,
-      theme: this.theme
+      theme: this.theme,
+      blank: this.blank
     }
   }
 
@@ -860,6 +923,10 @@ export class Store {
         break
       case 'anykey':
         if (this.timer.alarming) this.dismissAlarm()
+        else if (this.blank) this.setBlank(null)
+        break
+      case 'blank':
+        this.setBlank(e.kind)
         break
       case 'state':
         this.onDeckState(o, e.msg, e.userMoved)
@@ -1050,6 +1117,7 @@ export class Store {
   }
 
   private tick(): void {
+    this.updateKeepAwake()
     const wasAlarming = this.timer.alarming
     this.timer = T.tick(this.timer, Date.now())
     if (this.timer.alarming && !wasAlarming) this.alarmSince = Date.now()
@@ -1195,6 +1263,8 @@ export class Store {
       () => this.onProjectorClosed(n)
     )
     this.extras.set(n, { screen: screenWin, roller, contentId: null, displayId: display?.id ?? null })
+    // A projector opened while the others are black or white starts the same way.
+    screenWin.setBlank(this.blank)
   }
 
   /** The teacher closed Projector n: its content waits, keeping its page. */

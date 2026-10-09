@@ -225,6 +225,36 @@ try {
   await waitFor('Esc on the floating toolbar leaves the arrow', (s) => s.ink.tool === 'pointer')
   console.log('ok 7d Ctrl+Z and Esc on a slide and on the floating toolbar')
 
+  // 7f. Black or white projectors (B / W) and keeping the screens awake.
+  assert.equal(await call(() => globalThis.__presenter.keepsAwake()), false, 'nothing keeps the screens awake while nothing runs')
+  await call(() => globalThis.__presenter.timerStart(60))
+  await sleep(400)
+  assert.equal(await call(() => globalThis.__presenter.keepsAwake()), true, 'a running class timer keeps the screens awake')
+  await call(() => globalThis.__presenter.timerReset())
+  await sleep(400)
+  assert.equal(await call(() => globalThis.__presenter.keepsAwake()), false, 'the screens may sleep again after the timer')
+  await call(() => globalThis.__presenter.setBlank('black'))
+  s = await state()
+  assert.equal(s.blank, null, 'no black screen without an audience')
+  await call(() => globalThis.__presenter.startProjecting())
+  s = await waitFor('projecting (hidden)', (s) => s.projecting)
+  await sleep(400)
+  assert.equal(await call(() => globalThis.__presenter.keepsAwake()), true, 'projecting keeps the screens awake')
+  const pageBefore = out(s, 'projector').shownIndex
+  await call(() => globalThis.__presenter.setBlank('black'))
+  s = await waitFor('black screen', (s) => s.blank === 'black')
+  assert.equal(await call(() => globalThis.__presenter.projectorWin.isBlank()), true, 'the projector is covered')
+  await call(() => globalThis.__presenter.onKey('next', null))
+  s = await waitFor('a page key brings the slide back', (s) => s.blank === null)
+  assert.equal(out(s, 'projector').shownIndex, pageBefore, 'that key does not turn the page')
+  await call(() => globalThis.__presenter.setBlank('white'))
+  await call(() => globalThis.__presenter.setBlank('white'))
+  s = await waitFor('W again shows the slide', (s) => s.blank === null)
+  await call(() => globalThis.__presenter.setBlank('black'))
+  await call(() => globalThis.__presenter.stopProjecting())
+  s = await waitFor('stopped, not black', (s) => !s.projecting && s.blank === null)
+  console.log('ok 7f black or white projectors (B / W); screens kept awake while needed')
+
   // 7e. Set is the time the one Start button uses (only while stopped); then change the time of a
   // running timer: add, take away (one second stays), and give a rung timer more time.
   await call(() => globalThis.__presenter.timerReset())

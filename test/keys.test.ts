@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { commandKey, intentToAction, keyIntent } from '../src/shared/keys'
+import { blankKey, commandKey, intentToAction, keyIntent } from '../src/shared/keys'
 
 describe('keyIntent', () => {
   it('maps clicker and arrow keys', () => {
@@ -36,5 +36,20 @@ describe('commandKey', () => {
   it('starts projecting with ⌘ Return (Mac keyboards need fn for F5)', () => {
     expect(commandKey('Enter', { meta: true })).toBe('project')
     expect(commandKey('Enter', { meta: true, alt: true })).toBeNull()
+  })
+})
+
+describe('blankKey', () => {
+  it('maps B and . to black, W and , to white', () => {
+    expect(blankKey('b')).toBe('black')
+    expect(blankKey('B')).toBe('black')
+    expect(blankKey('.')).toBe('black')
+    expect(blankKey('w')).toBe('white')
+    expect(blankKey(',')).toBe('white')
+  })
+  it('ignores the keys with Ctrl, Alt or ⌘, and other keys', () => {
+    expect(blankKey('b', { control: true })).toBeNull()
+    expect(blankKey('w', { meta: true })).toBeNull()
+    expect(blankKey('x')).toBeNull()
   })
 })

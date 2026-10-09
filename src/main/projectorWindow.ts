@@ -1,4 +1,4 @@
-import { app, BaseWindow, WebContentsView, screen } from 'electron'
+import { app, BaseWindow, View, WebContentsView, screen } from 'electron'
 import { HEADLESS } from './headless'
 import { IS_MAC } from './platform'
 import { projectorDisplay } from './displays'
@@ -17,6 +17,8 @@ export class ProjectorWindow {
   readonly overlay: WebContentsView
   private content: WebContentsView | null = null
   private overlayVisible = false
+  /** Black or white over everything (B / W). */
+  private readonly cover = new View()
   private allowClose = false
   /** Window titles in the chosen language. */
   titles = { normal: 'Projector · Presenter', windowed: 'Projector (window) · Esc stops projecting' }
@@ -34,6 +36,8 @@ export class ProjectorWindow {
     // Stack: deck (attached later at index 0), 抽人 picture, timer on top.
     this.win.contentView.addChildView(roller)
     this.win.contentView.addChildView(this.overlay)
+    this.cover.setVisible(false)
+    this.win.contentView.addChildView(this.cover)
     loadOverlay(this.overlay)
     this.win.on('resize', () => this.layout())
     this.win.on('enter-full-screen', () => this.layout())
@@ -110,6 +114,7 @@ export class ProjectorWindow {
     const { width, height } = this.contentSize()
     this.content?.setBounds({ x: 0, y: 0, width, height })
     this.roller.setBounds({ x: 0, y: 0, width, height })
+    this.cover.setBounds({ x: 0, y: 0, width, height })
     this.overlay.setBounds({
       x: Math.max(0, width - OVERLAY.width - OVERLAY.margin),
       y: Math.max(0, height - OVERLAY.height - OVERLAY.margin),
@@ -122,6 +127,16 @@ export class ProjectorWindow {
     if (this.win.isDestroyed()) return { ...WINDOWED }
     const b = this.win.getContentBounds()
     return { width: b.width, height: b.height }
+  }
+
+  /** Black or white over the whole screen (null = show it again). */
+  setBlank(kind: 'black' | 'white' | null): void {
+    if (kind) this.cover.setBackgroundColor(kind === 'white' ? '#ffffff' : '#000000')
+    this.cover.setVisible(kind !== null)
+  }
+
+  isBlank(): boolean {
+    return this.cover.getVisible()
   }
 
   setOverlayVisible(visible: boolean): void {
