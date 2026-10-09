@@ -172,7 +172,7 @@ Presenter 是一个解压即用的文件夹。没有安装程序，也不需要�
 
 - 源码：`src/`。设计文档：`docs/specs/`。实施计划：`docs/superpowers/plans/`。
 - 常用命令：`npm run build`（构建）、`npm test`（单元测试）、`npm run e2e`（端到端测试，17 步）。只有一块屏幕时，它会弹出窗口、发出声音；接着第二块屏幕时，它隐藏、静音运行，并跳过投影步骤。它从不截取屏幕画面。`PRESENTER_E2E_HIDDEN=1 npm run e2e` 在只有一块屏幕时也隐藏、静音运行。
-- 不开窗口的检查：`npm run check:viewer`（PPT/PDF）、`npm run check:ink`（标注：画笔、框选、橡皮擦、箭头、Shift 形状）、`npm run check:frameworks`（Reveal.js、remark、impress.js、Marp、普通 slide 网页、协议示例）、`npm run check:console`（深色和浅色界面的控制台排版、菜单、开始画面、浮动工具条、计时器输入格打字、按住 A+）、`npm run check:start`（隐藏静音启动，逐个启动和 8 个同时启动）。
+- 不开窗口的检查：`npm run check:viewer`（PPT/PDF）、`npm run check:ink`（标注：画笔、框选、橡皮擦、箭头、Shift 形状）、`npm run check:frameworks`（Reveal.js、remark、impress.js、Marp、普通 slide 网页、协议示例）、`npm run check:console`（深色和浅色界面的控制台排版、菜单、开始画面、浮动工具条及其计时器、计时器输入格打字、🔔 和 ± 弹出框、按住 A+）、`npm run check:start`（隐藏静音启动，逐个启动和 8 个同时启动）。
 - 真实转换测试：`PRESENTER_CONVERT_IT=libreoffice npm test`（或 `powerpoint`；Mac 上用 `keynote`）。
 - 压缩包：`npm run dist:win`（Windows）、`npm run dist:mac`（只能在 Mac 上运行）。没有 Mac 时，在 GitHub 上运行 **Build app zips** 工作流（Actions 页面，或 `gh workflow run build.yml`；只推送不会自动运行），它同时生成两个压缩包，并替换这个版本的 Releases 页（说明文字：`.github/release-notes.md`）。发新版本时先改 `package.json` 里的 `version`。图标源文件：`build/icon.svg`。
 - 在维护者的电脑上，桌面图标启动的是源码版（`Start Presenter.bat`）：修改源码后必须运行 `npm run build`。

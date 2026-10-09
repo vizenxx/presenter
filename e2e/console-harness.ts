@@ -272,10 +272,33 @@ async function inputs(): Promise<void> {
   await wait(300)
 }
 
+/** The floating toolbar's ⏱ settings: the same Set as the console, and one Start. */
+async function toolbarTimer(): Promise<void> {
+  const state = sampleState(false, true)
+  state.timer = { status: 'idle', remainingSec: 300, durationSec: 300, alarming: false, warnings: [{ sec: 60, beeps: 3 }] }
+  writeStub(state)
+  const win = new BrowserWindow({ show: false, width: 1400, height: 160, useContentSize: true, backgroundColor: '#475569', webPreferences: { preload: STUB, contextIsolation: true, sandbox: true, offscreen: true } })
+  await win.loadFile(path.join(ROOT, 'out', 'renderer', 'toolbar.html'))
+  await wait(1200)
+  const js = <T>(code: string): Promise<T> => win.webContents.executeJavaScript(code) as Promise<T>
+  const opened = await js<boolean>(`(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.includes('⏱')); if (b) b.click(); return !!b })()`)
+  if (!opened) throw new Error('the toolbar has no ⏱ button')
+  await wait(300)
+  const starts = await js<number>(`[...document.querySelectorAll('button')].filter((b) => b.textContent.trim() === 'Start').length`)
+  if (starts !== 1) throw new Error(`the toolbar timer has ${starts} Start buttons`)
+  if (!(await js<boolean>(`!!document.querySelector('input[title="Minutes"]') && !document.querySelector('input[title="Minutes"]').disabled`))) throw new Error('the toolbar timer has no usable Set')
+  const image = await win.webContents.capturePage()
+  fs.writeFileSync(path.join(OUT, 'toolbar-timer.png'), image.toPNG())
+  console.log('ok floating toolbar timer: one Start and Set')
+  win.destroy()
+  await wait(300)
+}
+
 app.whenReady().then(async () => {
   let code = 0
   try {
     await inputs()
+    await toolbarTimer()
     await shot(false)
     await shot(true)
     await shot(false, 'guide')
