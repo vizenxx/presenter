@@ -97,6 +97,8 @@ export class Store {
   private lastFolder: string | null = null
   /** Projector page the marks belong to; marks clear when it changes. */
   private inkPage = -1
+  /** Marks of the pages a content is not on now, per content and page: coming back shows them again. */
+  private inkPages = new Map<OutputId, Map<number, InkStroke[]>>()
   /** The console shows a live video of the projector; JPEG snapshots are only a fallback. */
   private mirrorVideo = false
   /** Only the latest open request may load its result (conversions can finish out of order). */
@@ -202,10 +204,11 @@ export class Store {
     this.mainPrepared = prepared
     this.remember(deck)
     this.scene('projector').apply({ t: 'clear' })
-    this.inkPage = 0
+    this.inkPages.delete('projector')
     const zoom = zoomFor(deck.path)
     // A restart in class goes back to the page shown last (within 3 hours); otherwise page 1.
     const start = resumePage(deck.path) ?? 0
+    this.inkPage = start
     this.projector().index = start
     this.setResumed(start > 0 ? start : null)
     for (const o of this.outputs.values()) {
@@ -1012,14 +1015,31 @@ export class Store {
   }
 
   /** Marks are temporary: they clear when the projector shows another page. */
-  private clearInkIfPageChanged(): void {
+  /**
+   * Marks belong to their slide: on a page change the marks of the page left are kept, and the
+   * page shown gets its own marks back (empty the first time). They last until the deck closes
+   * or opens again.
+   */
+  private swapInkPage(): void {
     const onAir = this.onAir()
     const page = onAir?.shownIndex() ?? -1
     if (page === this.inkPage) return
+    const left = this.inkPage
     this.inkPage = page
     if (!onAir || onAir.kind === 'capture') return
-    const marks = this.scene(onAir.id)
-    if (marks.strokes.length > 0 || marks.laser) this.applyInk(onAir.id, { t: 'clear' }, 'main')
+    const scene = this.scene(onAir.id)
+    let pages = this.inkPages.get(onAir.id)
+    if (!pages) {
+      pages = new Map()
+      this.inkPages.set(onAir.id, pages)
+    }
+    if (left >= 0) {
+      if (scene.strokes.length > 0) pages.set(left, scene.strokes)
+      else pages.delete(left)
+    }
+    const back = pages.get(page) ?? []
+    if (scene.strokes.length > 0 || scene.laser) this.applyInk(onAir.id, { t: 'clear' }, 'main')
+    for (const stroke of back) this.applyInk(onAir.id, { t: 'begin', stroke: { ...stroke, points: [...stroke.points] } }, 'main')
   }
 
   private sendInkSettings(): void {
@@ -1120,7 +1140,7 @@ export class Store {
   private afterMove(): void {
     // Each deck file remembers its page, for a restart in class.
     rememberPages([...this.outputs.values()].filter((o) => o.deck && o.kind !== 'preview').map((o) => ({ path: (o.deck as DeckRef).path, index: o.shownIndex() })))
-    this.clearInkIfPageChanged()
+    this.swapInkPage()
     this.followPreview()
     if (this.timer.status === 'idle') this.timer = T.reset(this.timer, this.defaultDuration())
     this.syncTimer(true)

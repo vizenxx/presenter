@@ -175,7 +175,7 @@ const en = {
   inkUndoTitle: `Undo the last mark (${KEYS.mod}+Z)`,
   inkClearTitle: 'Remove every mark on this slide (Delete)',
   inkColor: 'Colour',
-  inkHint: 'Marks show on the projector at once and clear when the slide changes. Hold Shift for straight lines and squares; Esc returns to the pointer.',
+  inkHint: 'Marks show on the projector at once and stay with their slide. Hold Shift for straight lines and squares; Esc returns to the pointer.',
 
   guideButton: '📘 Guide',
   themeLight: 'Light',
@@ -249,7 +249,7 @@ const en = {
     ['Black out the projector', 'Press B (black) or W (white), or click ⬛ Black screen in the top bar while projecting. Any key or click shows the slides again; that key does not turn the page.'],
     ['Turn pages', 'Clicker, arrow keys, PageUp / PageDown or Space. Home and End go to the first and last page.'],
     ['See what comes next', 'Next slide (right). Click it to look further ahead: students see no change. Click the current slide to go back.'],
-    ['Mark on the slide', `Bar above the slide: pen (P), highlighter (H), box (R), arrow (A), laser (L), eraser (E). Hold Shift for a straight line or a square. ${KEYS.mod}+Z undoes; Esc returns to the pointer. Marks clear on the next page.`],
+    ['Mark on the slide', `Bar above the slide: pen (P), highlighter (H), box (R), arrow (A), laser (L), eraser (E). Hold Shift for a straight line or a square. ${KEYS.mod}+Z undoes; Esc returns to the pointer. Marks stay with their slide.`],
     ['Read notes or jump to a slide', 'Slides and Notes, above the slide. Or type the slide number and press Enter.'],
     ['Time an activity', 'Class timer: click 1 min, 5 min … (starts at once), or Set minutes : seconds and click Start. 🔔 (next to its name) sets warning bells, each with its own time and number of beeps; the last 5 seconds beep once a second; at zero it rings until any key.'],
     ['Time my own talk', 'My timer (bottom right): count up, count down, or From–to (class periods with weekdays and AM/PM times in 🕘; it starts by itself). Only you see it; it makes no sound.'],

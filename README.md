@@ -120,7 +120,7 @@ The bar above the current slide: **Pointer, Pen, Highlighter, Box, Arrow, Laser,
 
 - Draw on the console's slide picture or directly on the projector; both show the same marks at once.
 - While projecting, moving the mouse on the projector shows a small tool palette at its bottom left (it hides after a few seconds).
-- Marks on a deck clear when the page changes. Marks on a program window stay until you clear them or the window leaves its projector.
+- Marks stay with their slide: when you come back to a slide, its marks are there again (until the deck closes or opens again). **Clear** removes the marks of the slide shown. Marks on a program window stay until you clear them or the window leaves its projector.
 - **Arrow**: drag from where the arrow starts to where it points. The tip has an open V head.
 - Hold **Shift** while you draw: the pen and the highlighter draw one straight line (any angle), the box becomes a square, the arrow turns in 45° steps.
 - Keys in the console and on the floating toolbar: **P** pen, **H** highlighter, **R** box, **A** arrow, **L** laser, **E** eraser, **Ctrl+Z** (⌘Z) undo, **Delete** clear.

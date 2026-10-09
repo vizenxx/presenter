@@ -225,6 +225,20 @@ try {
   await waitFor('Esc on the floating toolbar leaves the arrow', (s) => s.ink.tool === 'pointer')
   console.log('ok 7d Ctrl+Z and Esc on a slide and on the floating toolbar')
 
+  // 7h. Marks stay with their slide: leave the page and come back, and they are there again.
+  const markHere = () => call(() => globalThis.__presenter.inkOp({ t: 'begin', stroke: { id: 'page-mark', tool: 'pen', color: '#ef4444', points: [0.3, 0.3, 0.6, 0.6] } }, 'main'))
+  const pageNow = out(await state(), 'projector').shownIndex
+  await markHere()
+  assert.equal(await marks(), 1, 'a mark on this slide')
+  await call(() => globalThis.__presenter.navigate({ type: 'step', delta: 1 }))
+  await waitFor('next slide', (s) => out(s, 'projector').shownIndex === pageNow + 1)
+  await waitUntil('the next slide has no marks', async () => (await marks()) === 0)
+  await call(() => globalThis.__presenter.navigate({ type: 'step', delta: -1 }))
+  await waitFor('back', (s) => out(s, 'projector').shownIndex === pageNow)
+  await waitUntil('the mark is back on its slide', async () => (await marks()) === 1)
+  await call(() => globalThis.__presenter.inkOp({ t: 'clear' }, 'main'))
+  console.log('ok 7h marks stay with their slide')
+
   // 7g. A deck opens again on the page it showed last (within 3 hours), with a notice; a page move ends the notice.
   await call(() => globalThis.__presenter.navigate({ type: 'goto', index: 4 }))
   s = await waitFor('on slide 5', (s) => out(s, 'projector').shownIndex === 4)
