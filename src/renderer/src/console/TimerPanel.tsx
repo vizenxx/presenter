@@ -44,8 +44,10 @@ export function CustomTime({ planned, buttonClass = SMALL }: { planned: number |
 }
 
 /**
- * The warning bells: each beeps its own number of times when its time is left (minutes : seconds).
- * Up to 5; ✕ removes one, ＋ adds one. Presenter remembers them.
+ * The warning bells. A header line ("🔔 Warning bells", "＋ Add a bell" at the right), then one
+ * card per bell in the order they ring (most time left first), all the same width, one or two
+ * per line: time left (minutes : seconds), number of beeps, ✕. The list is sorted again when you
+ * leave a box, never while you type. Up to 5 bells; Presenter remembers them.
  */
 function WarningBells({ warnings }: { warnings: TimerWarning[] }) {
   const t = useT()
@@ -53,26 +55,32 @@ function WarningBells({ warnings }: { warnings: TimerWarning[] }) {
   const change = (i: number, next: Partial<TimerWarning>): void => send(warnings.map((w, j) => (j === i ? { ...w, ...next } : w)))
   const add = (): void => send([...warnings, warnings.length === 0 ? { sec: 60, beeps: 3 } : { sec: 30, beeps: 1 }])
   return (
-    <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-sm text-muted" title={t.warnTitle}>
-      <span>🔔 {t.warnBells}</span>
-      {warnings.length === 0 && <span>{t.warnNone}</span>}
-      {warnings.map((w, i) => (
-        <span key={i} className="flex items-center gap-1 rounded-full py-0.5 pr-0.5 pl-1 ring-1 ring-line/70">
-          <NumberField value={Math.floor(w.sec / 60)} min={0} max={60} onChange={(m) => change(i, { sec: m * 60 + (w.sec % 60) })} title={t.warnMinutes} className="w-10 text-ink" />
-          <span>:</span>
-          <NumberField value={w.sec % 60} min={0} max={59} digits={2} onChange={(sec) => change(i, { sec: Math.floor(w.sec / 60) * 60 + sec })} title={t.warnSeconds} className="w-10 text-ink" />
-          <span>{t.warnLeft} ·</span>
-          <NumberField value={w.beeps} min={1} max={MAX_BEEPS} onChange={(beeps) => change(i, { beeps })} title={t.warnBeepsTitle} className="w-8 text-ink" />
-          <span>{t.warnBeeps(w.beeps)}</span>
-          <button type="button" title={t.warnRemove} aria-label={t.warnRemove} onClick={() => send(warnings.filter((_, j) => j !== i))} className="grid h-6 w-6 place-items-center rounded-full hover:bg-line">
-            ✕
+    <div className="mt-2 border-t border-line/60 pt-2 text-sm text-muted" title={t.warnTitle}>
+      <div className="flex items-center gap-2">
+        <span>🔔 {t.warnBells}</span>
+        {warnings.length === 0 && <span>{t.warnNone}</span>}
+        {warnings.length < MAX_WARNINGS && (
+          <button type="button" onClick={add} className="ml-auto rounded-full px-2 py-0.5 text-tint hover:bg-panel-2">
+            ＋ {t.warnAdd}
           </button>
-        </span>
-      ))}
-      {warnings.length < MAX_WARNINGS && (
-        <button type="button" onClick={add} className="rounded-full px-2 py-0.5 text-tint hover:bg-panel-2">
-          ＋ {t.warnAdd}
-        </button>
+        )}
+      </div>
+      {warnings.length > 0 && (
+        <div className="mt-1.5 grid grid-cols-[repeat(auto-fill,minmax(15.5rem,1fr))] gap-1.5">
+          {warnings.map((w, i) => (
+            <div key={i} className="flex items-center gap-1 rounded-xl py-1 pr-1 pl-2 ring-1 ring-line/70">
+              <NumberField value={Math.floor(w.sec / 60)} min={0} max={60} live={false} onChange={(m) => change(i, { sec: m * 60 + (w.sec % 60) })} title={t.warnMinutes} className="w-10 text-ink" />
+              <span>:</span>
+              <NumberField value={w.sec % 60} min={0} max={59} digits={2} live={false} onChange={(sec) => change(i, { sec: Math.floor(w.sec / 60) * 60 + sec })} title={t.warnSeconds} className="w-10 text-ink" />
+              <span className="mr-1">{t.warnLeft}</span>
+              <NumberField value={w.beeps} min={1} max={MAX_BEEPS} live={false} onChange={(beeps) => change(i, { beeps })} title={t.warnBeepsTitle} className="w-8 text-ink" />
+              <span>{t.warnBeeps(w.beeps)}</span>
+              <button type="button" title={t.warnRemove} aria-label={t.warnRemove} onClick={() => send(warnings.filter((_, j) => j !== i))} className="ml-auto grid h-6 w-6 place-items-center rounded-full hover:bg-line">
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   )

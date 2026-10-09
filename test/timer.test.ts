@@ -65,7 +65,8 @@ describe('timer', () => {
     expect(T.timerCue(run(6), run(5), [])).toEqual({ kind: 'last-seconds' })
   })
   it('puts a sent list into range', () => {
-    expect(T.cleanWarnings([{ sec: -5, beeps: 0 }, { sec: 99999, beeps: 20 }, null, 'x'])).toEqual([{ sec: 0, beeps: 1 }, { sec: T.MAX_WARN_SEC, beeps: T.MAX_BEEPS }])
+    expect(T.cleanWarnings([{ sec: -5, beeps: 0 }, { sec: 99999, beeps: 20 }, null, 'x'])).toEqual([{ sec: T.MAX_WARN_SEC, beeps: T.MAX_BEEPS }, { sec: 0, beeps: 1 }])
+    expect(T.cleanWarnings([{ sec: 30, beeps: 1 }, { sec: 300, beeps: 2 }, { sec: 120, beeps: 3 }]).map((w) => w.sec)).toEqual([300, 120, 30])
     expect(T.cleanWarnings(Array.from({ length: 8 }, () => ({ sec: 60, beeps: 3 })))).toHaveLength(T.MAX_WARNINGS)
     expect(T.cleanWarnings('nonsense')).toEqual(T.DEFAULT_WARNINGS)
     expect(T.cleanWarnings([])).toEqual([])

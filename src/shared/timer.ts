@@ -77,7 +77,7 @@ export const MAX_WARNINGS = 5
 export const MAX_WARN_SEC = 60 * 60
 export const MAX_BEEPS = 9
 
-/** A list as the console may send it, put into range: at most 5 bells, 0 s – 60 min, 1–9 beeps. */
+/** A list as the console may send it, put into range (at most 5 bells, 0 s – 60 min, 1–9 beeps) and in the order the bells ring. */
 export function cleanWarnings(list: unknown): TimerWarning[] {
   if (!Array.isArray(list)) return DEFAULT_WARNINGS.map((w) => ({ ...w }))
   const whole = (v: unknown, min: number, max: number, fallback: number): number => {
@@ -88,6 +88,7 @@ export function cleanWarnings(list: unknown): TimerWarning[] {
     .filter((w): w is Record<string, unknown> => typeof w === 'object' && w !== null)
     .slice(0, MAX_WARNINGS)
     .map((w) => ({ sec: whole(w['sec'], 0, MAX_WARN_SEC, 60), beeps: whole(w['beeps'], 1, MAX_BEEPS, 3) }))
+    .sort((a, b) => b.sec - a.sec)
 }
 
 /**

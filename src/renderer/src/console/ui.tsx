@@ -72,9 +72,10 @@ export function HoldBtn(props: { children: ReactNode; onStep: () => void; title?
 /**
  * A number box that can be emptied while typing. It keeps the last valid value; leaving the box
  * (or Enter) puts a value into range, and an empty box shows the last value again.
+ * live = false: the value goes out only when you leave the box or press Enter (a sorted list must not move while you type).
  */
-export function NumberField(props: { value: number; min: number; max: number; onChange: (n: number) => void; onEnter?: (n: number) => void; digits?: number; title?: string; className?: string }) {
-  const { value, min, max, onChange, onEnter, digits = 0, title, className = '' } = props
+export function NumberField(props: { value: number; min: number; max: number; onChange: (n: number) => void; onEnter?: (n: number) => void; digits?: number; title?: string; className?: string; live?: boolean }) {
+  const { value, min, max, onChange, onEnter, digits = 0, title, className = '', live = true } = props
   const [draft, setDraft] = useState<string | null>(null)
   const shown = draft ?? String(value).padStart(digits, '0')
   const commit = (): number => {
@@ -94,7 +95,7 @@ export function NumberField(props: { value: number; min: number; max: number; on
         const text = e.target.value.replace(/\D/g, '').slice(0, String(max).length)
         setDraft(text)
         const n = Number(text)
-        if (text !== '' && n >= min && n <= max) onChange(n)
+        if (live && text !== '' && n >= min && n <= max) onChange(n)
       }}
       onBlur={commit}
       onKeyDown={(e) => {

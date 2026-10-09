@@ -155,6 +155,8 @@ async function inputs(): Promise<void> {
     await wait(60)
   }
   const field = (title: string): string => `document.querySelector('input[title="${title}"]')`
+  // This hidden page never has the keyboard, so leaving a box fires no blur here; send the event React listens to.
+  const leave = (title: string): Promise<unknown> => js(`${field(title)}.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))`)
   const calls = (): Promise<unknown[][]> => js('window.presenter.__calls()')
 
   // Minutes: empty the box completely, then type 0.
@@ -185,17 +187,20 @@ async function inputs(): Promise<void> {
   await js(`${field('Bell: minutes left')}.setSelectionRange(9, 9)`)
   await key('Backspace')
   await key('2')
+  await leave('Bell: minutes left')
   await js(`${field('How many beeps (1–9)')}.focus()`)
   await js(`${field('How many beeps (1–9)')}.setSelectionRange(9, 9)`)
   await key('Backspace')
   if ((await js<string>(`${field('How many beeps (1–9)')}.value`)) !== '') throw new Error('the beeps box does not empty')
   await key('5')
+  await leave('How many beeps (1–9)')
+  await wait(100)
   await js(`document.querySelector('button[title="Remove this bell"]').click()`)
   await wait(100)
   const bells = await sent()
-  for (const want of ['[{"sec":60,"beeps":3},{"sec":30,"beeps":1}]', '[{"sec":120,"beeps":3}]', '[{"sec":60,"beeps":5}]', '[]']) {
-    if (!bells.includes(want)) throw new Error(`warning bells: ${want} not sent: ${JSON.stringify(bells)}`)
-  }
+  // Each box sends once, when you leave it (not on every key).
+  const want = ['[{"sec":60,"beeps":3},{"sec":30,"beeps":1}]', '[{"sec":120,"beeps":3}]', '[{"sec":60,"beeps":5}]', '[]']
+  if (JSON.stringify(bells) !== JSON.stringify(want)) throw new Error(`warning bells sent ${JSON.stringify(bells)}, expected ${JSON.stringify(want)}`)
   console.log('ok warning bells: add, change time and beeps, remove')
 
   // Change the time: + 1:00 on the class timer; then My timer, 0:30, − 0:30.

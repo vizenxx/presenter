@@ -129,7 +129,7 @@ The bar above the current slide: **Pointer, Pen, Highlighter, Box, Arrow, Laser,
 
 - Click a preset (**1 min**, **5 min** …) to start at once, or type minutes **:** seconds and click **Start** (or press Enter). **−** and **+** change the minutes; hold them to go fast. A box can be emptied while you type.
 - When a deck plans a time for a slide, the timer shows it.
-- **🔔 Warning bells** (under the presets): each bell beeps its own number of times (1–9) when its time is left (minutes : seconds). **＋ Add a bell** adds one (up to 5); **✕** removes one. At first there is one bell: 1:00 left, 3 beeps. Presenter remembers the bells. In the last 5 seconds it always beeps once a second.
+- **🔔 Warning bells** (under the presets): each bell beeps its own number of times (1–9) when its time is left (minutes : seconds). The bells are listed in the order they ring. **＋ Add a bell** adds one (up to 5); **✕** removes one. At first there is one bell: 1:00 left, 3 beeps. Presenter remembers the bells. In the last 5 seconds it always beeps once a second.
 - At zero the alarm rings until you press any key or click. That key does not turn the page.
 - UXD202 decks show the countdown in their own bar; everything else shows it at the bottom right of the projector.
 
