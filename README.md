@@ -38,7 +38,7 @@ Presenter is a folder you unzip; there is no installer and no administrator pass
 | Next slide (right) | The slide after the selected card's slide. Click it to look further ahead. |
 | Class timer | The countdown the audience sees on the projector, with warning bells at times you choose. |
 | My timer | Your own timer. Only you see it. |
-| Change the time | Adds time to, or takes time from, the class timer or My timer while it runs. |
+| ⚙ Timer tools | One line under My timer; click it to open **Change the time** and the **warning bells**. It shows how many bells are set, and Presenter remembers open or folded. |
 | Slides / Notes | The slide list and speaker notes of the selected card (buttons above the current slide). |
 | Bottom bar | One card per content (deck or program window), each with its **Projector ▾** button. **＋ Add screen** at the end. |
 
@@ -129,7 +129,7 @@ The bar above the current slide: **Pointer, Pen, Highlighter, Box, Arrow, Laser,
 
 - Click a preset (**1 min**, **5 min** …) to start at once, or type minutes **:** seconds and click **Start** (or press Enter). **−** and **+** change the minutes; hold them to go fast. A box can be emptied while you type.
 - When a deck plans a time for a slide, the timer shows it.
-- **🔔 Warning bells** (under the presets): each bell beeps its own number of times (1–9) when its time is left (minutes : seconds). The bells are listed in the order they ring. **＋ Add a bell** adds one (up to 5); **✕** removes one. At first there is one bell: 1:00 left, 3 beeps. Presenter remembers the bells. In the last 5 seconds it always beeps once a second.
+- **🔔 Warning bells** (in **⚙ Timer tools**, under My timer): each bell beeps its own number of times (1–9) when its time is left (minutes : seconds). The bells are listed in the order they ring. **＋ Add a bell** adds one (up to 5); **✕** removes one. At first there is one bell: 1:00 left, 3 beeps. Presenter remembers the bells. In the last 5 seconds it always beeps once a second.
 - At zero the alarm rings until you press any key or click. That key does not turn the page.
 - UXD202 decks show the countdown in their own bar; everything else shows it at the bottom right of the projector.
 
@@ -139,7 +139,7 @@ The bar above the current slide: **Pointer, Pen, Highlighter, Box, Arrow, Laser,
 - A countdown keeps going past zero as **Over time**, in red.
 - The floating toolbar shows its time while it runs.
 
-**Change the time** (under My timer)
+**Change the time** (in **⚙ Timer tools**, under My timer)
 
 - Choose **Class timer** or **My timer**, type an amount (minutes : seconds), then click **− 1:00** to take it away or **+ 1:00** to add it.
 - It changes a timer that runs or is paused; a timer that has not started stays as it is.

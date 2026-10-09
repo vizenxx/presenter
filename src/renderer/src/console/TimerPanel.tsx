@@ -49,7 +49,7 @@ export function CustomTime({ planned, buttonClass = SMALL }: { planned: number |
  * per line: time left (minutes : seconds), number of beeps, ✕. The list is sorted again when you
  * leave a box, never while you type. Up to 5 bells; Presenter remembers them.
  */
-function WarningBells({ warnings }: { warnings: TimerWarning[] }) {
+export function WarningBells({ warnings }: { warnings: TimerWarning[] }) {
   const t = useT()
   const send = (list: TimerWarning[]): void => window.presenter.timerWarnings(list)
   const change = (i: number, next: Partial<TimerWarning>): void => send(warnings.map((w, j) => (j === i ? { ...w, ...next } : w)))
@@ -86,7 +86,7 @@ function WarningBells({ warnings }: { warnings: TimerWarning[] }) {
   )
 }
 
-/** The class timer (students see it on the projector): the time, presets and own time, and the warning bells. */
+/** The class timer (students see it on the projector), kept to two rows: the time, then presets and own time. */
 export function TimerPanel({ state }: { state: AppState }) {
   const t = useT()
   const timer = state.timer
@@ -116,7 +116,6 @@ export function TimerPanel({ state }: { state: AppState }) {
           <CustomTime planned={state.plannedMinutes} />
         </span>
       </div>
-      <WarningBells warnings={timer.warnings} />
     </section>
   )
 }

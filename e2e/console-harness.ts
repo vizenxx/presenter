@@ -77,6 +77,8 @@ api.guide = () => Promise.resolve({ aiRequest: ${JSON.stringify(AI_REQUEST)} })
 api.saveGuideFile = () => Promise.resolve(null)
 api.listWindows = () => Promise.resolve(${JSON.stringify(SAMPLE_WINDOWS)})
 contextBridge.exposeInMainWorld('presenter', api)
+// Every page starts with Timer tools folded (the open state is remembered in the page's storage).
+try { localStorage.removeItem('presenter.timerTools.open') } catch {}
 `
   )
 }
@@ -89,7 +91,8 @@ const OPENERS: Record<string, string> = {
   'screen-menu': `[...document.querySelectorAll('footer button')].find((x) => x.textContent.trim() === '⋯')`,
   'window-picker': `(() => { [...document.querySelectorAll('footer button')].find((x) => x.textContent.includes('＋')).click(); return new Promise((r) => setTimeout(() => r([...document.querySelectorAll('button')].find((x) => x.textContent.startsWith('A window'))), 300)) })()`,
   'add-menu': `[...document.querySelectorAll('footer button')].find((x) => x.textContent.includes('＋'))`,
-  roller: `[...document.querySelectorAll('header button')].find((x) => x.textContent.includes('🎲'))`
+  roller: `[...document.querySelectorAll('header button')].find((x) => x.textContent.includes('🎲'))`,
+  bells: `(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.includes('Timer tools')); return b.getAttribute('aria-expanded') === 'true' ? { click() {} } : b })()`
 }
 
 async function shot(projecting: boolean, open: Open = null, page = 'console', theme: UiTheme = 'dark'): Promise<void> {
@@ -178,6 +181,15 @@ async function inputs(): Promise<void> {
   const started = (await calls()).filter((c) => c[0] === 'timerStart')
   if (started.length !== 1 || started[0][1] !== 30) throw new Error(`Enter should start 30 s: ${JSON.stringify(started)}`)
   console.log('ok timer boxes: empty fully, 0 min 30 s starts 30 s')
+
+  // Timer tools: folded at first (one line with the number of bells), then opened.
+  const toolsText = await js<string>(`[...document.querySelectorAll('button')].find((x) => x.textContent.includes('Timer tools')).textContent`)
+  if (!toolsText.includes('1 warning bell')) throw new Error(`folded Timer tools does not show the bells: ${toolsText}`)
+  if (await js<boolean>(`!!document.querySelector('input[title="Bell: minutes left"]')`)) throw new Error('Timer tools is not folded at first')
+  await js(`[...document.querySelectorAll('button')].find((x) => x.textContent.includes('Timer tools')).click()`)
+  await wait(150)
+  if (!(await js<boolean>(`!!document.querySelector('input[title="Bell: minutes left"]') && !!document.querySelector('input[title="Change by: minutes"]')`))) throw new Error('opened Timer tools lacks the bells or Change the time')
+  console.log('ok Timer tools: folded at first with the number of bells, opens to Change the time and the bells')
 
   // Warning bells: add one, change the minutes and the beeps of the first, remove it (the stub state stays at one bell 1:00 / 3 beeps).
   const sent = async (): Promise<string[]> => (await calls()).filter((c) => c[0] === 'timerWarnings').map((c) => JSON.stringify(c[1]))

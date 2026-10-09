@@ -34,8 +34,7 @@ export function AdjustTime({ state }: { state: AppState }) {
     </button>
   )
   return (
-    <section className="rounded-card bg-panel px-4 py-2 ring-1 ring-line/60" title={t.adjustHint}>
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1" title={t.adjustHint}>
         <h2 className="text-sm font-semibold text-muted">{t.adjustTitle}</h2>
         <span className="flex rounded-full bg-panel-2 p-0.5">
           {segment('class', t.adjustClass)}
@@ -54,7 +53,6 @@ export function AdjustTime({ state }: { state: AppState }) {
             + {label}
           </button>
         </span>
-      </div>
-    </section>
+    </div>
   )
 }

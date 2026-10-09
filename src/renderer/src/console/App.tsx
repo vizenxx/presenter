@@ -9,7 +9,7 @@ import { ScreensBar } from './ScreensBar'
 import { SpeakerTimer } from './SpeakerTimer'
 import { TimerPanel } from './TimerPanel'
 import { WindowPicker } from './WindowPicker'
-import { AdjustTime } from './AdjustTime'
+import { TimerTools } from './TimerTools'
 import { useT } from './i18n'
 import { DeckStatusBar, type ConsoleMenu } from './ui'
 
@@ -55,7 +55,7 @@ export function App() {
           {state.mainDeck ? <NextPane state={state} next={next} suspended={suspended} /> : <div className="flex-1" />}
           <TimerPanel state={state} />
           <SpeakerTimer speaker={state.speaker} />
-          <AdjustTime state={state} />
+          <TimerTools state={state} />
         </div>
         {drawer && <Drawer state={state} tab={drawer} onTab={setDrawer} />}
       </main>
