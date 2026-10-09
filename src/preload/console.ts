@@ -49,6 +49,7 @@ const api: ConsoleApi = {
   setLinked: (id, linked) => ipcRenderer.send('console:set-linked', id, linked),
   nudge: (id, delta) => ipcRenderer.send('console:nudge', id, delta),
   addScreen: (sameDeck) => ipcRenderer.send('console:add-screen', sameDeck),
+  addWhiteboard: (show) => ipcRenderer.send('console:add-whiteboard', show === true),
   removeScreen: (id) => ipcRenderer.send('console:remove-screen', id),
   timerStart: (sec) => ipcRenderer.send('console:timer-start', sec),
   timerToggle: () => ipcRenderer.send('console:timer-toggle'),

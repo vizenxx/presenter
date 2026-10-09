@@ -27,6 +27,7 @@ import { WindowsHelper, windowHandle } from './windowsHelper'
 import { WindowTools } from './windowTools'
 import { rememberZoom, zoomFor } from './zoomMemory'
 import { rememberPages, resumePage } from './pageMemory'
+import { whiteboardFile } from './whiteboard'
 import { loadTheme, saveTheme, themeBackground } from './themeMemory'
 import { loadWarnings, saveWarnings } from './timerMemory'
 import { loadMyTimer, saveMyTimer } from './myTimerMemory'
@@ -279,6 +280,24 @@ export class Store {
     o.followsMain = sameDeck
     o.setZoomPercent(zoomFor(deck.path))
     o.load(deck, prepared)
+    this.emit()
+  }
+
+  /**
+   * A whiteboard: blank white pages to draw on, as a content (it waits, or with show it goes on
+   * Projector 1, e.g. from the start screen). It is not added to Recent.
+   */
+  async addWhiteboard(show = false): Promise<void> {
+    const deck = this.toDeck(whiteboardFile())
+    const prepared = await this.prepare(deck)
+    if (!prepared) return
+    const n = this.screenSeq++
+    const id = `screen-${n}`
+    const o = this.createOutput(id, n, 'window', 0)
+    o.followsMain = false
+    o.linked = false
+    o.load(deck, prepared)
+    if (show) this.showOn(id, 1)
     this.emit()
   }
 

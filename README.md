@@ -81,7 +81,7 @@ The **📘 Guide** in the app has the same help in two parts: **1 · Use Present
 ## Contents and projectors
 
 - Each card in the bottom bar is one **content**: a deck or a program window. It remembers its own page.
-- **＋ Add screen** adds a content: the same deck, another deck, or **A window on this computer**. A new content **waits**; nothing opens.
+- **＋ Add screen** adds a content: the same deck, another deck, **A window on this computer**, or a **Whiteboard** (30 blank white pages; put it on Projector 1 and draw with the marking tools; each page keeps its marks; also on the start screen). A new content **waits**; nothing opens.
 - The card's **Projector ▾** button decides where the audience sees it:
   - **Projector 1**: the main projector.
   - **Projector 2, 3 …**: projectors you opened.

@@ -21,6 +21,9 @@ function EmptyState({ state, onGuide, onPickWindow }: { state: AppState; onGuide
         <Btn title={t.firstWindowTitle} onClick={onPickWindow}>
           🪟 {t.firstWindow}
         </Btn>
+        <Btn title={t.firstWhiteboardTitle} onClick={() => window.presenter.addWhiteboard(true)}>
+          ✏️ {t.firstWhiteboard}
+        </Btn>
       </div>
       <button type="button" onClick={onGuide} className="text-sm text-tint hover:underline">
         {t.guideLink}

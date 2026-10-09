@@ -174,6 +174,7 @@ export function ScreensBar({ state, menu, onMenu, onPickWindow }: { state: AppSt
             {state.mainDeck && <MenuItem onClick={() => { close(); window.presenter.addScreen(true) }}>{t.sameDeckWindow}</MenuItem>}
             <MenuItem onClick={() => { close(); window.presenter.addScreen(false) }}>{t.otherDeckWindow}</MenuItem>
             <MenuItem onClick={() => { close(); onPickWindow() }}>{t.windowScreen}</MenuItem>
+            <MenuItem onClick={() => { close(); window.presenter.addWhiteboard(false) }}>{t.whiteboardScreen}</MenuItem>
           </Menu>
         )}
       </span>

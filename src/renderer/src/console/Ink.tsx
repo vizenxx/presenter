@@ -96,7 +96,8 @@ export function MirrorView({ aspect, ink, fallback }: { aspect: number; ink: Ink
         stream = s
         if (video.current) {
           video.current.srcObject = s
-          void video.current.play()
+          // Stopping projecting right away removes the video before it plays; that is not an error.
+          video.current.play().catch(() => undefined)
         }
         setLive(true)
         window.presenter.mirrorMode('video')

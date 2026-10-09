@@ -256,6 +256,8 @@ export interface ConsoleApi {
   setLinked(id: OutputId, linked: boolean): void
   nudge(id: OutputId, delta: number): void
   addScreen(sameDeck: boolean): void
+  /** A whiteboard (blank pages to draw on); show = straight onto Projector 1. */
+  addWhiteboard(show?: boolean): void
   removeScreen(id: OutputId): void
   timerStart(sec: number): void
   timerToggle(): void

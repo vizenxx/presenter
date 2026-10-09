@@ -247,6 +247,7 @@ try {
   assert.ok(png.length > 1000 && png.subarray(1, 4).toString() === 'PNG', 'it is a PNG picture')
   console.log('ok 7i the slide saved as a picture')
 
+
   // 7g. A deck opens again on the page it showed last (within 3 hours), with a notice; a page move ends the notice.
   await call(() => globalThis.__presenter.navigate({ type: 'goto', index: 4 }))
   s = await waitFor('on slide 5', (s) => out(s, 'projector').shownIndex === 4)
@@ -402,6 +403,15 @@ try {
   assert.equal(await inConsole('projector'), true, 'screen 1 back in the current pane')
   await call(() => globalThis.__presenter.removeScreen('screen-5'))
   console.log('ok 8c projector menu: Projector 1, a new Projector 2, pages kept')
+
+  // 8d. A whiteboard: 30 blank pages as a content that waits (not in Recent).
+  await call(() => globalThis.__presenter.addWhiteboard(false))
+  s = await waitFor('whiteboard ready', (s) => s.outputs.some((o) => o.deck?.name === 'Whiteboard' && o.total === 30), 20000)
+  const board = s.outputs.find((o) => o.deck?.name === 'Whiteboard')
+  assert.equal(board.shownOn, null, 'the whiteboard waits')
+  assert.ok(!s.recent.some((d) => d.name === 'Whiteboard'), 'the whiteboard is not in Recent')
+  await call((_e, id) => globalThis.__presenter.removeScreen(id), board.id)
+  console.log('ok 8d whiteboard')
 
   // Steps 9-15 show the projector window and capture the desktop.
   if (!HEADLESS) {
