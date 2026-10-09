@@ -79,3 +79,38 @@ describe('timer', () => {
     expect(T.timerCue(run(4), run(60))).toBeNull()
   })
 })
+
+describe('changing the time of a running timer', () => {
+  it('adds and takes away time on a running class timer, keeping at least one second', () => {
+    const running = T.start(T.initialTimer(), 300, 0)
+    expect(T.adjust(running, 60, 10_000)).toMatchObject({ status: 'running', remainingMs: 350_000, endAt: 360_000, durationSec: 300 })
+    expect(T.adjust(running, -120, 10_000)).toMatchObject({ remainingMs: 170_000, endAt: 180_000 })
+    expect(T.adjust(running, -999, 10_000)).toMatchObject({ status: 'running', remainingMs: 1000, endAt: 11_000 })
+  })
+  it('changes a paused class timer, gives a finished one more time, and leaves one not started alone', () => {
+    const paused = T.pause(T.start(T.initialTimer(), 300, 0), 100_000)
+    expect(T.adjust(paused, 30, 500_000)).toMatchObject({ status: 'paused', remainingMs: 230_000, endAt: null })
+    const done = T.tick(T.start(T.initialTimer(), 2, 0), 5000)
+    expect(done.alarming).toBe(true)
+    expect(T.adjust(done, 120, 6000)).toMatchObject({ status: 'running', alarming: false, remainingMs: 120_000, endAt: 126_000 })
+    expect(T.adjust(done, -60, 6000)).toBe(done)
+    const idle = T.initialTimer(300)
+    expect(T.adjust(idle, 60, 0)).toBe(idle)
+  })
+  it('adds time to My timer: more left when counting down, more counted when counting up', () => {
+    const down = { mode: 'down' as const, minutes: 45, startedAt: 0, heldMs: 0 }
+    expect(T.adjustSpeaker(down, 60, 10_000).heldMs).toBe(-60_000)
+    expect(T.adjustSpeaker(down, -60, 10_000).heldMs).toBe(60_000)
+    const up = { mode: 'up' as const, minutes: 45, startedAt: null, heldMs: 30_000 }
+    expect(T.adjustSpeaker(up, 60, 0).heldMs).toBe(90_000)
+    expect(T.adjustSpeaker(up, -120, 0).heldMs).toBe(0)
+    const upRunning = { mode: 'up' as const, minutes: 45, startedAt: 0, heldMs: 0 }
+    expect(T.adjustSpeaker(upRunning, -120, 50_000).heldMs).toBe(-50_000)
+  })
+  it('leaves My timer alone before it starts', () => {
+    const fresh = { mode: 'down' as const, minutes: 45, startedAt: null, heldMs: 0 }
+    expect(T.adjustSpeaker(fresh, 60, 0)).toBe(fresh)
+    expect(T.speakerStarted(fresh)).toBe(false)
+    expect(T.speakerStarted({ ...fresh, heldMs: -60_000 })).toBe(true)
+  })
+})

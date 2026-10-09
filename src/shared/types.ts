@@ -211,6 +211,10 @@ export interface ConsoleApi {
   speakerMinutes(minutes: number): void
   speakerToggle(): void
   speakerReset(): void
+  /** Adds seconds to My timer (negative: takes them away). */
+  speakerAdjust(deltaSec: number): void
+  /** Adds seconds to the class timer (negative: takes them away). */
+  timerAdjust(deltaSec: number): void
   setTheme(theme: UiTheme): void
   /** The floating toolbar page reports its size. */
   toolbarSize(width: number, height: number): void

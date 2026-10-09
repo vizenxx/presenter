@@ -225,6 +225,27 @@ try {
   await waitFor('Esc on the floating toolbar leaves the arrow', (s) => s.ink.tool === 'pointer')
   console.log('ok 7d Ctrl+Z and Esc on a slide and on the floating toolbar')
 
+  // 7e. Change the time of a running timer: add, take away (one second stays), and give a rung timer more time.
+  await call(() => globalThis.__presenter.timerStart(120))
+  await call(() => globalThis.__presenter.timerAdjust(60))
+  s = await waitFor('class timer + 1:00', (s) => s.timer.remainingSec >= 177 && s.timer.remainingSec <= 180)
+  await call(() => globalThis.__presenter.timerAdjust(-999))
+  s = await waitFor('class timer keeps one second', (s) => s.timer.status === 'running' && s.timer.remainingSec === 1)
+  s = await waitFor('then it rings', (s) => s.timer.alarming, 4000)
+  await call(() => globalThis.__presenter.timerAdjust(30))
+  s = await waitFor('a rung timer runs again for the added time', (s) => s.timer.status === 'running' && !s.timer.alarming && s.timer.remainingSec >= 28)
+  await call(() => globalThis.__presenter.timerReset())
+  await call(() => globalThis.__presenter.speakerMode('down'))
+  await call(() => globalThis.__presenter.speakerAdjust(60))
+  s = await state()
+  assert.equal(s.speaker.heldMs, 0, 'My timer does not change before it starts')
+  await call(() => globalThis.__presenter.speakerToggle())
+  await call(() => globalThis.__presenter.speakerAdjust(60))
+  s = await state()
+  assert.ok(s.speaker.heldMs <= -59_000 && s.speaker.heldMs >= -60_000, `My timer counting down got one more minute (${s.speaker.heldMs})`)
+  await call(() => globalThis.__presenter.speakerReset())
+  console.log('ok 7e change the time of a running timer')
+
   // 8. Extra screen with the same deck joins the linked group.
   await call(() => globalThis.__presenter.addScreen(true))
   s = await waitFor('extra detected', (s) => out(s, 'screen-3')?.adapter === 'uxd202')

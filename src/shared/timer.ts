@@ -1,3 +1,5 @@
+import type { SpeakerTimerView } from './types'
+
 export type TimerStatus = 'idle' | 'running' | 'paused' | 'done'
 
 export interface TimerState {
@@ -101,4 +103,45 @@ export function timerCue(before: { status: TimerStatus; remainingSec: number } |
   if (passed.length === 0) return null
   const nearest = passed.reduce((a, b) => (b.sec < a.sec || (b.sec === a.sec && b.beeps > a.beeps) ? b : a))
   return { kind: 'warning', beeps: nearest.beeps }
+}
+
+/**
+ * Adds time to the class timer (a negative amount takes time away). A running or paused timer
+ * keeps at least one second, so taking away too much makes it ring a second later. A timer that
+ * has rung runs again for the added time. A timer that has not started does not change.
+ */
+export function adjust(s: TimerState, deltaSec: number, now: number): TimerState {
+  const delta = Math.round(deltaSec) * 1000
+  if (delta === 0) return s
+  switch (s.status) {
+    case 'running': {
+      const left = Math.max(1000, (s.endAt ?? now) - now + delta)
+      return { ...s, remainingMs: left, endAt: now + left }
+    }
+    case 'paused':
+      return { ...s, remainingMs: Math.max(1000, s.remainingMs + delta) }
+    case 'done':
+      return delta > 0 ? { ...s, status: 'running', alarming: false, remainingMs: delta, endAt: now + delta } : s
+    case 'idle':
+      return s
+  }
+}
+
+/** True when My timer has started (running, or paused with time on it). */
+export function speakerStarted(s: SpeakerTimerView): boolean {
+  return s.startedAt !== null || s.heldMs !== 0
+}
+
+/**
+ * Adds time to My timer (a negative amount takes time away). Count down: more time left (it may
+ * go above the minutes set). Count up: more time counted (never below zero). Not started: no change.
+ */
+export function adjustSpeaker(s: SpeakerTimerView, deltaSec: number, now: number): SpeakerTimerView {
+  const delta = Math.round(deltaSec) * 1000
+  if (delta === 0 || !speakerStarted(s)) return s
+  const runningMs = s.startedAt !== null ? now - s.startedAt : 0
+  // Counting up never goes below zero: the held part may cancel the running part, no more.
+  const lowest = runningMs > 0 ? -runningMs : 0
+  const heldMs = s.mode === 'down' ? s.heldMs - delta : Math.max(lowest, s.heldMs + delta)
+  return { ...s, heldMs }
 }

@@ -38,6 +38,7 @@ Presenter is a folder you unzip; there is no installer and no administrator pass
 | Next slide (right) | The slide after the selected card's slide. Click it to look further ahead. |
 | Class timer | The countdown the audience sees on the projector, with warning bells at times you choose. |
 | My timer | Your own timer. Only you see it. |
+| Change the time | Adds time to, or takes time from, the class timer or My timer while it runs. |
 | Slides / Notes | The slide list and speaker notes of the selected card (buttons above the current slide). |
 | Bottom bar | One card per content (deck or program window), each with its **Projector ▾** button. **＋ Add screen** at the end. |
 
@@ -137,6 +138,13 @@ The bar above the current slide: **Pointer, Pen, Highlighter, Box, Arrow, Laser,
 - **Count up** or **Count down**, to pace your talk. It makes no sound.
 - A countdown keeps going past zero as **Over time**, in red.
 - The floating toolbar shows its time while it runs.
+
+**Change the time** (under My timer)
+
+- Choose **Class timer** or **My timer**, type an amount (minutes : seconds), then click **− 1:00** to take it away or **+ 1:00** to add it.
+- It changes a timer that runs or is paused; a timer that has not started stays as it is.
+- The class timer keeps at least one second, so taking away too much makes it ring a second later. After it rang, **+** makes it run again for that time (for example "two more minutes").
+- Taking time away past a warning bell's time rings that bell.
 
 ## Name picker
 

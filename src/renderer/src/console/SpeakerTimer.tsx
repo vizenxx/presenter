@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { clock } from '../../../shared/format'
+import { speakerStarted } from '../../../shared/timer'
 import type { SpeakerTimerView } from '../../../shared/types'
 import { useT } from './i18n'
 import { Btn, NumberField } from './ui'
@@ -29,7 +30,7 @@ export function useNow(running: boolean): number {
 export function SpeakerTimer({ speaker }: { speaker: SpeakerTimerView }) {
   const t = useT()
   const running = speaker.startedAt !== null
-  const started = running || speaker.heldMs > 0
+  const started = speakerStarted(speaker)
   const shownSec = speakerSeconds(speaker, useNow(running))
   const over = speaker.mode === 'down' && shownSec < 0
   const SMALL = 'rounded-full px-2.5 py-0.5 text-sm'

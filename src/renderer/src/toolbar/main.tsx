@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import '../styles.css'
 import { clock, mmss } from '../../../shared/format'
 import { INK_COLORS, INK_TOOLS, inkKeyAction } from '../../../shared/ink'
+import { speakerStarted } from '../../../shared/timer'
 import { inkSvg, type InkIconName } from '../../../shared/inkIcons'
 import type { AppState } from '../../../shared/types'
 import { useAppState } from '../console/hooks'
@@ -108,7 +109,7 @@ function Toolbar() {
   const speaker = state?.speaker
   const mine = speaker ? speakerSeconds(speaker, now) : 0
   // My timer shows only once the teacher has started it (running or paused).
-  const mineSet = !!speaker && (speaker.startedAt !== null || speaker.heldMs > 0)
+  const mineSet = !!speaker && speakerStarted(speaker)
   const timer = state?.timer
   const timerOn = !!timer && (timer.status !== 'idle' || timer.alarming)
   // The roll shows on the audience screens; with none, only this bar and the console show it.

@@ -594,6 +594,12 @@ export class Store {
     this.emit()
   }
 
+  /** Adds time to My timer (below zero: takes time away) once it has started. */
+  speakerAdjust(deltaSec: number): void {
+    this.speaker = T.adjustSpeaker(this.speaker, Number(deltaSec) || 0, Date.now())
+    this.emit()
+  }
+
   // ---------- look ----------
 
   setTheme(theme: UiTheme): void {
@@ -703,6 +709,14 @@ export class Store {
 
   timerStart(sec: number): void {
     this.timer = T.start(this.timer, sec, Date.now())
+    this.syncTimer(true)
+  }
+
+  /** Adds time to the class timer (below zero: takes time away) while it runs, is paused, or has rung. */
+  timerAdjust(deltaSec: number): void {
+    const next = T.adjust(this.timer, Number(deltaSec) || 0, Date.now())
+    if (next === this.timer) return
+    this.timer = next
     this.syncTimer(true)
   }
 

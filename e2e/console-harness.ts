@@ -13,7 +13,7 @@ const OUT = path.join(ROOT, 'e2e', 'out')
 const STUB = path.join(OUT, 'harness', 'console-stub-preload.cjs')
 const AI_REQUEST = aiRequestText(fs.readFileSync(path.join(ROOT, 'docs', 'ai-integration.md'), 'utf8'))
 /** Every ConsoleApi method (contextBridge copies plain objects only, so no Proxy). */
-const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "listWindows", "addWindowScreen", "setTheme", "timerWarnings"]
+const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "listWindows", "addWindowScreen", "setTheme", "timerWarnings", "speakerAdjust", "timerAdjust"]
 
 app.disableHardwareAcceleration()
 // Each screenshot closes its window; keep the app alive between them.
@@ -197,6 +197,27 @@ async function inputs(): Promise<void> {
     if (!bells.includes(want)) throw new Error(`warning bells: ${want} not sent: ${JSON.stringify(bells)}`)
   }
   console.log('ok warning bells: add, change time and beeps, remove')
+
+  // Change the time: + 1:00 on the class timer; then My timer, 0:30, − 0:30.
+  const clickText = (text: string): Promise<boolean> => js(`(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === ${JSON.stringify(text)}); if (b) b.click(); return !!b })()`)
+  if (!(await clickText('+ 1:00'))) throw new Error('no "+ 1:00" button')
+  if (!(await clickText('My timer'))) throw new Error('no "My timer" choice')
+  await js(`${field('Change by: minutes')}.focus()`)
+  await js(`${field('Change by: minutes')}.setSelectionRange(9, 9)`)
+  await key('Backspace')
+  await key('0')
+  await js(`${field('Change by: seconds')}.focus()`)
+  await js(`${field('Change by: seconds')}.setSelectionRange(9, 9)`)
+  await key('Backspace')
+  await key('Backspace')
+  await key('3')
+  await key('0')
+  await js(`${field('Change by: seconds')}.blur()`)
+  await wait(100)
+  if (!(await clickText('− 0:30'))) throw new Error('no "− 0:30" button after typing 0:30')
+  const changes = (await calls()).filter((c) => c[0] === 'timerAdjust' || c[0] === 'speakerAdjust').map((c) => `${c[0]} ${c[1]}`)
+  if (changes.join('|') !== 'timerAdjust 60|speakerAdjust -30') throw new Error(`change the time sent: ${JSON.stringify(changes)}`)
+  console.log('ok change the time: + 1:00 on the class timer, − 0:30 on My timer')
 
   // A+ held for one second repeats (one step at once, then every 80 ms after 400 ms).
   const r = await js<number[]>(`(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === 'A+'); const r = b.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2] })()`)
