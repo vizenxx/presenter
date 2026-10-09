@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { speakerStarted } from '../../../shared/timer'
+import { clockNow, speakerStarted } from '../../../shared/timer'
 import type { AppState } from '../../../shared/types'
 import { useT } from './i18n'
 import { NumberField } from './ui'
@@ -22,7 +22,9 @@ export function AdjustTime({ state, initial }: { state: AppState; initial: Targe
   const amount = minutes * 60 + seconds
   const label = `${minutes}:${String(seconds).padStart(2, '0')}`
   const classStatus = state.timer.status
-  const on = target === 'class' ? classStatus !== 'idle' : speakerStarted(state.speaker)
+  // My timer From–to with no class period today has nothing to change.
+  const mineOn = speakerStarted(state.speaker) && !(state.speaker.mode === 'clock' && clockNow(state.speaker, Date.now()).phase === 'none')
+  const on = target === 'class' ? classStatus !== 'idle' : mineOn
   const canMore = on && amount > 0
   const canLess = canMore && !(target === 'class' && classStatus === 'done')
   const change = (sign: 1 | -1): void => {

@@ -82,7 +82,7 @@ export class Store {
   private activeWindowId: OutputId | null = null
   private tools!: WindowTools
   private tracking = false
-  private speaker: SpeakerTimerView = { mode: 'up', minutes: 45, startedAt: null, heldMs: 0, fromSec: 9 * 3600, untilSec: 10 * 3600 }
+  private speaker: SpeakerTimerView = { mode: 'up', minutes: 45, startedAt: null, heldMs: 0, periods: T.cleanPeriods(T.DEFAULT_PERIODS), clockExtra: null }
   private theme: UiTheme | null = null
   private warnings: T.TimerWarning[] = T.DEFAULT_WARNINGS.map((w) => ({ ...w }))
   /** Folder of the deck opened last; Open deck starts there. */
@@ -116,7 +116,7 @@ export class Store {
     this.recent = loadRecent()
     this.theme = loadTheme()
     this.warnings = loadWarnings()
-    this.speaker = { ...loadMyTimer(), startedAt: null, heldMs: 0 }
+    this.speaker = { ...loadMyTimer(), startedAt: null, heldMs: 0, clockExtra: null }
     this.lastFolder = loadFolder()
     const projector = this.createOutput('projector', 1, 'projector', 0)
     // The next preview is not a screen: it shows the slide after the selected screen's slide.
@@ -586,16 +586,17 @@ export class Store {
     this.emit()
   }
 
-  /** My timer's clock times (seconds after midnight): it counts down from the start to the end by itself. */
-  speakerTimes(fromSec: number, untilSec: number): void {
-    this.speaker = { ...this.speaker, ...T.cleanTimes(Number(fromSec), Number(untilSec)) }
+  /** My timer's class periods (From–to): during a period it counts down to its end by itself. */
+  speakerPeriods(periods: unknown): void {
+    // Today's ± change belongs to a period by its place in the list; a new list starts without it.
+    this.speaker = { ...this.speaker, periods: T.cleanPeriods(periods), clockExtra: null }
     this.saveSpeaker()
     this.emit()
   }
 
   private saveSpeaker(): void {
-    const { mode, minutes, fromSec, untilSec } = this.speaker
-    saveMyTimer({ mode, minutes, fromSec, untilSec })
+    const { mode, minutes, periods } = this.speaker
+    saveMyTimer({ mode, minutes, periods })
   }
 
   speakerToggle(): void {
@@ -615,7 +616,6 @@ export class Store {
   /** Adds time to My timer (below zero: takes time away) once it has started. */
   speakerAdjust(deltaSec: number): void {
     this.speaker = T.adjustSpeaker(this.speaker, Number(deltaSec) || 0, Date.now())
-    if (this.speaker.mode === 'clock') this.saveSpeaker()
     this.emit()
   }
 

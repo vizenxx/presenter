@@ -49,8 +49,8 @@ describe('speakerSeconds (my timer)', () => {
   it('counts up, counts down, and goes below zero when over time', async () => {
     const { speakerSeconds } = await import('../src/renderer/src/console/SpeakerTimer')
     const t0 = 1_000_000
-    expect(speakerSeconds({ mode: 'up', minutes: 10, startedAt: t0, heldMs: 5000, fromSec: 0, untilSec: 3600 }, t0 + 60_000)).toBe(65)
-    expect(speakerSeconds({ mode: 'down', minutes: 1, startedAt: null, heldMs: 30_000, fromSec: 0, untilSec: 3600 }, t0)).toBe(30)
-    expect(speakerSeconds({ mode: 'down', minutes: 1, startedAt: t0, heldMs: 0, fromSec: 0, untilSec: 3600 }, t0 + 90_000)).toBe(-30)
+    expect(speakerSeconds({ mode: 'up', minutes: 10, startedAt: t0, heldMs: 5000, periods: [], clockExtra: null }, t0 + 60_000)).toBe(65)
+    expect(speakerSeconds({ mode: 'down', minutes: 1, startedAt: null, heldMs: 30_000, periods: [], clockExtra: null }, t0)).toBe(30)
+    expect(speakerSeconds({ mode: 'down', minutes: 1, startedAt: t0, heldMs: 0, periods: [], clockExtra: null }, t0 + 90_000)).toBe(-30)
   })
 })

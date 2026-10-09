@@ -13,7 +13,7 @@ const OUT = path.join(ROOT, 'e2e', 'out')
 const STUB = path.join(OUT, 'harness', 'console-stub-preload.cjs')
 const AI_REQUEST = aiRequestText(fs.readFileSync(path.join(ROOT, 'docs', 'ai-integration.md'), 'utf8'))
 /** Every ConsoleApi method (contextBridge copies plain objects only, so no Proxy). */
-const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "listWindows", "addWindowScreen", "setTheme", "timerWarnings", "speakerAdjust", "timerAdjust", "timerSet", "speakerTimes"]
+const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "listWindows", "addWindowScreen", "setTheme", "timerWarnings", "speakerAdjust", "timerAdjust", "timerSet", "speakerPeriods"]
 
 app.disableHardwareAcceleration()
 // Each screenshot closes its window; keep the app alive between them.
@@ -36,7 +36,7 @@ function sampleState(projecting: boolean, crowd = false, theme: UiTheme = 'dark'
     mainDeck: deck,
     slidesOf: 'projector',
     onAirId: crowd ? 'screen-2' : 'projector',
-    speaker: { mode: 'down', minutes: 45, startedAt: null, heldMs: 754000, fromSec: 9 * 3600, untilSec: 10 * 3600 + 50 * 60 },
+    speaker: { mode: 'down', minutes: 45, startedAt: null, heldMs: 754000, periods: [{ days: [1, 2, 3, 4, 5], fromSec: 9 * 3600, untilSec: 10 * 3600 + 50 * 60 }], clockExtra: null },
     toolsFor: crowd ? 'window-7' : null,
     projectors: crowd ? [{ number: 2, contentId: 'window-7', fullscreen: true }] : [],
     previewOf: 'projector',
@@ -275,10 +275,10 @@ async function inputs(): Promise<void> {
   await wait(300)
 }
 
-/** My timer From–to: no Start or Reset (it starts by itself); the 🕘 pop-up sets the clock times. */
+/** My timer From–to: no Start or Reset (it starts by itself); the 🕘 pop-up edits class periods (weekdays, AM/PM). */
 async function clockTimes(): Promise<void> {
   const state = sampleState(false)
-  state.speaker = { ...state.speaker, mode: 'clock', heldMs: 0, fromSec: 9 * 3600, untilSec: 10 * 3600 + 50 * 60 }
+  state.speaker = { ...state.speaker, mode: 'clock', heldMs: 0 }
   writeStub(state)
   const win = new BrowserWindow({ show: false, width: 1536, height: 864, useContentSize: true, webPreferences: { preload: STUB, contextIsolation: true, sandbox: true, offscreen: true } })
   await win.loadFile(path.join(ROOT, 'out', 'renderer', 'console.html'))
@@ -294,30 +294,37 @@ async function clockTimes(): Promise<void> {
   const mine = `[...document.querySelectorAll('section')].find((x) => x.textContent.includes('My timer · only you see it'))`
   const buttons = await js<string[]>(`[...${mine}.querySelectorAll('button')].map((b) => b.textContent.trim())`)
   if (buttons.includes('Start') || buttons.includes('Resume') || buttons.includes('Reset')) throw new Error(`From–to should have no Start or Reset: ${JSON.stringify(buttons)}`)
-  if (!buttons.includes('🕘 09:00–10:50')) throw new Error(`no 🕘 09:00–10:50 button: ${JSON.stringify(buttons)}`)
+  if (!buttons.some((b) => b.startsWith('🕘'))) throw new Error(`no 🕘 button: ${JSON.stringify(buttons)}`)
   await js(`[...document.querySelectorAll('button')].find((x) => x.textContent.trim().startsWith('🕘')).click()`)
   await wait(150)
-  // To: 11 : 15. Each box sends when you leave it.
   const field = (title: string): string => `document.querySelector('input[title="${title}"]')`
   const leave = (title: string): Promise<unknown> => js(`${field(title)}.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))`)
-  await js(`${field('To: hour')}.focus()`)
-  await js(`${field('To: hour')}.setSelectionRange(9, 9)`)
+  const press = (title: string): Promise<unknown> => js(`document.querySelector('button[title="${title}"]').click()`)
+  // The end hour: 10 → 11 (AM stays). Then PM. Then Saturday too. Then remove it. Then add a period.
+  await js(`${field('Period 1 to: hour')}.focus()`)
+  await js(`${field('Period 1 to: hour')}.setSelectionRange(9, 9)`)
   await key('Backspace')
   await key('Backspace')
   await key('1')
   await key('1')
-  await leave('To: hour')
-  await js(`${field('To: minute')}.focus()`)
-  await js(`${field('To: minute')}.setSelectionRange(9, 9)`)
-  await key('Backspace')
-  await key('Backspace')
-  await key('1')
-  await key('5')
-  await leave('To: minute')
+  await leave('Period 1 to: hour')
   await wait(100)
-  const sent = (await js<unknown[][]>('window.presenter.__calls()')).filter((c) => c[0] === 'speakerTimes').map((c) => `${c[1]}-${c[2]}`)
-  if (JSON.stringify(sent) !== JSON.stringify([`${9 * 3600}-${11 * 3600 + 50 * 60}`, `${9 * 3600}-${10 * 3600 + 15 * 60}`])) throw new Error(`clock times sent: ${JSON.stringify(sent)}`)
-  console.log('ok My timer From–to: no Start or Reset; the 🕘 pop-up sends the times when you leave a box')
+  await press('Period 1 to: PM')
+  await press('Period 1: Sat')
+  await press('Remove this period')
+  await js(`[...document.querySelectorAll('button')].find((x) => x.textContent.includes('Add a period')).click()`)
+  await wait(100)
+  const sent = (await js<unknown[][]>('window.presenter.__calls()')).filter((c) => c[0] === 'speakerPeriods').map((c) => JSON.stringify(c[1]))
+  const p0 = { days: [1, 2, 3, 4, 5], fromSec: 9 * 3600, untilSec: 10 * 3600 + 50 * 60 }
+  const want = [
+    [{ ...p0, untilSec: 11 * 3600 + 50 * 60 }],
+    [{ ...p0, untilSec: 22 * 3600 + 50 * 60 }],
+    [{ ...p0, days: [1, 2, 3, 4, 5, 6] }],
+    [],
+    [p0, { days: [1, 2, 3, 4, 5], fromSec: 11 * 3600 + 5 * 60, untilSec: 12 * 3600 + 5 * 60 }]
+  ].map((x) => JSON.stringify(x))
+  if (JSON.stringify(sent) !== JSON.stringify(want)) throw new Error(`class periods sent ${JSON.stringify(sent)}, expected ${JSON.stringify(want)}`)
+  console.log('ok My timer From–to: no Start or Reset; the 🕘 pop-up edits hour, AM/PM, weekdays, remove and add')
   win.destroy()
   await wait(300)
 }

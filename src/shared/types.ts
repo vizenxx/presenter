@@ -63,7 +63,15 @@ export interface SpeakerTimerView {
   minutes: number
   startedAt: number | null
   heldMs: number
-  /** Clock times for mode 'clock', in seconds after midnight (local time). */
+  /** Class periods for mode 'clock' (From–to). */
+  periods: ClockPeriod[]
+  /** Today's change of one period's end with ± (seconds; not remembered). key = date#period. */
+  clockExtra: { key: string; sec: number } | null
+}
+
+/** A class period: on these weekdays (0 = Sunday … 6 = Saturday), from a clock time to a clock time (seconds after midnight). */
+export interface ClockPeriod {
+  days: number[]
   fromSec: number
   untilSec: number
 }
@@ -214,8 +222,8 @@ export interface ConsoleApi {
   showOn(id: OutputId, target: number | 'new' | null): void
   projectorFullscreen(n: number): void
   speakerMode(mode: SpeakerMode): void
-  /** My timer's clock times (seconds after midnight). Remembered. */
-  speakerTimes(fromSec: number, untilSec: number): void
+  /** My timer's class periods (From–to). Remembered. */
+  speakerPeriods(periods: ClockPeriod[]): void
   speakerMinutes(minutes: number): void
   speakerToggle(): void
   speakerReset(): void

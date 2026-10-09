@@ -254,18 +254,22 @@ try {
   s = await state()
   assert.ok(s.speaker.heldMs <= -59_000 && s.speaker.heldMs >= -60_000, `My timer counting down got one more minute (${s.speaker.heldMs})`)
   await call(() => globalThis.__presenter.speakerReset())
-  // My timer by clock times: it runs by itself between the start and the end; the times are remembered.
-  const nowSec = await call(() => { const d = new Date(); return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds() })
-  if (nowSec > 120 && nowSec < 86000) {
-    const from = Math.floor(nowSec / 60) * 60 - 60
-    const until = from + 180
+  // My timer From–to: today's class period runs by itself; the periods are remembered; ± changes only today's end.
+  const today = await call(() => { const d = new Date(); return { day: d.getDay(), sec: d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds() } })
+  if (today.sec > 120 && today.sec < 86000) {
+    const from = Math.floor(today.sec / 60) * 60 - 60
+    const periods = [{ days: [today.day], fromSec: from, untilSec: from + 180 }]
     await call(() => globalThis.__presenter.speakerMode('clock'))
-    await call((_e, a) => globalThis.__presenter.speakerTimes(a.from, a.until), { from, until })
-    s = await waitFor('clock times set', (s) => s.speaker.mode === 'clock' && s.speaker.fromSec === from && s.speaker.untilSec === until)
-    assert.deepEqual(JSON.parse(fs.readFileSync(path.join(USER_DATA, 'mytimer.json'), 'utf8')), { mode: 'clock', minutes: s.speaker.minutes, fromSec: from, untilSec: until }, 'My timer settings are remembered')
+    await call((_e, list) => globalThis.__presenter.speakerPeriods(list), periods)
+    s = await waitFor('class period set', (s) => s.speaker.mode === 'clock' && s.speaker.periods.length === 1 && s.speaker.periods[0].fromSec === from)
+    assert.deepEqual(JSON.parse(fs.readFileSync(path.join(USER_DATA, 'mytimer.json'), 'utf8')), { mode: 'clock', minutes: s.speaker.minutes, periods }, 'My timer settings are remembered')
     await call(() => globalThis.__presenter.speakerToggle())
     s = await state()
-    assert.equal(s.speaker.startedAt, null, 'Start does nothing with clock times (they run by themselves)')
+    assert.equal(s.speaker.startedAt, null, 'Start does nothing with class periods (they run by themselves)')
+    await call(() => globalThis.__presenter.speakerAdjust(600))
+    s = await state()
+    assert.equal(s.speaker.clockExtra?.sec, 600, '± changes today\'s end')
+    assert.deepEqual(s.speaker.periods, periods, '± does not change the weekly times')
     await call(() => globalThis.__presenter.speakerMode('up'))
   }
   console.log('ok 7e change the time of a running timer')

@@ -1,4 +1,4 @@
-import type { SpeakerMode, SpeakerTimerView } from './types'
+import type { ClockPeriod, SpeakerMode, SpeakerTimerView } from './types'
 
 export type TimerStatus = 'idle' | 'running' | 'paused' | 'done'
 
@@ -134,6 +134,12 @@ export function speakerStarted(s: SpeakerTimerView): boolean {
 }
 
 export const DAY_SEC = 24 * 60 * 60
+/** Class periods for My timer From–to: up to 6. Over time shows for 30 minutes after a period's end. */
+export const MAX_PERIODS = 6
+export const OVER_TIME_SHOWN_SEC = 30 * 60
+/** Weekdays in the order the pop-up shows them (JavaScript numbers: 0 = Sunday). */
+export const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0]
+export const DEFAULT_PERIODS: ClockPeriod[] = [{ days: [1, 2, 3, 4, 5], fromSec: 9 * 3600, untilSec: 10 * 3600 }]
 
 /** Seconds after local midnight at this moment. */
 export function secondsOfDay(now: number): number {
@@ -141,51 +147,109 @@ export function secondsOfDay(now: number): number {
   return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds() + d.getMilliseconds() / 1000
 }
 
-/** My timer by clock times: before the start time, during (counting down to the end), or after the end time. */
-export type ClockPhase = 'before' | 'during' | 'after'
+/**
+ * Where My timer From–to stands now, from today's periods: during one (counting down to its end),
+ * after one (Over time, for 30 minutes after its end), before the next one today, or none.
+ * key names today's period, for a change of today's end with ±.
+ */
+export interface ClockNow {
+  phase: 'before' | 'during' | 'after' | 'none'
+  period: ClockPeriod | null
+  key: string | null
+  /** The period's end today (seconds after midnight), with today's ± change. */
+  endSec: number
+}
 
-export function clockPhase(s: SpeakerTimerView, now: number): ClockPhase {
+export function clockNow(s: SpeakerTimerView, now: number): ClockNow {
+  const d = new Date(now)
   const sec = secondsOfDay(now)
-  if (sec < s.fromSec) return 'before'
-  return sec < s.untilSec ? 'during' : 'after'
+  const date = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`
+  const today = s.periods
+    .map((period, i) => ({ period, key: `${date}#${i}` }))
+    .filter((x) => x.period.days.includes(d.getDay()))
+    .map((x) => ({ ...x, endSec: x.period.untilSec + (s.clockExtra && s.clockExtra.key === x.key ? s.clockExtra.sec : 0) }))
+    .sort((a, b) => a.period.fromSec - b.period.fromSec)
+  const during = today.find((x) => x.period.fromSec <= sec && sec < x.endSec)
+  if (during) return { phase: 'during', ...during }
+  const ended = today.filter((x) => x.endSec <= sec && sec - x.endSec < OVER_TIME_SHOWN_SEC).sort((a, b) => b.endSec - a.endSec)[0]
+  if (ended) return { phase: 'after', ...ended }
+  const next = today.find((x) => x.period.fromSec > sec)
+  if (next) return { phase: 'before', ...next }
+  return { phase: 'none', period: null, key: null, endSec: 0 }
 }
 
 /**
  * Seconds My timer shows: time so far (count up), time left (count down, below zero when over),
- * or by clock times: the whole length before the start, then the time left until the end (below zero after it).
+ * or From–to: the period's length before it starts, then the time left until its end (below zero after it).
  */
 export function speakerSeconds(s: SpeakerTimerView, now: number): number {
-  if (s.mode === 'clock') return clockPhase(s, now) === 'before' ? s.untilSec - s.fromSec : s.untilSec - secondsOfDay(now)
+  if (s.mode === 'clock') {
+    const c = clockNow(s, now)
+    if (c.phase === 'none' || !c.period) return 0
+    return c.phase === 'before' ? c.endSec - c.period.fromSec : c.endSec - secondsOfDay(now)
+  }
   const elapsed = (s.heldMs + (s.startedAt !== null ? now - s.startedAt : 0)) / 1000
   return s.mode === 'up' ? elapsed : s.minutes * 60 - elapsed
 }
 
-/** Clock times put into range: whole minutes in one day, the end at least one minute after the start. */
-export function cleanTimes(fromSec: number, untilSec: number): { fromSec: number; untilSec: number } {
-  const minute = (v: number): number => Math.round((Number.isFinite(v) ? v : 0) / 60) * 60
-  const from = Math.min(DAY_SEC - 60, Math.max(0, minute(fromSec)))
-  const until = Math.min(DAY_SEC - 60, Math.max(from + 60, minute(untilSec)))
-  return { fromSec: from, untilSec: Math.max(until, from + 60) }
+/**
+ * Periods as the console may send them, put into range: at most 6; days 0–6 without repeats;
+ * whole minutes in one day, the end at least one minute after the start; in order of start time.
+ */
+export function cleanPeriods(list: unknown): ClockPeriod[] {
+  if (!Array.isArray(list)) return DEFAULT_PERIODS.map((p) => ({ ...p, days: [...p.days] }))
+  const minute = (v: unknown): number => {
+    const n = Number(v)
+    return Math.round((Number.isFinite(n) ? n : 0) / 60) * 60
+  }
+  return list
+    .filter((p): p is Record<string, unknown> => typeof p === 'object' && p !== null)
+    .slice(0, MAX_PERIODS)
+    .map((p) => {
+      const days = Array.isArray(p['days']) ? [...new Set(p['days'].map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n <= 6))].sort() : []
+      const fromSec = Math.min(DAY_SEC - 60, Math.max(0, minute(p['fromSec'])))
+      const untilSec = Math.min(DAY_SEC - 60, Math.max(fromSec + 60, minute(p['untilSec'])))
+      return { days, fromSec, untilSec: Math.max(untilSec, fromSec + 60) }
+    })
+    .sort((a, b) => a.fromSec - b.fromSec)
 }
 
-/** "09:05" for seconds after midnight. */
-export function hhmm(sec: number): string {
+/** 12-hour clock: "9:05 AM" for seconds after midnight. */
+export function time12(sec: number): string {
   const total = Math.floor(sec / 60)
-  return `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`
+  const h = Math.floor(total / 60) % 24
+  return `${h % 12 === 0 ? 12 : h % 12}:${String(total % 60).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`
+}
+
+/** "9:00–10:50 AM", or "11:30 AM–1:00 PM" when the two times are in different halves of the day. */
+export function range12(fromSec: number, untilSec: number): string {
+  const [a, b] = [time12(fromSec), time12(untilSec)]
+  return a.slice(-2) === b.slice(-2) ? `${a.slice(0, -3)}–${b}` : `${a}–${b}`
+}
+
+/** Seconds after midnight from a 12-hour time (hour 1–12, AM or PM). */
+export function from12(hour: number, minute: number, pm: boolean): number {
+  return ((hour % 12) + (pm ? 12 : 0)) * 3600 + minute * 60
 }
 
 export const SPEAKER_MODES: SpeakerMode[] = ['up', 'down', 'clock']
 
 /**
  * Adds time to My timer (a negative amount takes time away). Count down: more time left (it may
- * go above the minutes set). Count up: more time counted (never below zero). Clock times: the end
- * moves (in whole minutes). Not started: no change.
+ * go above the minutes set). Count up: more time counted (never below zero). From–to: today's
+ * period ends later or earlier (today only; the weekly times stay). Not started: no change.
  */
 export function adjustSpeaker(s: SpeakerTimerView, deltaSec: number, now: number): SpeakerTimerView {
   const delta = Math.round(deltaSec) * 1000
   if (delta === 0 || !speakerStarted(s)) return s
-  // Clock times: more time = a later end (whole minutes, still after the start).
-  if (s.mode === 'clock') return { ...s, ...cleanTimes(s.fromSec, s.untilSec + Math.round(deltaSec)) }
+  if (s.mode === 'clock') {
+    const c = clockNow(s, now)
+    if (!c.period || !c.key) return s
+    const before = s.clockExtra && s.clockExtra.key === c.key ? s.clockExtra.sec : 0
+    // The end stays at least one minute after the start.
+    const sec = Math.max(c.period.fromSec + 60 - c.period.untilSec, before + Math.round(deltaSec))
+    return { ...s, clockExtra: { key: c.key, sec } }
+  }
   const runningMs = s.startedAt !== null ? now - s.startedAt : 0
   // Counting up never goes below zero: the held part may cancel the running part, no more.
   const lowest = runningMs > 0 ? -runningMs : 0

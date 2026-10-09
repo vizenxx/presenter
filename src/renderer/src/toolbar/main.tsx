@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import '../styles.css'
 import { clock, mmss } from '../../../shared/format'
 import { INK_COLORS, INK_TOOLS, inkKeyAction } from '../../../shared/ink'
-import { clockPhase, speakerSeconds, speakerStarted } from '../../../shared/timer'
+import { clockNow, speakerSeconds, speakerStarted } from '../../../shared/timer'
 import { inkSvg, type InkIconName } from '../../../shared/inkIcons'
 import type { AppState } from '../../../shared/types'
 import { useAppState } from '../console/hooks'
@@ -64,7 +64,7 @@ function Toolbar() {
   const [timerOpen, setTimerOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
   const clockMode = !!state && state.speaker.mode === 'clock'
-  const running = !!state && (state.speaker.startedAt !== null || (clockMode && clockPhase(state.speaker, Date.now()) === 'during'))
+  const running = !!state && (state.speaker.startedAt !== null || (clockMode && clockNow(state.speaker, Date.now()).phase === 'during'))
   const now = useNow(running || clockMode)
   const face = useRollFace(state?.roller ?? { lists: [], activeListId: null, activeText: '', people: [], superLucky: false, roll: null, showing: false })
 
@@ -110,7 +110,7 @@ function Toolbar() {
   const speaker = state?.speaker
   const mine = speaker ? speakerSeconds(speaker, now) : 0
   // My timer shows only once it has started (running or paused; by clock times: from the start time on).
-  const mineSet = !!speaker && (speaker.mode === 'clock' ? clockPhase(speaker, now) !== 'before' : speakerStarted(speaker))
+  const mineSet = !!speaker && (speaker.mode === 'clock' ? ['during', 'after'].includes(clockNow(speaker, now).phase) : speakerStarted(speaker))
   const timer = state?.timer
   const timerOn = !!timer && (timer.status !== 'idle' || timer.alarming)
   // The roll shows on the audience screens; with none, only this bar and the console show it.

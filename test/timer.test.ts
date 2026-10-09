@@ -99,42 +99,73 @@ describe('changing the time of a running timer', () => {
     expect(T.adjust(idle, 60, 0)).toBe(idle)
   })
   it('adds time to My timer: more left when counting down, more counted when counting up', () => {
-    const down = { mode: 'down' as const, minutes: 45, startedAt: 0, heldMs: 0, fromSec: 0, untilSec: 3600 }
+    const down = { mode: 'down' as const, minutes: 45, startedAt: 0, heldMs: 0, periods: [], clockExtra: null }
     expect(T.adjustSpeaker(down, 60, 10_000).heldMs).toBe(-60_000)
     expect(T.adjustSpeaker(down, -60, 10_000).heldMs).toBe(60_000)
-    const up = { mode: 'up' as const, minutes: 45, startedAt: null, heldMs: 30_000, fromSec: 0, untilSec: 3600 }
+    const up = { mode: 'up' as const, minutes: 45, startedAt: null, heldMs: 30_000, periods: [], clockExtra: null }
     expect(T.adjustSpeaker(up, 60, 0).heldMs).toBe(90_000)
     expect(T.adjustSpeaker(up, -120, 0).heldMs).toBe(0)
-    const upRunning = { mode: 'up' as const, minutes: 45, startedAt: 0, heldMs: 0, fromSec: 0, untilSec: 3600 }
+    const upRunning = { mode: 'up' as const, minutes: 45, startedAt: 0, heldMs: 0, periods: [], clockExtra: null }
     expect(T.adjustSpeaker(upRunning, -120, 50_000).heldMs).toBe(-50_000)
   })
   it('leaves My timer alone before it starts', () => {
-    const fresh = { mode: 'down' as const, minutes: 45, startedAt: null, heldMs: 0, fromSec: 0, untilSec: 3600 }
+    const fresh = { mode: 'down' as const, minutes: 45, startedAt: null, heldMs: 0, periods: [], clockExtra: null }
     expect(T.adjustSpeaker(fresh, 60, 0)).toBe(fresh)
     expect(T.speakerStarted(fresh)).toBe(false)
     expect(T.speakerStarted({ ...fresh, heldMs: -60_000 })).toBe(true)
   })
 })
 
-describe('My timer by clock times', () => {
-  const at = (h: number, m: number, sec = 0): number => new Date(2026, 9, 9, h, m, sec).getTime()
-  const period = { mode: 'clock' as const, minutes: 45, startedAt: null, heldMs: 0, fromSec: 9 * 3600, untilSec: 10 * 3600 + 50 * 60 }
-  it('waits before the start, counts down to the end by itself, and goes over time after it', () => {
-    expect(T.clockPhase(period, at(8, 59, 30))).toBe('before')
-    expect(T.speakerSeconds(period, at(8, 59, 30))).toBe(110 * 60)
-    expect(T.clockPhase(period, at(9, 0))).toBe('during')
-    expect(T.speakerSeconds(period, at(10, 0))).toBe(50 * 60)
-    expect(T.clockPhase(period, at(10, 50))).toBe('after')
-    expect(T.speakerSeconds(period, at(10, 52))).toBe(-120)
+describe('My timer From–to: class periods by weekday', () => {
+  // 2026-10-09 is a Friday (day 5); 2026-10-10 a Saturday.
+  const at = (h: number, m: number, sec = 0, date = 9): number => new Date(2026, 9, date, h, m, sec).getTime()
+  const periods = [
+    { days: [1, 3, 5], fromSec: 9 * 3600, untilSec: 10 * 3600 + 50 * 60 },
+    { days: [5], fromSec: 14 * 3600, untilSec: 16 * 3600 }
+  ]
+  const s = { mode: 'clock' as const, minutes: 45, startedAt: null, heldMs: 0, periods, clockExtra: null }
+  it('waits before a period, counts down during it, and shows Over time for 30 minutes after it', () => {
+    expect(T.clockNow(s, at(8, 59, 30)).phase).toBe('before')
+    expect(T.speakerSeconds(s, at(8, 59, 30))).toBe(110 * 60)
+    expect(T.clockNow(s, at(10, 0)).phase).toBe('during')
+    expect(T.speakerSeconds(s, at(10, 0))).toBe(50 * 60)
+    expect(T.clockNow(s, at(10, 52)).phase).toBe('after')
+    expect(T.speakerSeconds(s, at(10, 52))).toBe(-120)
   })
-  it('keeps clock times in whole minutes, the end after the start', () => {
-    expect(T.cleanTimes(9 * 3600 + 20, 9 * 3600)).toEqual({ fromSec: 9 * 3600, untilSec: 9 * 3600 + 60 })
-    expect(T.cleanTimes(-5, 99_999)).toEqual({ fromSec: 0, untilSec: T.DAY_SEC - 60 })
-    expect(T.hhmm(9 * 3600 + 5 * 60)).toBe('09:05')
+  it('goes on to the next period of the day, then has nothing left', () => {
+    expect(T.clockNow(s, at(11, 30))).toMatchObject({ phase: 'before', period: periods[1] })
+    expect(T.speakerSeconds(s, at(15, 0))).toBe(3600)
+    expect(T.clockNow(s, at(17, 0)).phase).toBe('none')
+    expect(T.speakerSeconds(s, at(17, 0))).toBe(0)
   })
-  it('moves the end time with Change the time', () => {
-    expect(T.adjustSpeaker(period, 600, at(9, 30)).untilSec).toBe(11 * 3600)
-    expect(T.adjustSpeaker(period, -7 * 3600, at(9, 30)).untilSec).toBe(9 * 3600 + 60)
-    expect(T.speakerStarted(period)).toBe(true)
+  it('uses only the periods of the weekday', () => {
+    expect(T.clockNow(s, at(10, 0, 0, 10)).phase).toBe('none')
+    expect(T.clockNow(s, at(15, 0, 0, 7)).phase).toBe('none')
+    expect(T.clockNow(s, at(10, 0, 0, 7)).phase).toBe('during')
+  })
+  it('changes only today\'s end with ±', () => {
+    const later = T.adjustSpeaker(s, 600, at(10, 0))
+    expect(later.periods).toEqual(periods)
+    expect(T.speakerSeconds(later, at(10, 0))).toBe(60 * 60)
+    expect(T.speakerSeconds(later, at(10, 0, 0, 12))).toBe(50 * 60)
+    expect(T.speakerSeconds(T.adjustSpeaker(s, -7 * 3600, at(10, 0)), at(9, 0, 30))).toBe(30)
+  })
+  it('keeps periods in range and in order of start time', () => {
+    expect(T.cleanPeriods([{ days: [5, 5, 9, 1], fromSec: 14 * 3600 + 20, untilSec: 13 * 3600 }, { days: [2], fromSec: 9 * 3600, untilSec: 10 * 3600 }])).toEqual([
+      { days: [2], fromSec: 9 * 3600, untilSec: 10 * 3600 },
+      { days: [1, 5], fromSec: 14 * 3600, untilSec: 14 * 3600 + 60 }
+    ])
+    expect(T.cleanPeriods(Array.from({ length: 9 }, () => ({ days: [1], fromSec: 0, untilSec: 60 })))).toHaveLength(T.MAX_PERIODS)
+  })
+  it('writes 12-hour times with AM and PM', () => {
+    expect(T.time12(0)).toBe('12:00 AM')
+    expect(T.time12(9 * 3600 + 5 * 60)).toBe('9:05 AM')
+    expect(T.time12(12 * 3600)).toBe('12:00 PM')
+    expect(T.time12(14 * 3600 + 30 * 60)).toBe('2:30 PM')
+    expect(T.range12(9 * 3600, 10 * 3600 + 50 * 60)).toBe('9:00–10:50 AM')
+    expect(T.range12(11 * 3600 + 30 * 60, 13 * 3600)).toBe('11:30 AM–1:00 PM')
+    expect(T.from12(12, 0, false)).toBe(0)
+    expect(T.from12(12, 15, true)).toBe(12 * 3600 + 15 * 60)
+    expect(T.from12(2, 30, true)).toBe(14 * 3600 + 30 * 60)
   })
 })

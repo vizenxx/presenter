@@ -37,7 +37,7 @@ function wireIpc(store: Store): void {
   })
   ipcMain.on('console:projector-fullscreen', (_e, n: number) => store.projectorFullscreen(Number(n)))
   ipcMain.on('console:speaker-mode', (_e, mode: SpeakerMode) => store.speakerMode(mode))
-  ipcMain.on('console:speaker-times', (_e, fromSec: number, untilSec: number) => store.speakerTimes(fromSec, untilSec))
+  ipcMain.on('console:speaker-periods', (_e, periods: unknown) => store.speakerPeriods(periods))
   ipcMain.on('console:speaker-minutes', (_e, minutes: number) => store.speakerMinutes(Number(minutes)))
   ipcMain.on('console:speaker-toggle', () => store.speakerToggle())
   ipcMain.on('console:speaker-reset', () => store.speakerReset())
