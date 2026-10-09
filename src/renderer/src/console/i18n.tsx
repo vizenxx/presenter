@@ -185,7 +185,7 @@ const en = {
   fromTo: 'From–to',
   timesButtonTitle: 'Class periods: My timer counts down to the end of today\'s period by itself',
   timesTitle: 'My timer · class periods',
-  timesHint: 'During a period My timer counts down to its end by itself; for 30 minutes after the end it shows Over time. Each period has its weekdays. ± changes only today\'s end. Presenter remembers the periods.',
+  timesHint: 'During a period My timer counts down to its end by itself; for 30 minutes after the end it shows Over time. Each period has its weekdays; the list is in order of weekday, then start time. ± changes only today\'s end. Presenter remembers the periods.',
   timesFrom: 'From',
   timesTo: 'To',
   startsAt: (time: string) => `Starts at ${time}`,

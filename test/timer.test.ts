@@ -150,11 +150,22 @@ describe('My timer From–to: class periods by weekday', () => {
     expect(T.speakerSeconds(later, at(10, 0, 0, 12))).toBe(50 * 60)
     expect(T.speakerSeconds(T.adjustSpeaker(s, -7 * 3600, at(10, 0)), at(9, 0, 30))).toBe(30)
   })
-  it('keeps periods in range and in order of start time', () => {
+  it('keeps periods in range, listed by weekday first and then by start time', () => {
     expect(T.cleanPeriods([{ days: [5, 5, 9, 1], fromSec: 14 * 3600 + 20, untilSec: 13 * 3600 }, { days: [2], fromSec: 9 * 3600, untilSec: 10 * 3600 }])).toEqual([
-      { days: [2], fromSec: 9 * 3600, untilSec: 10 * 3600 },
-      { days: [1, 5], fromSec: 14 * 3600, untilSec: 14 * 3600 + 60 }
+      { days: [1, 5], fromSec: 14 * 3600, untilSec: 14 * 3600 + 60 },
+      { days: [2], fromSec: 9 * 3600, untilSec: 10 * 3600 }
     ])
+    const hour = (h: number) => ({ fromSec: h * 3600, untilSec: (h + 1) * 3600 })
+    const order = T.cleanPeriods([
+      { days: [0], ...hour(8) },
+      { days: [], ...hour(7) },
+      { days: [3], ...hour(14) },
+      { days: [0, 3], ...hour(9) },
+      { days: [1], ...hour(16) },
+      { days: [1], ...hour(10) }
+    ])
+    // Mon 10, Mon 16, then Wed (+Sun) 9, Wed 14, then Sun 8, then the period with no weekday.
+    expect(order.map((p) => `${p.days.join(',')}@${p.fromSec / 3600}`)).toEqual(['1@10', '1@16', '3,0@9', '3@14', '0@8', '@7'])
     expect(T.cleanPeriods(Array.from({ length: 9 }, () => ({ days: [1], fromSec: 0, untilSec: 60 })))).toHaveLength(T.MAX_PERIODS)
   })
   it('writes 12-hour times with AM and PM', () => {

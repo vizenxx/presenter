@@ -135,7 +135,7 @@ The bar above the current slide: **Pointer, Pen, Highlighter, Box, Arrow, Laser,
 **My timer** (only you see it)
 
 - **Count up**, **Count down**, or **From–to**, to pace your talk. It makes no sound.
-- **From–to**: click **🕘** and set your class periods: for each period, its weekdays (Mon … Sun) and its start and end on the 12-hour clock (hour : minute, **AM** or **PM**); up to 6 periods, two on one day are fine. During today's period My timer counts down to its end by itself; for 30 minutes after the end it shows **Over time**; before the next period it shows "Starts at 2:00 PM"; with none left today, "No class period now". There is no Start button in this mode. **±** changes only today's end. Presenter remembers the periods.
+- **From–to**: click **🕘** and set your class periods: for each period, its weekdays (Mon … Sun) and its start and end on the 12-hour clock (hour : minute, **AM** or **PM**); up to 6 periods, two on one day are fine; they are listed by weekday, then by start time. During today's period My timer counts down to its end by itself; for 30 minutes after the end it shows **Over time**; before the next period it shows "Starts at 2:00 PM"; with none left today, "No class period now". There is no Start button in this mode. **±** changes only today's end. Presenter remembers the periods.
 - A countdown keeps going past zero as **Over time**, in red.
 - The floating toolbar shows its time while it runs.
 

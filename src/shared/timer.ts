@@ -193,8 +193,10 @@ export function speakerSeconds(s: SpeakerTimerView, now: number): number {
 }
 
 /**
- * Periods as the console may send them, put into range: at most 6; days 0–6 without repeats;
- * whole minutes in one day, the end at least one minute after the start; in order of start time.
+ * Periods as the console may send them, put into range: at most 6; days 0–6 without repeats, in
+ * week order (Mon … Sun); whole minutes in one day, the end at least one minute after the start.
+ * Listed by weekday first (a period's first day in week order), then by start time; a period with
+ * no weekday comes last.
  */
 export function cleanPeriods(list: unknown): ClockPeriod[] {
   if (!Array.isArray(list)) return DEFAULT_PERIODS.map((p) => ({ ...p, days: [...p.days] }))
@@ -206,12 +208,17 @@ export function cleanPeriods(list: unknown): ClockPeriod[] {
     .filter((p): p is Record<string, unknown> => typeof p === 'object' && p !== null)
     .slice(0, MAX_PERIODS)
     .map((p) => {
-      const days = Array.isArray(p['days']) ? [...new Set(p['days'].map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n <= 6))].sort() : []
+      const days = Array.isArray(p['days']) ? [...new Set(p['days'].map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n <= 6))].sort((a, b) => WEEK_ORDER.indexOf(a) - WEEK_ORDER.indexOf(b)) : []
       const fromSec = Math.min(DAY_SEC - 60, Math.max(0, minute(p['fromSec'])))
       const untilSec = Math.min(DAY_SEC - 60, Math.max(fromSec + 60, minute(p['untilSec'])))
       return { days, fromSec, untilSec: Math.max(untilSec, fromSec + 60) }
     })
-    .sort((a, b) => a.fromSec - b.fromSec)
+    .sort((a, b) => firstDay(a) - firstDay(b) || a.fromSec - b.fromSec)
+}
+
+/** A period's first weekday in week order (Mon = 0 … Sun = 6); no weekday = after Sunday. */
+function firstDay(p: ClockPeriod): number {
+  return p.days.length === 0 ? WEEK_ORDER.length : Math.min(...p.days.map((d) => WEEK_ORDER.indexOf(d)))
 }
 
 /** 12-hour clock: "9:05 AM" for seconds after midnight. */
