@@ -84,6 +84,8 @@ function placeMediaLayer(): void {
   const r = canvas.getBoundingClientRect()
   Object.assign(mediaLayer.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` })
 }
+// Also whenever the drawn page changes size (a render that another render replaced never places it).
+new ResizeObserver(() => placeMediaLayer()).observe(canvas)
 
 function playingIndex(): number | null {
   const i = players.findIndex((p) => !p.paused && !p.ended)

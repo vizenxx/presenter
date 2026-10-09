@@ -72,7 +72,8 @@ async function media(win: BrowserWindow, convertedFolder: string): Promise<void>
   await until('media deck', (s) => s.totalSlides > 3)
   win.webContents.send('deck:cmd', { type: 'GOTO', slideIndex: 2 })
   await until('page 3 has a video', (s) => s.currentSlide === 2 && s.media?.kinds.join() === 'video' && s.media.playing === null)
-  const box = await win.webContents.executeJavaScript(`(() => { const b = document.querySelector('.media'); const r = b.getBoundingClientRect(); const c = document.getElementById('page').getBoundingClientRect(); return [(r.left - c.left) / c.width, (r.top - c.top) / c.height, r.width / c.width] })()`)
+  // Measured once the page is drawn (the GOTO's render ends a moment after the report).
+  const box = await win.webContents.executeJavaScript(`new Promise((done) => { const t0 = Date.now(); const look = () => { const b = document.querySelector('.media'); const r = b.getBoundingClientRect(); const c = document.getElementById('page').getBoundingClientRect(); if (r.width > 0 || Date.now() - t0 > 3000) done([(r.left - c.left) / c.width, (r.top - c.top) / c.height, r.width / c.width]); else setTimeout(look, 50) }; look() })`)
   if (Math.abs(box[0] - 0.25) > 0.01 || Math.abs(box[1] - 0.25) > 0.01 || Math.abs(box[2] - 0.5) > 0.01) throw new Error(`the video is not where it stands on the slide: ${box}`)
   const part = await win.webContents.executeJavaScript(`fetch('/media/1.wav', { headers: { Range: 'bytes=0-9' } }).then(async (r) => [r.status, (await r.arrayBuffer()).byteLength, r.headers.get('content-range')])`)
   if (part[0] !== 206 || part[1] !== 10) throw new Error(`the file is not served in parts: ${JSON.stringify(part)}`)
@@ -181,6 +182,19 @@ function pptxWithVideo(sample: string, video: { mp4: Buffer; png: Buffer }): str
   return out
 }
 
+/** The first conversion on a computer: LibreOffice starts with a new, empty profile. */
+async function freshProfile(): Promise<void> {
+  if (!converters.includes('libreoffice')) return
+  const cacheRoot = fs.mkdtempSync(path.join(OUT, 'fresh-cache-'))
+  try {
+    const prepared = await prepareDeck(SAMPLE, { cacheRoot, converters: ['libreoffice'] })
+    if (!fs.existsSync(path.join(prepared.folder, 'deck.pdf'))) throw new Error('no deck.pdf on the first conversion')
+    console.log('ok the first conversion with a new LibreOffice profile works')
+  } finally {
+    fs.rmSync(cacheRoot, { recursive: true, force: true })
+  }
+}
+
 /** The whole path with a real video in a real PPTX: convert, take the video out, play it in place. */
 async function realVideo(win: BrowserWindow): Promise<void> {
   const video = await recordVideo()
@@ -235,6 +249,7 @@ app.whenReady().then(async () => {
     fs.copyFileSync(path.join(prepared.folder, 'deck.pdf'), pdf)
     await check(win, pdf, 'pdf', false)
     await media(win, prepared.folder)
+    await freshProfile()
     await realVideo(win)
     console.log('VIEWER OK')
   } catch (error) {
