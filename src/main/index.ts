@@ -1,7 +1,7 @@
 import { app, ipcMain, Menu, type WebContents } from 'electron'
 import path from 'node:path'
 import type { InkOp, InkTool } from '../shared/ink'
-import type { KeyIntent, NavAction, OutputId, PreviewRect, UiTheme } from '../shared/types'
+import type { KeyIntent, NavAction, OutputId, PreviewRect, SpeakerMode, UiTheme } from '../shared/types'
 import type { ZoomDirection } from '../shared/zoom'
 import type { GuideFile } from '../shared/guide'
 import { registerDeckScheme, setViewerRoot } from './deckProtocol'
@@ -36,7 +36,8 @@ function wireIpc(store: Store): void {
     if (to !== undefined) store.showOn(id, to)
   })
   ipcMain.on('console:projector-fullscreen', (_e, n: number) => store.projectorFullscreen(Number(n)))
-  ipcMain.on('console:speaker-mode', (_e, mode: 'up' | 'down') => store.speakerMode(mode))
+  ipcMain.on('console:speaker-mode', (_e, mode: SpeakerMode) => store.speakerMode(mode))
+  ipcMain.on('console:speaker-times', (_e, fromSec: number, untilSec: number) => store.speakerTimes(fromSec, untilSec))
   ipcMain.on('console:speaker-minutes', (_e, minutes: number) => store.speakerMinutes(Number(minutes)))
   ipcMain.on('console:speaker-toggle', () => store.speakerToggle())
   ipcMain.on('console:speaker-reset', () => store.speakerReset())

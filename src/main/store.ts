@@ -9,7 +9,7 @@ import { MAIN_STRINGS } from '../shared/lang'
 import { mergeRecent } from '../shared/recentList'
 import * as T from '../shared/timer'
 import { stepZoom, zoomKey, type ZoomDirection } from '../shared/zoom'
-import type { AppState, DeckRef, DeckStatus, KeyIntent, NavAction, OutputId, OutputKind, PreviewRect, RollerPlay, SpeakerTimerView, TimerView, UiTheme, WindowSource } from '../shared/types'
+import type { AppState, DeckRef, DeckStatus, KeyIntent, NavAction, OutputId, OutputKind, PreviewRect, RollerPlay, SpeakerTimerView, SpeakerMode, TimerView, UiTheme, WindowSource } from '../shared/types'
 import type { GuideFile } from '../shared/guide'
 import { ConsoleWindow } from './consoleWindow'
 import { saveGuideFile } from './guide'
@@ -28,6 +28,7 @@ import { WindowTools } from './windowTools'
 import { rememberZoom, zoomFor } from './zoomMemory'
 import { loadTheme, saveTheme, themeBackground } from './themeMemory'
 import { loadWarnings, saveWarnings } from './timerMemory'
+import { loadMyTimer, saveMyTimer } from './myTimerMemory'
 import { loadFolder, saveFolder } from './folderMemory'
 
 export interface StorePaths {
@@ -81,7 +82,7 @@ export class Store {
   private activeWindowId: OutputId | null = null
   private tools!: WindowTools
   private tracking = false
-  private speaker: SpeakerTimerView = { mode: 'up', minutes: 45, startedAt: null, heldMs: 0 }
+  private speaker: SpeakerTimerView = { mode: 'up', minutes: 45, startedAt: null, heldMs: 0, fromSec: 9 * 3600, untilSec: 10 * 3600 }
   private theme: UiTheme | null = null
   private warnings: T.TimerWarning[] = T.DEFAULT_WARNINGS.map((w) => ({ ...w }))
   /** Folder of the deck opened last; Open deck starts there. */
@@ -115,6 +116,7 @@ export class Store {
     this.recent = loadRecent()
     this.theme = loadTheme()
     this.warnings = loadWarnings()
+    this.speaker = { ...loadMyTimer(), startedAt: null, heldMs: 0 }
     this.lastFolder = loadFolder()
     const projector = this.createOutput('projector', 1, 'projector', 0)
     // The next preview is not a screen: it shows the slide after the selected screen's slide.
@@ -571,19 +573,35 @@ export class Store {
 
   // ---------- my timer (the speaker's own) ----------
 
-  speakerMode(mode: 'up' | 'down'): void {
-    if (mode !== 'up' && mode !== 'down') return
+  speakerMode(mode: SpeakerMode): void {
+    if (!T.SPEAKER_MODES.includes(mode)) return
     this.speaker = { ...this.speaker, mode, startedAt: null, heldMs: 0 }
+    this.saveSpeaker()
     this.emit()
   }
 
   speakerMinutes(minutes: number): void {
     this.speaker = { ...this.speaker, minutes: Math.min(240, Math.max(1, Math.round(Number(minutes)) || 1)) }
+    this.saveSpeaker()
     this.emit()
+  }
+
+  /** My timer's clock times (seconds after midnight): it counts down from the start to the end by itself. */
+  speakerTimes(fromSec: number, untilSec: number): void {
+    this.speaker = { ...this.speaker, ...T.cleanTimes(Number(fromSec), Number(untilSec)) }
+    this.saveSpeaker()
+    this.emit()
+  }
+
+  private saveSpeaker(): void {
+    const { mode, minutes, fromSec, untilSec } = this.speaker
+    saveMyTimer({ mode, minutes, fromSec, untilSec })
   }
 
   speakerToggle(): void {
     const s = this.speaker
+    // Clock times start and stop by themselves.
+    if (s.mode === 'clock') return
     const now = Date.now()
     this.speaker = s.startedAt === null ? { ...s, startedAt: now } : { ...s, startedAt: null, heldMs: s.heldMs + now - s.startedAt }
     this.emit()
@@ -597,6 +615,7 @@ export class Store {
   /** Adds time to My timer (below zero: takes time away) once it has started. */
   speakerAdjust(deltaSec: number): void {
     this.speaker = T.adjustSpeaker(this.speaker, Number(deltaSec) || 0, Date.now())
+    if (this.speaker.mode === 'clock') this.saveSpeaker()
     this.emit()
   }
 

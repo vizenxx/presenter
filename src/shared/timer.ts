@@ -1,4 +1,4 @@
-import type { SpeakerTimerView } from './types'
+import type { SpeakerMode, SpeakerTimerView } from './types'
 
 export type TimerStatus = 'idle' | 'running' | 'paused' | 'done'
 
@@ -128,18 +128,64 @@ export function adjust(s: TimerState, deltaSec: number, now: number): TimerState
   }
 }
 
-/** True when My timer has started (running, or paused with time on it). */
+/** True when My timer has started (running, or paused with time on it). Clock times are always set. */
 export function speakerStarted(s: SpeakerTimerView): boolean {
-  return s.startedAt !== null || s.heldMs !== 0
+  return s.mode === 'clock' || s.startedAt !== null || s.heldMs !== 0
+}
+
+export const DAY_SEC = 24 * 60 * 60
+
+/** Seconds after local midnight at this moment. */
+export function secondsOfDay(now: number): number {
+  const d = new Date(now)
+  return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds() + d.getMilliseconds() / 1000
+}
+
+/** My timer by clock times: before the start time, during (counting down to the end), or after the end time. */
+export type ClockPhase = 'before' | 'during' | 'after'
+
+export function clockPhase(s: SpeakerTimerView, now: number): ClockPhase {
+  const sec = secondsOfDay(now)
+  if (sec < s.fromSec) return 'before'
+  return sec < s.untilSec ? 'during' : 'after'
 }
 
 /**
+ * Seconds My timer shows: time so far (count up), time left (count down, below zero when over),
+ * or by clock times: the whole length before the start, then the time left until the end (below zero after it).
+ */
+export function speakerSeconds(s: SpeakerTimerView, now: number): number {
+  if (s.mode === 'clock') return clockPhase(s, now) === 'before' ? s.untilSec - s.fromSec : s.untilSec - secondsOfDay(now)
+  const elapsed = (s.heldMs + (s.startedAt !== null ? now - s.startedAt : 0)) / 1000
+  return s.mode === 'up' ? elapsed : s.minutes * 60 - elapsed
+}
+
+/** Clock times put into range: whole minutes in one day, the end at least one minute after the start. */
+export function cleanTimes(fromSec: number, untilSec: number): { fromSec: number; untilSec: number } {
+  const minute = (v: number): number => Math.round((Number.isFinite(v) ? v : 0) / 60) * 60
+  const from = Math.min(DAY_SEC - 60, Math.max(0, minute(fromSec)))
+  const until = Math.min(DAY_SEC - 60, Math.max(from + 60, minute(untilSec)))
+  return { fromSec: from, untilSec: Math.max(until, from + 60) }
+}
+
+/** "09:05" for seconds after midnight. */
+export function hhmm(sec: number): string {
+  const total = Math.floor(sec / 60)
+  return `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`
+}
+
+export const SPEAKER_MODES: SpeakerMode[] = ['up', 'down', 'clock']
+
+/**
  * Adds time to My timer (a negative amount takes time away). Count down: more time left (it may
- * go above the minutes set). Count up: more time counted (never below zero). Not started: no change.
+ * go above the minutes set). Count up: more time counted (never below zero). Clock times: the end
+ * moves (in whole minutes). Not started: no change.
  */
 export function adjustSpeaker(s: SpeakerTimerView, deltaSec: number, now: number): SpeakerTimerView {
   const delta = Math.round(deltaSec) * 1000
   if (delta === 0 || !speakerStarted(s)) return s
+  // Clock times: more time = a later end (whole minutes, still after the start).
+  if (s.mode === 'clock') return { ...s, ...cleanTimes(s.fromSec, s.untilSec + Math.round(deltaSec)) }
   const runningMs = s.startedAt !== null ? now - s.startedAt : 0
   // Counting up never goes below zero: the held part may cancel the running part, no more.
   const lowest = runningMs > 0 ? -runningMs : 0

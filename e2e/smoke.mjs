@@ -254,6 +254,20 @@ try {
   s = await state()
   assert.ok(s.speaker.heldMs <= -59_000 && s.speaker.heldMs >= -60_000, `My timer counting down got one more minute (${s.speaker.heldMs})`)
   await call(() => globalThis.__presenter.speakerReset())
+  // My timer by clock times: it runs by itself between the start and the end; the times are remembered.
+  const nowSec = await call(() => { const d = new Date(); return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds() })
+  if (nowSec > 120 && nowSec < 86000) {
+    const from = Math.floor(nowSec / 60) * 60 - 60
+    const until = from + 180
+    await call(() => globalThis.__presenter.speakerMode('clock'))
+    await call((_e, a) => globalThis.__presenter.speakerTimes(a.from, a.until), { from, until })
+    s = await waitFor('clock times set', (s) => s.speaker.mode === 'clock' && s.speaker.fromSec === from && s.speaker.untilSec === until)
+    assert.deepEqual(JSON.parse(fs.readFileSync(path.join(USER_DATA, 'mytimer.json'), 'utf8')), { mode: 'clock', minutes: s.speaker.minutes, fromSec: from, untilSec: until }, 'My timer settings are remembered')
+    await call(() => globalThis.__presenter.speakerToggle())
+    s = await state()
+    assert.equal(s.speaker.startedAt, null, 'Start does nothing with clock times (they run by themselves)')
+    await call(() => globalThis.__presenter.speakerMode('up'))
+  }
   console.log('ok 7e change the time of a running timer')
 
   // 8. Extra screen with the same deck joins the linked group.

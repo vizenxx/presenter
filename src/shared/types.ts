@@ -58,11 +58,17 @@ export interface OutputView {
 
 /** The speaker's own timer (never shown to the audience). Times are Date.now() values. */
 export interface SpeakerTimerView {
-  mode: 'up' | 'down'
+  /** up = count up, down = count down from minutes, clock = from a start clock time to an end clock time (it starts by itself). */
+  mode: SpeakerMode
   minutes: number
   startedAt: number | null
   heldMs: number
+  /** Clock times for mode 'clock', in seconds after midnight (local time). */
+  fromSec: number
+  untilSec: number
 }
+
+export type SpeakerMode = 'up' | 'down' | 'clock'
 
 /** Projector 2, 3 …: extra audience screens the teacher opened. */
 export interface ProjectorView {
@@ -207,7 +213,9 @@ export interface ConsoleApi {
   /** Show a content on Projector n, on a new projector, or nowhere (null: it waits, keeping its page). */
   showOn(id: OutputId, target: number | 'new' | null): void
   projectorFullscreen(n: number): void
-  speakerMode(mode: 'up' | 'down'): void
+  speakerMode(mode: SpeakerMode): void
+  /** My timer's clock times (seconds after midnight). Remembered. */
+  speakerTimes(fromSec: number, untilSec: number): void
   speakerMinutes(minutes: number): void
   speakerToggle(): void
   speakerReset(): void

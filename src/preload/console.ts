@@ -25,6 +25,7 @@ const api: ConsoleApi = {
   projectorFullscreen: (n) => ipcRenderer.send('console:projector-fullscreen', n),
   speakerMode: (mode) => ipcRenderer.send('console:speaker-mode', mode),
   speakerMinutes: (minutes) => ipcRenderer.send('console:speaker-minutes', minutes),
+  speakerTimes: (fromSec, untilSec) => ipcRenderer.send('console:speaker-times', fromSec, untilSec),
   speakerToggle: () => ipcRenderer.send('console:speaker-toggle'),
   speakerReset: () => ipcRenderer.send('console:speaker-reset'),
   speakerAdjust: (deltaSec) => ipcRenderer.send('console:speaker-adjust', deltaSec),

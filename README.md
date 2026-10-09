@@ -134,7 +134,8 @@ The bar above the current slide: **Pointer, Pen, Highlighter, Box, Arrow, Laser,
 
 **My timer** (only you see it)
 
-- **Count up** or **Count down**, to pace your talk. It makes no sound.
+- **Count up**, **Count down**, or **From–to**, to pace your talk. It makes no sound.
+- **From–to**: click **🕘** and set the start and end clock times (for example 09:00 and 10:50). Before the start it shows the whole length and "Starts at 09:00"; at the start it begins by itself and counts down to the end; after the end it shows **Over time**. There is no Start button in this mode. Presenter remembers the times.
 - A countdown keeps going past zero as **Over time**, in red.
 - The floating toolbar shows its time while it runs.
 

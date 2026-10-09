@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import '../styles.css'
 import { clock, mmss } from '../../../shared/format'
 import { INK_COLORS, INK_TOOLS, inkKeyAction } from '../../../shared/ink'
-import { speakerStarted } from '../../../shared/timer'
+import { clockPhase, speakerSeconds, speakerStarted } from '../../../shared/timer'
 import { inkSvg, type InkIconName } from '../../../shared/inkIcons'
 import type { AppState } from '../../../shared/types'
 import { useAppState } from '../console/hooks'
@@ -11,7 +11,7 @@ import { inkToolTitle } from '../console/Ink'
 import { IS_MAC } from '../console/platform'
 import { screenLabel, useT } from '../console/i18n'
 import { useRollFace } from '../console/RollerPanel'
-import { speakerSeconds, useNow } from '../console/SpeakerTimer'
+import { useNow } from '../console/SpeakerTimer'
 import { PRESETS, SetTime } from '../console/TimerPanel'
 
 const ICON_BTN = 'grid h-8 w-8 place-items-center rounded-full hover:bg-line'
@@ -63,8 +63,9 @@ function Toolbar() {
   const [open, setOpen] = useState(true)
   const [timerOpen, setTimerOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
-  const running = !!state && state.speaker.startedAt !== null
-  const now = useNow(running)
+  const clockMode = !!state && state.speaker.mode === 'clock'
+  const running = !!state && (state.speaker.startedAt !== null || (clockMode && clockPhase(state.speaker, Date.now()) === 'during'))
+  const now = useNow(running || clockMode)
   const face = useRollFace(state?.roller ?? { lists: [], activeListId: null, activeText: '', people: [], superLucky: false, roll: null, showing: false })
 
   // Keys while the toolbar has the keyboard (it takes it while you draw on a window): Esc returns
@@ -108,8 +109,8 @@ function Toolbar() {
   const target = state?.outputs.find((o) => o.id === state.toolsFor)
   const speaker = state?.speaker
   const mine = speaker ? speakerSeconds(speaker, now) : 0
-  // My timer shows only once the teacher has started it (running or paused).
-  const mineSet = !!speaker && speakerStarted(speaker)
+  // My timer shows only once it has started (running or paused; by clock times: from the start time on).
+  const mineSet = !!speaker && (speaker.mode === 'clock' ? clockPhase(speaker, now) !== 'before' : speakerStarted(speaker))
   const timer = state?.timer
   const timerOn = !!timer && (timer.status !== 'idle' || timer.alarming)
   // The roll shows on the audience screens; with none, only this bar and the console show it.
@@ -156,7 +157,7 @@ function Toolbar() {
             {mineSet && (
               <Group>
                 <span className="text-sm text-muted">{t.mineShort}</span>
-                <span title={t.myTimerTitle} className={`text-lg font-semibold tracking-tight tabular-nums ${speaker.mode === 'down' && mine < 0 ? 'text-alarm' : running ? 'text-ink' : 'text-muted'}`}>
+                <span title={t.myTimerTitle} className={`text-lg font-semibold tracking-tight tabular-nums ${speaker.mode !== 'up' && mine < 0 ? 'text-alarm' : running ? 'text-ink' : 'text-muted'}`}>
                   {clock(mine)}
                 </span>
               </Group>

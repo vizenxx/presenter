@@ -110,7 +110,7 @@ export function NumberField(props: { value: number; min: number; max: number; on
 }
 
 /** Menus that can be open in the console; native deck views step aside while one is. */
-export type ConsoleMenu = 'recent' | 'add' | 'bells' | 'adjust-class' | 'adjust-mine' | `screen:${string}` | `show:${string}` | null
+export type ConsoleMenu = 'recent' | 'add' | 'bells' | 'times' | 'adjust-class' | 'adjust-mine' | `screen:${string}` | `show:${string}` | null
 
 /**
  * A pop-up menu below (or above) its button, from its left edge (or, align right, its right edge).

@@ -13,7 +13,7 @@ const OUT = path.join(ROOT, 'e2e', 'out')
 const STUB = path.join(OUT, 'harness', 'console-stub-preload.cjs')
 const AI_REQUEST = aiRequestText(fs.readFileSync(path.join(ROOT, 'docs', 'ai-integration.md'), 'utf8'))
 /** Every ConsoleApi method (contextBridge copies plain objects only, so no Proxy). */
-const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "listWindows", "addWindowScreen", "setTheme", "timerWarnings", "speakerAdjust", "timerAdjust", "timerSet"]
+const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "listWindows", "addWindowScreen", "setTheme", "timerWarnings", "speakerAdjust", "timerAdjust", "timerSet", "speakerTimes"]
 
 app.disableHardwareAcceleration()
 // Each screenshot closes its window; keep the app alive between them.
@@ -36,7 +36,7 @@ function sampleState(projecting: boolean, crowd = false, theme: UiTheme = 'dark'
     mainDeck: deck,
     slidesOf: 'projector',
     onAirId: crowd ? 'screen-2' : 'projector',
-    speaker: { mode: 'down', minutes: 45, startedAt: null, heldMs: 754000 },
+    speaker: { mode: 'down', minutes: 45, startedAt: null, heldMs: 754000, fromSec: 9 * 3600, untilSec: 10 * 3600 + 50 * 60 },
     toolsFor: crowd ? 'window-7' : null,
     projectors: crowd ? [{ number: 2, contentId: 'window-7', fullscreen: true }] : [],
     previewOf: 'projector',
@@ -81,7 +81,7 @@ contextBridge.exposeInMainWorld('presenter', api)
   )
 }
 
-type Open = 'guide' | 'guide-prepare' | 'window-picker' | 'start' | 'screen-menu' | 'add-menu' | 'crowd' | 'roller' | 'bells' | 'adjust' | null
+type Open = 'guide' | 'guide-prepare' | 'window-picker' | 'start' | 'screen-menu' | 'add-menu' | 'crowd' | 'roller' | 'bells' | 'adjust' | 'clock' | null
 /** Clicks the button that opens each pop-up. */
 const OPENERS: Record<string, string> = {
   guide: `[...document.querySelectorAll('header button')].find((x) => x.textContent.includes('📘'))`,
@@ -91,7 +91,8 @@ const OPENERS: Record<string, string> = {
   'add-menu': `[...document.querySelectorAll('footer button')].find((x) => x.textContent.includes('＋'))`,
   roller: `[...document.querySelectorAll('header button')].find((x) => x.textContent.includes('🎲'))`,
   bells: `[...document.querySelectorAll('button')].find((x) => x.textContent.trim().startsWith('🔔'))`,
-  adjust: `[...document.querySelectorAll('button')].find((x) => x.textContent.trim() === '±')`
+  adjust: `[...document.querySelectorAll('button')].find((x) => x.textContent.trim() === '±')`,
+  clock: `[...document.querySelectorAll('button')].find((x) => x.textContent.trim().startsWith('🕘'))`
 }
 
 async function shot(projecting: boolean, open: Open = null, page = 'console', theme: UiTheme = 'dark'): Promise<void> {
@@ -101,6 +102,8 @@ async function shot(projecting: boolean, open: Open = null, page = 'console', th
     state.mainDeck = null
     state.outputs = state.outputs.filter((o) => o.kind !== 'capture' && o.kind !== 'window').map((o) => ({ ...o, deck: null, deckKind: null, total: null }))
   }
+  // My timer by clock times, its 🕘 pop-up open.
+  if (open === 'clock') state.speaker = { ...state.speaker, mode: 'clock', heldMs: 0 }
   // Three warning bells: the timer panel must still fit.
   if (open === 'bells') state.timer.warnings = [{ sec: 300, beeps: 1 }, { sec: 120, beeps: 2 }, { sec: 30, beeps: 5 }]
   writeStub(state)
@@ -272,6 +275,53 @@ async function inputs(): Promise<void> {
   await wait(300)
 }
 
+/** My timer From–to: no Start or Reset (it starts by itself); the 🕘 pop-up sets the clock times. */
+async function clockTimes(): Promise<void> {
+  const state = sampleState(false)
+  state.speaker = { ...state.speaker, mode: 'clock', heldMs: 0, fromSec: 9 * 3600, untilSec: 10 * 3600 + 50 * 60 }
+  writeStub(state)
+  const win = new BrowserWindow({ show: false, width: 1536, height: 864, useContentSize: true, webPreferences: { preload: STUB, contextIsolation: true, sandbox: true, offscreen: true } })
+  await win.loadFile(path.join(ROOT, 'out', 'renderer', 'console.html'))
+  await wait(1200)
+  const wc = win.webContents
+  const js = <T>(code: string): Promise<T> => wc.executeJavaScript(code) as Promise<T>
+  const key = async (keyCode: string): Promise<void> => {
+    wc.sendInputEvent({ type: 'keyDown', keyCode })
+    if (keyCode.length === 1) wc.sendInputEvent({ type: 'char', keyCode })
+    wc.sendInputEvent({ type: 'keyUp', keyCode })
+    await wait(60)
+  }
+  const mine = `[...document.querySelectorAll('section')].find((x) => x.textContent.includes('My timer · only you see it'))`
+  const buttons = await js<string[]>(`[...${mine}.querySelectorAll('button')].map((b) => b.textContent.trim())`)
+  if (buttons.includes('Start') || buttons.includes('Resume') || buttons.includes('Reset')) throw new Error(`From–to should have no Start or Reset: ${JSON.stringify(buttons)}`)
+  if (!buttons.includes('🕘 09:00–10:50')) throw new Error(`no 🕘 09:00–10:50 button: ${JSON.stringify(buttons)}`)
+  await js(`[...document.querySelectorAll('button')].find((x) => x.textContent.trim().startsWith('🕘')).click()`)
+  await wait(150)
+  // To: 11 : 15. Each box sends when you leave it.
+  const field = (title: string): string => `document.querySelector('input[title="${title}"]')`
+  const leave = (title: string): Promise<unknown> => js(`${field(title)}.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))`)
+  await js(`${field('To: hour')}.focus()`)
+  await js(`${field('To: hour')}.setSelectionRange(9, 9)`)
+  await key('Backspace')
+  await key('Backspace')
+  await key('1')
+  await key('1')
+  await leave('To: hour')
+  await js(`${field('To: minute')}.focus()`)
+  await js(`${field('To: minute')}.setSelectionRange(9, 9)`)
+  await key('Backspace')
+  await key('Backspace')
+  await key('1')
+  await key('5')
+  await leave('To: minute')
+  await wait(100)
+  const sent = (await js<unknown[][]>('window.presenter.__calls()')).filter((c) => c[0] === 'speakerTimes').map((c) => `${c[1]}-${c[2]}`)
+  if (JSON.stringify(sent) !== JSON.stringify([`${9 * 3600}-${11 * 3600 + 50 * 60}`, `${9 * 3600}-${10 * 3600 + 15 * 60}`])) throw new Error(`clock times sent: ${JSON.stringify(sent)}`)
+  console.log('ok My timer From–to: no Start or Reset; the 🕘 pop-up sends the times when you leave a box')
+  win.destroy()
+  await wait(300)
+}
+
 /** The floating toolbar's ⏱ settings: the same Set as the console, and one Start. */
 async function toolbarTimer(): Promise<void> {
   const state = sampleState(false, true)
@@ -322,6 +372,9 @@ app.whenReady().then(async () => {
     await shot(false, 'bells', 'console', 'light')
     await shot(false, 'adjust')
     await shot(false, 'adjust', 'console', 'light')
+    await shot(false, 'clock')
+    await shot(false, 'clock', 'console', 'light')
+    await clockTimes()
     console.log('CONSOLE OK')
   } catch (error) {
     console.error(String(error))
