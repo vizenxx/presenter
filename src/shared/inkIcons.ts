@@ -6,6 +6,7 @@ export const INK_ICONS = {
   rect: '<rect x="3.5" y="5" width="17" height="14" rx="2" stroke-dasharray="3.5 2.5"/>',
   arrow: '<path d="M5 19L19 5"/><path d="M10.5 5H19v8.5"/>',
   laser: '<circle cx="12" cy="12" r="3.5" fill="currentColor"/><circle cx="12" cy="12" r="8" opacity=".4"/>',
+  zoom: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/><path d="M10.5 7.5v6M7.5 10.5h6"/>',
   eraser: '<path d="M8 20h12"/><path d="M5.5 15.5l8.8-8.8a2 2 0 012.8 0l2.2 2.2a2 2 0 010 2.8L12.5 18H8z"/>',
   undo: '<path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 010 11H11"/>',
   clear: '<path d="M4 7h16"/><path d="M9.5 7V4h5v3"/><path d="M6.5 7l1 13h9l1-13"/>'

@@ -5,12 +5,12 @@
  * applies the same small operations; nothing is sent as pixels.
  */
 
-export type InkTool = 'pointer' | 'pen' | 'highlighter' | 'rect' | 'arrow' | 'laser' | 'eraser'
-export const INK_TOOLS: InkTool[] = ['pointer', 'pen', 'highlighter', 'rect', 'arrow', 'laser', 'eraser']
+export type InkTool = 'pointer' | 'pen' | 'highlighter' | 'rect' | 'arrow' | 'laser' | 'eraser' | 'zoom'
+export const INK_TOOLS: InkTool[] = ['pointer', 'pen', 'highlighter', 'rect', 'arrow', 'laser', 'eraser', 'zoom']
 export type StrokeTool = 'pen' | 'highlighter' | 'rect' | 'arrow'
 
 /** Tool keys (no modifier), the same in the console and on the floating toolbar. */
-export const INK_KEYS: Record<string, InkTool> = { p: 'pen', h: 'highlighter', r: 'rect', a: 'arrow', l: 'laser', e: 'eraser' }
+export const INK_KEYS: Record<string, InkTool> = { p: 'pen', h: 'highlighter', r: 'rect', a: 'arrow', l: 'laser', e: 'eraser', z: 'zoom' }
 
 export type InkKeyAction = { type: 'tool'; tool: InkTool } | { type: 'undo' } | { type: 'clear' } | { type: 'pointer' }
 
@@ -54,6 +54,8 @@ export type InkOp =
   | { t: 'clear' }
   | { t: 'laser'; x: number; y: number }
   | { t: 'laser-off' }
+  /** Enlarge a part of the slide to fill the screen ([x0, y0, x1, y1], fractions), or null to show it all again. */
+  | { t: 'zoom'; rect: number[] | null }
 
 export interface InkSettings {
   tool: InkTool
@@ -104,6 +106,8 @@ export function snapLine(x0: number, y0: number, x: number, y: number, aspect: n
 export class InkScene {
   strokes: InkStroke[] = []
   laser: InkLaser | null = null
+  /** The enlarged part ([x0, y0, x1, y1]), or null. */
+  zoom: number[] | null = null
 
   apply(op: InkOp): void {
     switch (op.t) {
@@ -138,6 +142,9 @@ export class InkScene {
       case 'laser-off':
         this.laser = null
         break
+      case 'zoom':
+        this.zoom = op.rect ? [...op.rect] : null
+        break
     }
   }
 
@@ -145,6 +152,27 @@ export class InkScene {
     for (let i = this.strokes.length - 1; i >= 0; i--) if (this.strokes[i].id === id) return this.strokes[i]
     return undefined
   }
+}
+
+// ---------- zoom (the magnifier) ----------
+
+/** The largest enlargement, and the smallest box (fraction of the slide) that counts as a drag, not a click. */
+export const MAX_ZOOM = 8
+export const MIN_ZOOM_BOX = 0.03
+
+/**
+ * How to enlarge a box to fill the screen, keeping its shape: scale s, then move by (tx, ty)
+ * (fractions of the screen; a point p of the screen goes to t + s * p). The box's centre goes to
+ * the screen's centre; the slide never shrinks.
+ */
+export function zoomTransform(rect: number[]): { s: number; tx: number; ty: number } {
+  const [x0, y0, x1, y1] = rect
+  const w = Math.max(1e-3, Math.abs(x1 - x0))
+  const h = Math.max(1e-3, Math.abs(y1 - y0))
+  const s = Math.max(1, Math.min(MAX_ZOOM, 1 / w, 1 / h))
+  const cx = (x0 + x1) / 2
+  const cy = (y0 + y1) / 2
+  return { s, tx: 0.5 - s * cx, ty: 0.5 - s * cy }
 }
 
 // ---------- eraser ----------
@@ -274,6 +302,8 @@ export interface InkInputOptions {
 }
 
 const ERASER_RADIUS = 0.015
+/** The box shown while the zoom tool is dragged (never kept). */
+const ZOOM_BOX_ID = 'zoom-box'
 /** A box, an arrow or a straight line shorter than this (fraction of the slide height) is dropped: it was a click. */
 const MIN_SHAPE = 0.006
 let idSeq = 0
@@ -283,6 +313,7 @@ export function attachInkInput(opts: InkInputOptions): () => void {
   // straight = a pen or highlighter stroke held with Shift: one line from where it started.
   let current: { id: string; tool: StrokeTool; start: [number, number]; end: [number, number]; straight: boolean } | null = null
   let erasing = false
+  let zooming: { start: [number, number]; end: [number, number]; shown: boolean } | null = null
 
   const at = (e: PointerEvent): [number, number] => {
     const r = element.getBoundingClientRect()
@@ -314,11 +345,21 @@ export function attachInkInput(opts: InkInputOptions): () => void {
       erase(x, y)
     } else if (tool === 'laser') {
       onOp({ t: 'laser', x, y })
+    } else if (tool === 'zoom') {
+      zooming = { start: [x, y], end: [x, y], shown: false }
     }
   }
 
   const move = (e: PointerEvent): void => {
     const { tool } = settings()
+    if (zooming && tool === 'zoom') {
+      zooming.end = at(e)
+      const points = [...zooming.start, ...zooming.end]
+      if (!zooming.shown) onOp({ t: 'begin', stroke: { id: ZOOM_BOX_ID, tool: 'rect', color: '#0071e3', points } })
+      else onOp({ t: 'rect', id: ZOOM_BOX_ID, points })
+      zooming.shown = true
+      return
+    }
     if (tool === 'laser') {
       const [x, y] = at(e)
       onOp({ t: 'laser', x, y })
@@ -352,6 +393,17 @@ export function attachInkInput(opts: InkInputOptions): () => void {
   }
 
   const up = (): void => {
+    const z = zooming
+    zooming = null
+    if (z) {
+      if (z.shown) onOp({ t: 'erase', ids: [ZOOM_BOX_ID] })
+      const a = aspect()
+      const big = Math.abs(z.end[0] - z.start[0]) * a >= MIN_ZOOM_BOX && Math.abs(z.end[1] - z.start[1]) >= MIN_ZOOM_BOX
+      // A box: enlarge it. A click: show the whole slide again.
+      if (big) onOp({ t: 'zoom', rect: [Math.min(z.start[0], z.end[0]), Math.min(z.start[1], z.end[1]), Math.max(z.start[0], z.end[0]), Math.max(z.start[1], z.end[1])] })
+      else if (scene.zoom) onOp({ t: 'zoom', rect: null })
+      return
+    }
     // A click with the box, arrow or straight-line tool leaves nothing behind (an empty mark would make Undo look broken).
     const c = current
     if (c && (c.tool === 'rect' || c.tool === 'arrow' || c.straight)) {

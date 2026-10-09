@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { attachInkInput, drawInk, INK_COLORS, InkScene, type InkSettings, type InkTool } from '../../../shared/ink'
+import { attachInkInput, drawInk, INK_COLORS, InkScene, zoomTransform, type InkSettings, type InkTool } from '../../../shared/ink'
 import { inkSvg, type InkIconName } from '../../../shared/inkIcons'
 import { useT, type Strings } from './i18n'
 import { AspectBox } from './ViewSlot'
@@ -12,7 +12,8 @@ export const INK_TOOL_LIST: Array<{ tool: InkTool; key: string; label: (t: Strin
   { tool: 'rect', key: 'R', label: (t) => t.inkRect, shift: (t) => t.inkShiftSquare },
   { tool: 'arrow', key: 'A', label: (t) => t.inkArrow, shift: (t) => t.inkShiftArrow },
   { tool: 'laser', key: 'L', label: (t) => t.inkLaser },
-  { tool: 'eraser', key: 'E', label: (t) => t.inkEraser }
+  { tool: 'eraser', key: 'E', label: (t) => t.inkEraser },
+  { tool: 'zoom', key: 'Z', label: (t) => t.inkZoom }
 ]
 
 /** The tooltip of a tool button: name, key, and what Shift does. */
@@ -22,7 +23,7 @@ export function inkToolTitle(t: Strings, tool: InkTool): string {
   return entry ? t.inkToolTitle(entry.label(t), entry.key, entry.shift?.(t)) : tool
 }
 
-const CURSORS: Record<InkTool, string> = { pointer: 'pointer', pen: 'crosshair', highlighter: 'crosshair', rect: 'crosshair', arrow: 'crosshair', laser: 'none', eraser: 'cell' }
+const CURSORS: Record<InkTool, string> = { pointer: 'pointer', pen: 'crosshair', highlighter: 'crosshair', rect: 'crosshair', arrow: 'crosshair', laser: 'none', eraser: 'cell', zoom: 'zoom-in' }
 
 function Icon({ name }: { name: InkIconName }) {
   return <span className="grid shrink-0 place-items-center" dangerouslySetInnerHTML={{ __html: inkSvg(name, 18) }} />
@@ -40,13 +41,13 @@ export function InkToolbar({ ink, enabled }: { ink: InkSettings; enabled: boolea
           disabled={!enabled}
           title={inkToolTitle(t, tool)}
           onClick={() => window.presenter.setInkTool(tool)}
-          className={`flex items-center gap-1.5 rounded-full px-2 py-1 text-sm disabled:opacity-40 ${ink.tool === tool ? 'bg-accent font-semibold text-white' : 'text-ink hover:bg-line'}`}
+          className={`flex items-center gap-1 rounded-full px-1.5 py-1 text-sm disabled:opacity-40 ${ink.tool === tool ? 'bg-accent font-semibold text-white' : 'text-ink hover:bg-line'}`}
         >
           <Icon name={tool} />
           {label(t)}
         </button>
       ))}
-      <span className="mx-1 h-5 w-px bg-line" />
+      <span className="mx-0.5 h-5 w-px bg-line" />
       {INK_COLORS.map((color) => (
         <button
           key={color}
@@ -55,10 +56,10 @@ export function InkToolbar({ ink, enabled }: { ink: InkSettings; enabled: boolea
           title={t.inkColor}
           onClick={() => window.presenter.setInkColor(color)}
           style={{ background: color }}
-          className={`m-0.5 h-6 w-6 rounded-full ring-1 ring-black/15 ring-inset disabled:opacity-40 ${ink.color === color ? 'outline-2 outline-offset-2 outline-accent' : ''}`}
+          className={`m-0.5 h-5 w-5 rounded-full ring-1 ring-black/15 ring-inset disabled:opacity-40 ${ink.color === color ? 'outline-2 outline-offset-2 outline-accent' : ''}`}
         />
       ))}
-      <span className="mx-1 h-5 w-px bg-line" />
+      <span className="mx-0.5 h-5 w-px bg-line" />
       {/* Undo and Clear show icons only (names in the tooltip) so the bar stays on one line. */}
       <button type="button" disabled={!enabled} title={`${t.inkUndo} · ${t.inkUndoTitle}`} aria-label={t.inkUndo} onClick={() => window.presenter.inkOp({ t: 'undo' }, false)} className="rounded-full p-1.5 text-ink hover:bg-line disabled:opacity-40">
         <Icon name="undo" />
@@ -135,9 +136,19 @@ export function MirrorView({ aspect, ink, fallback }: { aspect: number; ink: Ink
       scene.strokes = strokes.map((s) => ({ ...s, points: [...s.points] }))
       redraw()
     })
+    const follow = (): void => {
+      if (!scene.zoom) {
+        el.style.transform = ''
+        return
+      }
+      const { s, tx, ty } = zoomTransform(scene.zoom)
+      el.style.transformOrigin = '0 0'
+      el.style.transform = `translate(${tx * 100}%, ${ty * 100}%) scale(${s})`
+    }
     const unsubscribe = window.presenter.onInkOp((op) => {
       scene.apply(op)
       redraw()
+      if (op.t === 'zoom') follow()
     })
     const detach = attachInkInput({
       element: el,
@@ -146,6 +157,7 @@ export function MirrorView({ aspect, ink, fallback }: { aspect: number; ink: Ink
       onOp: (op) => {
         scene.apply(op)
         redraw()
+        if (op.t === 'zoom') follow()
         window.presenter.inkOp(op, true)
       }
     })

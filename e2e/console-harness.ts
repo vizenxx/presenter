@@ -52,6 +52,7 @@ function sampleState(projecting: boolean, crowd = false, theme: UiTheme = 'dark'
     roller: { lists: [{ id: 'l', name: 'Class list', count: 6 }], activeListId: 'l', activeText: '', people: ['Ann Lee', 'Bo Chen', 'Cai Dorji', 'Dema Wangmo', 'Eli Tashi', 'Fay Zangpo'].map((name, i) => ({ id: `1225010${i}`, name, wins: [1, 0, 2, 0, 0, 0][i] })), superLucky: true, roll: null, showing: false, groups: null },
     deckStatus: { state: 'ready' },
     ink: { tool: 'pen', color: '#ef4444' },
+    zoomed: false,
     theme,
     blank: null,
     resumedAt: null

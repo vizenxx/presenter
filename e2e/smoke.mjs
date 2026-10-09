@@ -247,6 +247,13 @@ try {
   assert.ok(png.length > 1000 && png.subarray(1, 4).toString() === 'PNG', 'it is a PNG picture')
   console.log('ok 7i the slide saved as a picture')
 
+  // 7k. Zoom: the state says when part of the slide is enlarged; Esc shows it all again (it does not stop anything else).
+  await call(() => globalThis.__presenter.inkOp({ t: 'zoom', rect: [0.2, 0.2, 0.4, 0.4] }, 'main'))
+  s = await waitFor('zoomed', (s) => s.zoomed)
+  await call(() => globalThis.__presenter.onCommand('stop-project'))
+  s = await waitFor('Esc shows the whole slide again', (s) => !s.zoomed)
+  console.log('ok 7k zoom and Esc')
+
 
   // 7g. A deck opens again on the page it showed last (within 3 hours), with a notice; a page move ends the notice.
   await call(() => globalThis.__presenter.navigate({ type: 'goto', index: 4 }))

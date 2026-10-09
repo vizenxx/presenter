@@ -4,7 +4,7 @@
  * main process as small operations; strokes made on the console arrive the same way.
  */
 import { ipcRenderer } from 'electron'
-import { attachInkInput, drawInk, INK_COLORS, INK_TOOLS, InkScene, type InkOp, type InkSettings, type InkStroke, type InkTool } from '../shared/ink'
+import { attachInkInput, drawInk, INK_COLORS, INK_TOOLS, InkScene, zoomTransform, type InkOp, type InkSettings, type InkStroke, type InkTool } from '../shared/ink'
 import { inkSvg, type InkIconName } from '../shared/inkIcons'
 
 interface SurfaceSettings extends InkSettings {
@@ -15,7 +15,7 @@ interface SurfaceSettings extends InkSettings {
 }
 
 const PALETTE_IDLE_MS = 2500
-const CURSORS: Record<InkTool, string> = { pointer: 'default', pen: 'crosshair', highlighter: 'crosshair', rect: 'crosshair', arrow: 'crosshair', laser: 'none', eraser: 'cell' }
+const CURSORS: Record<InkTool, string> = { pointer: 'default', pen: 'crosshair', highlighter: 'crosshair', rect: 'crosshair', arrow: 'crosshair', laser: 'none', eraser: 'cell', zoom: 'zoom-in' }
 
 const CSS = `
   :host { all: initial; }
@@ -68,9 +68,38 @@ export function mountInkSurface(): void {
     })
   }
 
+  // The ink pad lies on the teacher's real window: it never enlarges (the projector's picture does).
+  const isPad = location.pathname.endsWith('inkpad.html')
+  let savedOverflow: string | null = null
+  /** Enlarges the page (and its marks, which keep their places on it) to show the zoom box, or shows it all again. */
+  const applyZoom = (): void => {
+    if (isPad || !document.body) return
+    const rect = scene.zoom
+    const W = window.innerWidth
+    const H = window.innerHeight
+    if (!rect) {
+      document.body.style.transform = ''
+      canvas.style.transform = ''
+      document.documentElement.style.overflow = savedOverflow ?? ''
+      savedOverflow = null
+      return
+    }
+    // The enlarged page is larger than the window: no scroll bars meanwhile.
+    if (savedOverflow === null) savedOverflow = document.documentElement.style.overflow
+    document.documentElement.style.overflow = 'hidden'
+    const { s, tx, ty } = zoomTransform(rect)
+    document.body.style.transformOrigin = '0 0'
+    document.body.style.transform = `translate(${tx * W}px, ${ty * H}px) scale(${s})`
+    // The canvas sits outside the page body (maybe on the window picture's frame): same move, from its own corner.
+    const r = { left: parseFloat(canvas.style.left) || 0, top: parseFloat(canvas.style.top) || 0 }
+    canvas.style.transformOrigin = '0 0'
+    canvas.style.transform = `translate(${tx * W + (s - 1) * r.left}px, ${ty * H + (s - 1) * r.top}px) scale(${s})`
+  }
+
   const send = (op: InkOp): void => {
     scene.apply(op)
     redraw()
+    if (op.t === 'zoom') applyZoom()
     ipcRenderer.send('ink:op', op)
   }
 
@@ -120,6 +149,7 @@ export function mountInkSurface(): void {
   ipcRenderer.on('ink:op', (_e, op: InkOp) => {
     scene.apply(op)
     redraw()
+    if (op.t === 'zoom') applyZoom()
   })
   ipcRenderer.on('ink:snapshot', (_e, strokes: InkStroke[]) => {
     scene.strokes = strokes.map((s) => ({ ...s, points: [...s.points] }))

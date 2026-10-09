@@ -172,6 +172,8 @@ const en = {
   inkHighlighter: 'Highlighter',
   inkRect: 'Box',
   inkArrow: 'Arrow',
+  inkZoom: 'Zoom',
+  inkShiftZoom: 'drag a box',
   inkLaser: 'Laser',
   inkEraser: 'Eraser',
   inkUndo: 'Undo',

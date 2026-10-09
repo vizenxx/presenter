@@ -57,7 +57,7 @@ const isTextField = (el: EventTarget | null): boolean =>
 const JUMP_WAIT_MS = 3000
 
 /** Returns the slide number being typed (digits, then Enter jumps; Esc drops them), or ''. */
-export function useConsoleKeys(alarming: boolean, inkTool: InkTool, blank: boolean, audience: boolean): string {
+export function useConsoleKeys(alarming: boolean, inkTool: InkTool, blank: boolean, audience: boolean, zoomed = false): string {
   const [jump, setJump] = useState('')
   const typed = useRef('')
   const jumpTimer = useRef<number | null>(null)
@@ -109,6 +109,7 @@ export function useConsoleKeys(alarming: boolean, inkTool: InkTool, blank: boole
         e.preventDefault()
         if (alarming) window.presenter.timerDismiss()
         else if (command === 'project') window.presenter.startProjecting()
+        else if (zoomed) window.presenter.inkOp({ t: 'zoom', rect: null }, false)
         else if (inkTool !== 'pointer') window.presenter.setInkTool('pointer')
         else window.presenter.stopProjecting()
         return
@@ -149,7 +150,7 @@ export function useConsoleKeys(alarming: boolean, inkTool: InkTool, blank: boole
       window.removeEventListener('keydown', onKey)
       window.removeEventListener('pointerup', onPointerUp)
     }
-  }, [alarming, inkTool, blank, audience])
+  }, [alarming, inkTool, blank, audience, zoomed])
   return jump
 }
 

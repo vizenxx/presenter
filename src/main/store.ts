@@ -479,7 +479,13 @@ export class Store {
       this.closeRollerByUser()
       return
     }
-    // Esc first leaves a marking tool (like PowerPoint's pen), then stops projecting.
+    // Esc first shows the whole slide again (after the zoom tool), then leaves a marking tool, then stops projecting.
+    const target = this.inkTargetId()
+    if (command === 'stop-project' && target && this.scene(target).zoom) {
+      this.applyInk(target, { t: 'zoom', rect: null }, 'main')
+      this.emit()
+      return
+    }
     if (command === 'stop-project' && this.inkSettings.tool !== 'pointer') {
       this.setInkTool('pointer')
       return
@@ -599,6 +605,7 @@ export class Store {
   inkOp(op: InkOp, origin: 'deck' | 'console' | 'pad' | 'main'): void {
     const target = origin === 'deck' || origin === 'console' ? this.onAirId : this.inkTargetId()
     if (target) this.applyInk(target, op, origin)
+    if (op.t === 'zoom') this.emit()
   }
 
   inkSnapshot(): InkStroke[] {
@@ -924,6 +931,7 @@ export class Store {
       toolsFor: this.activeWindowId,
       deckStatus: this.deckStatus,
       ink: this.inkSettings,
+      zoomed: !!this.inkTargetId() && !!this.scene(this.inkTargetId() as OutputId).zoom,
       theme: this.theme,
       blank: this.blank,
       resumedAt: this.resumed
@@ -1068,6 +1076,8 @@ export class Store {
       else pages.delete(left)
     }
     const back = pages.get(page) ?? []
+    // A new page starts not enlarged.
+    if (scene.zoom) this.applyInk(onAir.id, { t: 'zoom', rect: null }, 'main')
     if (scene.strokes.length > 0 || scene.laser) this.applyInk(onAir.id, { t: 'clear' }, 'main')
     for (const stroke of back) this.applyInk(onAir.id, { t: 'begin', stroke: { ...stroke, points: [...stroke.points] } }, 'main')
   }

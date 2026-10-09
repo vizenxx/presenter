@@ -188,6 +188,23 @@ app.whenReady().then(async () => {
     await drag([640, 100], [640, 100])
     if (!ops.some((o) => o.t === 'erase')) throw new Error('a click with the arrow left an empty mark')
     console.log('ok a click with the arrow leaves nothing')
+
+    // 11. Zoom: drag a box; the page is enlarged so the box fills it; a click shows it all again.
+    ops.length = 0
+    tool('zoom')
+    await wait(100)
+    await drag([320, 180], [640, 360])
+    const zoom = ops.find((o) => o.t === 'zoom')
+    if (!zoom || zoom.t !== 'zoom' || !zoom.rect) throw new Error(`no zoom op: ${JSON.stringify(ops.map((o) => o.t))}`)
+    const t1 = await wc.executeJavaScript('document.body.style.transform')
+    const zoomScale = Number((/scale\(([0-9.]+)\)/.exec(t1) ?? [])[1])
+    if (!(zoomScale > 3.9 && zoomScale < 4.1)) throw new Error(`the page is not enlarged about 4 times: ${t1}`)
+    await shot('zoom')
+    if (ops.some((o) => o.t === 'begin' && o.stroke.id !== 'zoom-box')) throw new Error('the zoom box left a mark')
+    await drag([640, 360], [640, 360])
+    const t2 = await wc.executeJavaScript('document.body.style.transform')
+    if (t2 !== '') throw new Error(`a click does not show the whole page again: ${t2}`)
+    console.log('ok zoom: a box fills the page, a click shows it all again')
     console.log('INK OK')
   } catch (error) {
     console.error(String(error))

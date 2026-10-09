@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { hitStroke, inkKeyAction, InkScene, snapLine, squareCorner, type InkStroke } from '../src/shared/ink'
+import { hitStroke, inkKeyAction, InkScene, MAX_ZOOM, snapLine, squareCorner, zoomTransform, type InkStroke } from '../src/shared/ink'
 
 const pen = (id: string, points: number[]): InkStroke => ({ id, tool: 'pen', color: '#ef4444', points })
 
@@ -113,5 +113,34 @@ describe('marking keys', () => {
     expect(inkKeyAction('Delete', {}, false, 'pen')).toEqual({ type: 'clear' })
     expect(inkKeyAction('Backspace', {}, true, 'pen')).toEqual({ type: 'clear' })
     expect(inkKeyAction('Backspace', {}, false, 'pen')).toBeNull()
+  })
+})
+
+describe('the zoom tool', () => {
+  it('enlarges a box to fill the screen, its centre in the middle, keeping its shape', () => {
+    const z = zoomTransform([0.5, 0.5, 0.75, 0.75])
+    expect(z.s).toBeCloseTo(4)
+    // The box's centre (0.625, 0.625) goes to the screen's centre.
+    expect(z.tx + z.s * 0.625).toBeCloseTo(0.5)
+    expect(z.ty + z.s * 0.625).toBeCloseTo(0.5)
+    // A wide box: the width decides.
+    expect(zoomTransform([0, 0.4, 0.5, 0.45]).s).toBeCloseTo(2)
+  })
+  it('never shrinks the slide and stops at the largest enlargement', () => {
+    expect(zoomTransform([0, 0, 1, 1]).s).toBe(1)
+    expect(zoomTransform([0.5, 0.5, 0.5001, 0.5001]).s).toBe(MAX_ZOOM)
+  })
+  it('keeps the enlarged box in the scene until it shows the whole slide again', () => {
+    const scene = new InkScene()
+    scene.apply({ t: 'zoom', rect: [0.1, 0.1, 0.3, 0.3] })
+    expect(scene.zoom).toEqual([0.1, 0.1, 0.3, 0.3])
+    scene.apply({ t: 'clear' })
+    expect(scene.zoom).toEqual([0.1, 0.1, 0.3, 0.3])
+    scene.apply({ t: 'zoom', rect: null })
+    expect(scene.zoom).toBeNull()
+  })
+  it('is picked with Z', () => {
+    expect(inkKeyAction('z', {}, false, 'pen')).toEqual({ type: 'tool', tool: 'zoom' })
+    expect(inkKeyAction('z', { control: true }, false, 'pen')).toEqual({ type: 'undo' })
   })
 })

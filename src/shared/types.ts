@@ -198,6 +198,8 @@ export interface AppState {
   deckStatus: DeckStatus
   /** Marking tool and colour, shared by the console toolbar and the projector palette. */
   ink: InkSettings
+  /** Part of the slide (or window) on Projector 1 is enlarged with the zoom tool. */
+  zoomed: boolean
   /** Light or dark console; null = follow the computer's setting. */
   theme: UiTheme | null
   /** The projectors are black or white (B / W); null = the slides show. */
