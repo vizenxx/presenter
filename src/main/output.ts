@@ -21,6 +21,8 @@ export interface DeckStateMsg {
   timer?: { remaining: number | null; isRunning: boolean; isDone: boolean }
   /** False for decks without their own timer display (the built-in PDF/PPT viewer). */
   ownTimer?: boolean
+  /** The shown slide's videos and sounds (built-in viewer), and the one playing. */
+  media?: { kinds: Array<'video' | 'audio'>; playing: number | null }
 }
 
 export interface TimerSync {
@@ -80,6 +82,8 @@ export class Output {
   adapter: AdapterKind = 'none'
   total: number | null = null
   slides: SlideMeta[] = []
+  /** The shown slide's videos and sounds (built-in viewer); null = none. */
+  media: { kinds: Array<'video' | 'audio'>; playing: number | null } | null = null
   milestones: Milestone[] = []
   editing = false
   fullscreen = false
@@ -230,6 +234,7 @@ export class Output {
 
   receiveState(msg: DeckStateMsg): void {
     if (typeof msg.totalSlides === 'number') this.total = msg.totalSlides
+    this.media = msg.media && msg.media.kinds.length > 0 ? msg.media : null
     if (msg.metadata && msg.metadata.length > 0) this.slides = msg.metadata
     if (msg.milestones) this.milestones = msg.milestones
     this.ownTimer = msg.ownTimer !== false
@@ -266,6 +271,7 @@ export class Output {
       zoomPercent: this.zoomPercent,
       deckKind: this.deck ? deckKind(this.deck.path) : null,
       captureName: this.capture?.name ?? null,
+      media: this.media,
       shownOn: null
     }
   }
@@ -309,6 +315,11 @@ export class Output {
       this.keysAt = target
       void this.pressKeys(delta)
     }
+  }
+
+  /** Play or pause a video or sound of the shown slide (built-in viewer). */
+  toggleMedia(index: number): void {
+    this.send({ type: 'MEDIA', action: 'toggle', index })
   }
 
   private send(cmd: Record<string, unknown>): void {

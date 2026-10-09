@@ -93,6 +93,7 @@ function wireIpc(store: Store): void {
   ipcMain.on('console:nudge', (_e, id: OutputId, delta: number) => store.nudge(id, delta))
   ipcMain.on('console:add-screen', (_e, sameDeck: boolean) => void store.addScreen(sameDeck))
   ipcMain.on('console:add-whiteboard', (_e, show: boolean) => void store.addWhiteboard(show === true))
+  ipcMain.on('console:media-toggle', (_e, index: number) => store.mediaToggle(Number(index)))
   ipcMain.on('console:remove-screen', (_e, id: OutputId) => store.removeScreen(id))
   ipcMain.on('console:timer-start', (_e, sec: number) => store.timerStart(sec))
   ipcMain.on('console:timer-toggle', () => store.timerToggle())

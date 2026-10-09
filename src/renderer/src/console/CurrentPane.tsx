@@ -111,6 +111,19 @@ export function CurrentPane(props: {
           <PageText o={projector} />
         </span>
         <span className="min-w-0 truncate text-base font-semibold">{projector.title}</span>
+        {projector.media && (
+          <span className="flex shrink-0 items-center gap-1">
+            {projector.media.kinds.map((kind, i) => {
+              const playing = projector.media?.playing === i
+              const name = `${kind === 'audio' ? t.mediaSound : t.mediaVideo}${(projector.media?.kinds.length ?? 0) > 1 ? ` ${i + 1}` : ''}`
+              return (
+                <Btn key={i} tone={playing ? 'primary' : 'default'} title={t.mediaTitle} onClick={() => window.presenter.mediaToggle(i)}>
+                  {playing ? '⏸' : '▶'} {name}
+                </Btn>
+              )
+            })}
+          </span>
+        )}
         {state.resumedAt !== null && (
           <span className="flex shrink-0 items-center gap-1 rounded-full bg-accent/15 py-0.5 pr-0.5 pl-3 text-sm text-tint" title={t.resumedTitle}>
             {t.resumed(state.resumedAt + 1)}

@@ -1,6 +1,8 @@
 import { net, protocol, type Session } from 'electron'
+import fs from 'node:fs'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { byteRange } from '../shared/byteRange'
 import { resolveDeckRequest } from './deckPaths'
 
 export const DECK_SCHEME = 'deck'
@@ -16,8 +18,18 @@ const TYPES: Record<string, string> = {
   '.css': 'text/css',
   '.html': 'text/html; charset=utf-8',
   '.json': 'application/json',
-  '.pdf': 'application/pdf'
+  '.pdf': 'application/pdf',
+  '.mp4': 'video/mp4',
+  '.m4v': 'video/mp4',
+  '.mov': 'video/quicktime',
+  '.webm': 'video/webm',
+  '.ogv': 'video/ogg',
+  '.mp3': 'audio/mpeg',
+  '.m4a': 'audio/mp4',
+  '.wav': 'audio/wav',
+  '.ogg': 'audio/ogg'
 }
+
 
 /** Must run before app 'ready'. */
 export function registerDeckScheme(): void {
@@ -45,8 +57,25 @@ export function installDeckProtocol(ses: Session): void {
     const file = resolveDeckRequest(folder, viewer ? url.pathname.slice(VIEWER_PREFIX.length) : url.pathname)
     if (!file) return new Response('Forbidden', { status: 403 })
     try {
-      const response = await net.fetch(pathToFileURL(file).toString())
+      // Videos and sounds ask for parts of the file (to start fast and to seek).
       const type = TYPES[path.extname(file).toLowerCase()]
+      if (type && /^(video|audio)\//.test(type)) {
+        const size = fs.statSync(file).size
+        const range = byteRange(request.headers.get('range'), size)
+        if (range) {
+          const length = range.end - range.start + 1
+          const chunk = Buffer.alloc(length)
+          const fd = fs.openSync(file, 'r')
+          try {
+            fs.readSync(fd, chunk, 0, length, range.start)
+          } finally {
+            fs.closeSync(fd)
+          }
+          return new Response(chunk, { status: 206, headers: { 'content-type': type, 'content-length': String(length), 'content-range': `bytes ${range.start}-${range.end}/${size}`, 'accept-ranges': 'bytes' } })
+        }
+        return new Response(fs.readFileSync(file), { status: 200, headers: { 'content-type': type, 'content-length': String(size), 'accept-ranges': 'bytes' } })
+      }
+      const response = await net.fetch(pathToFileURL(file).toString())
       if (!type || !response.ok) return response
       return new Response(response.body, { status: response.status, headers: { 'content-type': type } })
     } catch {

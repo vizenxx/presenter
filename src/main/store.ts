@@ -283,6 +283,12 @@ export class Store {
     this.emit()
   }
 
+  /** Play or pause a video or sound of the slide on Projector 1 (PPT decks). */
+  mediaToggle(index: number): void {
+    const o = this.onAir()
+    if (o && Number.isInteger(index)) o.toggleMedia(index)
+  }
+
   /**
    * A whiteboard: blank white pages to draw on, as a content (it waits, or with show it goes on
    * Projector 1, e.g. from the start screen). It is not added to Recent.

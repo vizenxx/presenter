@@ -63,7 +63,12 @@ Presenter 是一个解压即用的文件夹。没有安装程序，也不需要�
 
 - 程序先把 PPT 转成放映格式。第一次打开一份 PPT 需要十几秒，控制台顶部会显示进度。之后再打开同一份 PPT 会直接显示。
 - 转换用 PowerPoint（Windows）或 Keynote（Mac），都没有时用 LibreOffice。三者都没有时，请先把 PPT 另存为 PDF。
-- 每页只显示最终画面：“点一下出现一条”的动画和视频不会播放。
+- PPTX 里的视频和声音在幻灯片上的原位播放。点控制台幻灯片标题旁的 **▶ Video**，或者点视频上的 ▶（投影上，或投影开始前的控制台画面上）。翻页时自动停止。不需要另装程序。
+  - 能播放：MP4、M4V、MOV（H.264）、WebM、MP3、M4A、WAV、OGG。WMV 和 AVI 不能播放：视频上会显示提示；请另存为 MP4 后重新插入。
+  - 链接（没有嵌入）的视频：文件还在 PPTX 指向的位置时才能播放。
+  - 旧的 .ppt 文件：先另存为 .pptx，视频才能播放。
+  - 这次更新后，每份 PPTX 会重新转换一次（只一次），以取出视频。
+- “点一下出现一条”的动画暂时不播放：每页只显示最终画面。
 - 隐藏的幻灯片不会显示，和 PowerPoint 放映时一样。
 - PPT 里的标题会出现在 **Slides** 里，讲者备注会出现在 **Notes** 里。
 
@@ -175,6 +180,7 @@ Presenter 是一个解压即用的文件夹。没有安装程序，也不需要�
 
 - **列表里找不到某个窗口**：先打开那个程序（最小化也可以）。Presenter 自己的窗口不会出现在列表里。
 - **PPT 打不开**：安装 PowerPoint、Keynote（Mac）或 LibreOffice 其中之一，或者先把 PPT 另存为 PDF。
+- **幻灯片上的视频显示 “cannot play here”**：视频是 WMV、AVI 或其他旧格式。请另存为 MP4 后重新插入。
 - **控制台一直停在 “Starting…”**：先不要关掉程序，把程序数据文件夹里的 `startup-log.txt` 发给维护者（Windows：`%APPDATA%\presenter`；Mac：`~/Library/Application Support/Presenter`）。它会显示停在了哪一步。
 
 ## 给维护者

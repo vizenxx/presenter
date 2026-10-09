@@ -63,7 +63,12 @@ The **📘 Guide** in the app has the same help in two parts: **1 · Use Present
 
 - A PPT is converted for showing first. The first time takes about 10–20 seconds; the console shows the progress. After that the same file opens at once.
 - Conversion uses PowerPoint (Windows) or Keynote (Mac), else LibreOffice. With none of them, save the PPT as PDF first.
-- Each slide shows its final picture: click-by-click animations and videos do not play.
+- Videos and sounds in a PPTX play where they stand on the slide. Click **▶ Video** next to the slide title in the console, or click the ▶ on the video (on the projector, or in the console before projecting). A page turn stops it. No extra program is needed.
+  - MP4, M4V, MOV (H.264), WebM, MP3, M4A, WAV and OGG play. WMV and AVI cannot play: the video shows a note; save it as MP4 and insert it again.
+  - A linked video (not embedded) plays when its file is still where the PPTX points.
+  - Old .ppt files: save them as .pptx first to play their videos.
+  - After this update, each PPTX is converted once more (once only) to take out its videos.
+- Click-by-click animations do not play yet: each slide shows its final picture.
 - Hidden slides are left out, as in PowerPoint's own show.
 - Slide titles appear under **Slides**, speaker notes under **Notes**.
 
@@ -175,6 +180,7 @@ Click **🎲 Name picker** (top bar). Choose a list and click **🎲 Roll**: the
 
 - **A window is not in the list**: open the program first (it may be minimized). Presenter's own windows are not listed.
 - **A PPT does not open**: install PowerPoint, Keynote (Mac) or LibreOffice, or save the PPT as PDF.
+- **A video on a slide shows "cannot play here"**: it is WMV, AVI or another old format. Save it as MP4 and insert it again.
 - **The console stays on "Starting…"**: leave it open and send the file `startup-log.txt` from the app data folder (`%APPDATA%\presenter` on Windows, `~/Library/Application Support/Presenter` on a Mac). It shows the step that did not happen.
 
 ## For maintainers

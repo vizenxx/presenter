@@ -3,9 +3,10 @@ import crypto from 'node:crypto'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { pathToFileURL } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { deckKind, deckTitle, type DeckKind } from '../shared/deckKinds'
 import type { DeckErrorCode } from '../shared/lang'
+import { unzipSync } from 'fflate'
 import { readPptxSlides, type SlideInfo } from './pptxMeta'
 
 /** Where a deck is served from and which page opens it. */
@@ -31,7 +32,14 @@ export interface ConvertOptions {
 export interface DeckMeta {
   source: string
   converter: Converter
-  slides: SlideInfo[]
+  slides: DeckSlide[]
+}
+
+/** A slide in meta.json: title, notes, and its videos and sounds as files next to deck.pdf (media/…). */
+export interface DeckSlide {
+  title: string
+  notes: string
+  media?: Array<{ kind: 'video' | 'audio'; x: number; y: number; w: number; h: number; file: string }>
 }
 
 /** A problem the teacher can act on; the console shows it in the chosen language. */
@@ -47,7 +55,7 @@ export class DeckError extends Error {
 /** The built-in page viewer, served from the app on every deck host. */
 export const VIEWER_ENTRY = '__presenter__/pdfdeck.html'
 /** Bump when the conversion output changes, so old cache entries are not reused. */
-const CONVERT_VERSION = 1
+const CONVERT_VERSION = 2
 const CONVERT_TIMEOUT_MS = 180_000
 const ZIP_SLIDES = /\.(pptx|pptm|ppsx)$/i
 
@@ -83,7 +91,7 @@ export async function convertSlides(full: string, opts: ConvertOptions): Promise
         else if (converter === 'keynote') await convertWithKeynote(full, pdf, work)
         else await convertWithLibreOffice(full, work, opts.cacheRoot)
         if (!fs.existsSync(pdf) || fs.statSync(pdf).size === 0) throw new Error('no PDF produced')
-        const slides = ZIP_SLIDES.test(full) ? safeSlides(full) : []
+        const slides = ZIP_SLIDES.test(full) ? withMedia(full, safeSlides(full), work) : []
         const meta: DeckMeta = { source: full, converter, slides }
         fs.writeFileSync(path.join(work, 'meta.json'), JSON.stringify(meta, null, 2))
         fs.rmSync(folder, { recursive: true, force: true })
@@ -99,6 +107,52 @@ export async function convertSlides(full: string, opts: ConvertOptions): Promise
   // macOS: the teacher said no (or not yet) to "Presenter wants to control Keynote".
   if (failures.some((f) => f.includes('-1743'))) throw new DeckError('automation-denied', failures.join('; '))
   throw new DeckError('convert-failed', failures.join('; '))
+}
+
+/**
+ * Copies each slide's videos and sounds next to the converted pages (media/…), so the viewer can
+ * play them where they stand on the slide. A linked file is taken from where the PPTX points
+ * (relative paths from the PPTX's folder); a file that cannot be found is left out.
+ */
+export function withMedia(full: string, slides: SlideInfo[], work: string): DeckSlide[] {
+  const parts = new Set(slides.flatMap((s) => (s.media ?? []).map((m) => m.part).filter((p): p is string => !!p)))
+  let files: Record<string, Uint8Array> = {}
+  if (parts.size > 0) {
+    try {
+      files = unzipSync(fs.readFileSync(full), { filter: (f) => parts.has(f.name) })
+    } catch {
+      files = {}
+    }
+  }
+  const mediaDir = path.join(work, 'media')
+  let n = 0
+  return slides.map(({ title, notes, media }) => {
+    const kept: NonNullable<DeckSlide['media']> = []
+    for (const m of media ?? []) {
+      let source: Uint8Array | null = null
+      let ext = ''
+      if (m.part && files[m.part]) {
+        source = files[m.part]
+        ext = path.extname(m.part)
+      } else if (m.link) {
+        try {
+          const linked = /^file:/i.test(m.link) ? fileURLToPath(m.link) : path.resolve(path.dirname(full), m.link)
+          if (fs.existsSync(linked)) {
+            source = fs.readFileSync(linked)
+            ext = path.extname(linked)
+          }
+        } catch {
+          source = null
+        }
+      }
+      if (!source) continue
+      fs.mkdirSync(mediaDir, { recursive: true })
+      const name = `media/${++n}${ext.toLowerCase()}`
+      fs.writeFileSync(path.join(work, name), source)
+      kept.push({ kind: m.kind, x: m.x, y: m.y, w: m.w, h: m.h, file: name })
+    }
+    return kept.length > 0 ? { title, notes, media: kept } : { title, notes }
+  })
 }
 
 function safeSlides(full: string): SlideInfo[] {

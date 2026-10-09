@@ -54,6 +54,8 @@ export interface OutputView {
   captureName: string | null
   /** The projector showing this content (1 = main projector), or null while it waits. */
   shownOn: number | null
+  /** The shown slide's videos and sounds (PPT decks), and the one playing; null = none. */
+  media?: { kinds: Array<'video' | 'audio'>; playing: number | null } | null
 }
 
 /** The speaker's own timer (never shown to the audience). Times are Date.now() values. */
@@ -262,6 +264,8 @@ export interface ConsoleApi {
   addScreen(sameDeck: boolean): void
   /** A whiteboard (blank pages to draw on); show = straight onto Projector 1. */
   addWhiteboard(show?: boolean): void
+  /** Play or pause a video or sound of the slide on Projector 1. */
+  mediaToggle(index: number): void
   removeScreen(id: OutputId): void
   timerStart(sec: number): void
   timerToggle(): void

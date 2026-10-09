@@ -13,7 +13,7 @@ const OUT = path.join(ROOT, 'e2e', 'out')
 const STUB = path.join(OUT, 'harness', 'console-stub-preload.cjs')
 const AI_REQUEST = aiRequestText(fs.readFileSync(path.join(ROOT, 'docs', 'ai-integration.md'), 'utf8'))
 /** Every ConsoleApi method (contextBridge copies plain objects only, so no Proxy). */
-const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "listWindows", "addWindowScreen", "setTheme", "timerWarnings", "speakerAdjust", "timerAdjust", "timerSet", "speakerPeriods", "setBlank", "savePicture", "addWhiteboard", "rollerGroups"]
+const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "listWindows", "addWindowScreen", "setTheme", "timerWarnings", "speakerAdjust", "timerAdjust", "timerSet", "speakerPeriods", "setBlank", "savePicture", "addWhiteboard", "rollerGroups", "mediaToggle"]
 
 app.disableHardwareAcceleration()
 // Each screenshot closes its window; keep the app alive between them.
@@ -84,7 +84,7 @@ contextBridge.exposeInMainWorld('presenter', api)
   )
 }
 
-type Open = 'guide' | 'guide-prepare' | 'window-picker' | 'start' | 'screen-menu' | 'add-menu' | 'crowd' | 'roller' | 'bells' | 'adjust' | 'clock' | null
+type Open = 'guide' | 'guide-prepare' | 'window-picker' | 'start' | 'screen-menu' | 'add-menu' | 'crowd' | 'roller' | 'bells' | 'adjust' | 'clock' | 'media' | null
 /** Clicks the button that opens each pop-up. */
 const OPENERS: Record<string, string> = {
   guide: `[...document.querySelectorAll('header button')].find((x) => x.textContent.includes('📘'))`,
@@ -109,6 +109,8 @@ async function shot(projecting: boolean, open: Open = null, page = 'console', th
   if (open === 'clock') state.speaker = { ...state.speaker, mode: 'clock', heldMs: 0 }
   // Three warning bells: the timer panel must still fit.
   if (open === 'bells') state.timer.warnings = [{ sec: 300, beeps: 1 }, { sec: 120, beeps: 2 }, { sec: 30, beeps: 5 }]
+  // A PPT slide with a video (playing) and a sound: their buttons sit next to the slide title.
+  if (open === 'media') state.outputs[0] = { ...state.outputs[0], media: { kinds: ['video', 'audio'], playing: 0 } }
   writeStub(state)
   // The toolbar starts in a 520 x 56 window, as in the app (src/main/windowTools.ts).
   const win = new BrowserWindow({ show: false, width: page === 'console' ? 1536 : 520, height: page === 'console' ? 864 : 56, useContentSize: true, backgroundColor: '#475569', webPreferences: { preload: STUB, contextIsolation: true, sandbox: true, offscreen: true } })
@@ -132,6 +134,13 @@ async function shot(projecting: boolean, open: Open = null, page = 'console', th
     if (bodyBg !== 'rgba(0, 0, 0, 0)' && bodyBg !== 'transparent') throw new Error(`toolbar page not see-through: ${bodyBg}`)
     win.setContentSize(bar[0], bar[1])
     await wait(300)
+  }
+  if (open === 'media') {
+    const labels = await win.webContents.executeJavaScript(`[...document.querySelectorAll('button')].map((b) => b.textContent.trim()).filter((t) => /Video|Sound/.test(t))`)
+    if (labels.join('|') !== '⏸ Video 1|▶ Sound 2') throw new Error(`media buttons: ${JSON.stringify(labels)}`)
+    await win.webContents.executeJavaScript(`[...document.querySelectorAll('button')].find((b) => b.textContent.includes('Sound 2')).click()`)
+    const calls = await win.webContents.executeJavaScript('window.presenter.__calls()')
+    if (!calls.some((c: unknown[]) => c[0] === 'mediaToggle' && c[1] === 1)) throw new Error('▶ Sound 2 did not ask to play the sound')
   }
   const image = await win.webContents.capturePage()
   const name = `${page}${projecting ? '-projecting' : ''}${open ? `-${open}` : ''}${theme === 'light' ? '-light' : ''}.png`
@@ -422,6 +431,8 @@ app.whenReady().then(async () => {
     await shot(false, 'adjust', 'console', 'light')
     await shot(false, 'clock')
     await shot(false, 'clock', 'console', 'light')
+    await shot(true, 'media')
+    await shot(true, 'media', 'console', 'light')
     await clockTimes()
     console.log('CONSOLE OK')
   } catch (error) {
