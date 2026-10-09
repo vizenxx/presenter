@@ -1,28 +1,27 @@
 import { app } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
-import { DEFAULT_WARN_SEC, MAX_WARN_SEC } from '../shared/timer'
+import { cleanWarnings, DEFAULT_WARNINGS, type TimerWarning } from '../shared/timer'
 
-/** Remembers when the class timer warns (seconds left before the end; 0 = no warning). */
+/** Remembers the class timer's warning bells. */
 const file = (): string => path.join(app.getPath('userData'), 'timer.json')
 
-export function clampWarn(seconds: number): number {
-  return Number.isFinite(seconds) ? Math.min(MAX_WARN_SEC, Math.max(0, Math.round(seconds))) : DEFAULT_WARN_SEC
-}
-
-export function loadWarn(): number {
+export function loadWarnings(): TimerWarning[] {
   try {
-    const value = (JSON.parse(fs.readFileSync(file(), 'utf8')) as { warnSec?: unknown }).warnSec
-    return typeof value === 'number' ? clampWarn(value) : DEFAULT_WARN_SEC
+    const saved = JSON.parse(fs.readFileSync(file(), 'utf8')) as { warnings?: unknown; warnSec?: unknown }
+    if (Array.isArray(saved.warnings)) return cleanWarnings(saved.warnings)
+    // Saved by 0.2.0: one warning time with 3 beeps; 0 = none.
+    if (typeof saved.warnSec === 'number') return saved.warnSec > 0 ? cleanWarnings([{ sec: saved.warnSec, beeps: 3 }]) : []
   } catch {
-    return DEFAULT_WARN_SEC
+    // Nothing saved yet.
   }
+  return DEFAULT_WARNINGS.map((w) => ({ ...w }))
 }
 
-export function saveWarn(seconds: number): void {
+export function saveWarnings(warnings: TimerWarning[]): void {
   try {
     fs.mkdirSync(path.dirname(file()), { recursive: true })
-    fs.writeFileSync(file(), JSON.stringify({ warnSec: seconds }, null, 2))
+    fs.writeFileSync(file(), JSON.stringify({ warnings }, null, 2))
   } catch {
     // A convenience; a failed write must not stop a class.
   }

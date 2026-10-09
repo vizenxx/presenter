@@ -60,18 +60,45 @@ export function remainingSec(s: TimerState): number {
   return Math.ceil(s.remainingMs / 1000)
 }
 
-/** A warning sound before the end: three beeps when the warning time is left, one beep for each of the last five seconds. */
-export type TimerCue = 'warning' | 'last-seconds' | null
+/** One warning bell: when this many seconds are left, beep this many times. */
+export interface TimerWarning {
+  sec: number
+  beeps: number
+}
 
-/** The warning time until the teacher sets another one; 0 = no warning. */
-export const DEFAULT_WARN_SEC = 60
+/** A sound before the end: a warning bell's beeps, or one beep for each of the last five seconds. */
+export type TimerCue = { kind: 'warning'; beeps: number } | { kind: 'last-seconds' } | null
+
+/** Until the teacher sets others: one bell, 3 beeps with one minute left. */
+export const DEFAULT_WARNINGS: TimerWarning[] = [{ sec: 60, beeps: 3 }]
+export const MAX_WARNINGS = 5
 export const MAX_WARN_SEC = 60 * 60
+export const MAX_BEEPS = 9
 
-/** The cue for a change of the shown time. A start, a resume or a reset never beeps. warnSec = 0: no warning. */
-export function timerCue(before: { status: TimerStatus; remainingSec: number } | null, now: { status: TimerStatus; remainingSec: number }, warnSec = DEFAULT_WARN_SEC): TimerCue {
+/** A list as the console may send it, put into range: at most 5 bells, 0 s – 60 min, 1–9 beeps. */
+export function cleanWarnings(list: unknown): TimerWarning[] {
+  if (!Array.isArray(list)) return DEFAULT_WARNINGS.map((w) => ({ ...w }))
+  const whole = (v: unknown, min: number, max: number, fallback: number): number => {
+    const n = Number(v)
+    return Number.isFinite(n) ? Math.min(max, Math.max(min, Math.round(n))) : fallback
+  }
+  return list
+    .filter((w): w is Record<string, unknown> => typeof w === 'object' && w !== null)
+    .slice(0, MAX_WARNINGS)
+    .map((w) => ({ sec: whole(w['sec'], 0, MAX_WARN_SEC, 60), beeps: whole(w['beeps'], 1, MAX_BEEPS, 3) }))
+}
+
+/**
+ * The cue for a change of the shown time. A start, a resume or a reset never beeps. A bell rings
+ * when its time is passed; when one step passes several bells, the one nearest the end rings.
+ * A bell at 0:00 never rings. The last five seconds always beep once a second.
+ */
+export function timerCue(before: { status: TimerStatus; remainingSec: number } | null, now: { status: TimerStatus; remainingSec: number }, warnings: TimerWarning[] = DEFAULT_WARNINGS): TimerCue {
   if (!before || before.status !== 'running' || now.status !== 'running') return null
   if (now.remainingSec >= before.remainingSec) return null
-  if (now.remainingSec >= 1 && now.remainingSec <= 5) return 'last-seconds'
-  if (warnSec > 0 && before.remainingSec > warnSec && now.remainingSec <= warnSec) return 'warning'
-  return null
+  if (now.remainingSec >= 1 && now.remainingSec <= 5) return { kind: 'last-seconds' }
+  const passed = warnings.filter((w) => w.sec > 0 && before.remainingSec > w.sec && now.remainingSec <= w.sec)
+  if (passed.length === 0) return null
+  const nearest = passed.reduce((a, b) => (b.sec < a.sec || (b.sec === a.sec && b.beeps > a.beeps) ? b : a))
+  return { kind: 'warning', beeps: nearest.beeps }
 }

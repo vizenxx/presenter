@@ -13,7 +13,7 @@ const OUT = path.join(ROOT, 'e2e', 'out')
 const STUB = path.join(OUT, 'harness', 'console-stub-preload.cjs')
 const AI_REQUEST = aiRequestText(fs.readFileSync(path.join(ROOT, 'docs', 'ai-integration.md'), 'utf8'))
 /** Every ConsoleApi method (contextBridge copies plain objects only, so no Proxy). */
-const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "listWindows", "addWindowScreen", "setTheme", "timerWarn"]
+const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "listWindows", "addWindowScreen", "setTheme", "timerWarnings"]
 
 app.disableHardwareAcceleration()
 // Each screenshot closes its window; keep the app alive between them.
@@ -42,7 +42,7 @@ function sampleState(projecting: boolean, crowd = false, theme: UiTheme = 'dark'
     previewOf: 'projector',
     slides: Array.from({ length: 18 }, (_, i) => ({ title: `Slide title ${i + 1}`, notes: i === 2 ? 'Ask the class first.' : '' })),
     milestones: [],
-    timer: { status: 'running', remainingSec: 297, durationSec: 300, alarming: false, warnSec: 60 },
+    timer: { status: 'running', remainingSec: 297, durationSec: 300, alarming: false, warnings: [{ sec: 60, beeps: 3 }] },
     plannedMinutes: null,
     recent: [deck],
     hasExternalDisplay: true,
@@ -81,7 +81,7 @@ contextBridge.exposeInMainWorld('presenter', api)
   )
 }
 
-type Open = 'guide' | 'guide-prepare' | 'window-picker' | 'start' | 'screen-menu' | 'add-menu' | 'crowd' | 'roller' | null
+type Open = 'guide' | 'guide-prepare' | 'window-picker' | 'start' | 'screen-menu' | 'add-menu' | 'crowd' | 'roller' | 'bells' | null
 /** Clicks the button that opens each pop-up. */
 const OPENERS: Record<string, string> = {
   guide: `[...document.querySelectorAll('header button')].find((x) => x.textContent.includes('📘'))`,
@@ -99,6 +99,8 @@ async function shot(projecting: boolean, open: Open = null, page = 'console', th
     state.mainDeck = null
     state.outputs = state.outputs.filter((o) => o.kind !== 'capture' && o.kind !== 'window').map((o) => ({ ...o, deck: null, deckKind: null, total: null }))
   }
+  // Three warning bells: the timer panel must still fit.
+  if (open === 'bells') state.timer.warnings = [{ sec: 300, beeps: 1 }, { sec: 120, beeps: 2 }, { sec: 30, beeps: 5 }]
   writeStub(state)
   // The toolbar starts in a 520 x 56 window, as in the app (src/main/windowTools.ts).
   const win = new BrowserWindow({ show: false, width: page === 'console' ? 1536 : 520, height: page === 'console' ? 864 : 56, useContentSize: true, backgroundColor: '#475569', webPreferences: { preload: STUB, contextIsolation: true, sandbox: true, offscreen: true } })
@@ -175,21 +177,26 @@ async function inputs(): Promise<void> {
   if (started.length !== 1 || started[0][1] !== 30) throw new Error(`Enter should start 30 s: ${JSON.stringify(started)}`)
   console.log('ok timer boxes: empty fully, 0 min 30 s starts 30 s')
 
-  // The warning time: type 2 : 30 and it is sent as 150 seconds.
-  await js(`${field('Warning: minutes left')}.focus()`)
-  await js(`${field('Warning: minutes left')}.setSelectionRange(9, 9)`)
+  // Warning bells: add one, change the minutes and the beeps of the first, remove it (the stub state stays at one bell 1:00 / 3 beeps).
+  const sent = async (): Promise<string[]> => (await calls()).filter((c) => c[0] === 'timerWarnings').map((c) => JSON.stringify(c[1]))
+  await js(`[...document.querySelectorAll('button')].find((x) => x.textContent.includes('Add a bell')).click()`)
+  await wait(100)
+  await js(`${field('Bell: minutes left')}.focus()`)
+  await js(`${field('Bell: minutes left')}.setSelectionRange(9, 9)`)
   await key('Backspace')
   await key('2')
-  await js(`${field('Warning: seconds left')}.focus()`)
-  await js(`${field('Warning: seconds left')}.setSelectionRange(9, 9)`)
+  await js(`${field('How many beeps (1–9)')}.focus()`)
+  await js(`${field('How many beeps (1–9)')}.setSelectionRange(9, 9)`)
   await key('Backspace')
-  await key('Backspace')
-  await key('3')
-  await key('0')
-  const warns = (await calls()).filter((c) => c[0] === 'timerWarn').map((c) => c[1])
-  // The stub state stays at 1:00, so each box joins the other box's old value: 2:00 = 120 s, then 1:30 = 90 s.
-  if (!warns.includes(120) || !warns.includes(90)) throw new Error(`warning time not sent: ${JSON.stringify(warns)}`)
-  console.log('ok warning time boxes send seconds left')
+  if ((await js<string>(`${field('How many beeps (1–9)')}.value`)) !== '') throw new Error('the beeps box does not empty')
+  await key('5')
+  await js(`document.querySelector('button[title="Remove this bell"]').click()`)
+  await wait(100)
+  const bells = await sent()
+  for (const want of ['[{"sec":60,"beeps":3},{"sec":30,"beeps":1}]', '[{"sec":120,"beeps":3}]', '[{"sec":60,"beeps":5}]', '[]']) {
+    if (!bells.includes(want)) throw new Error(`warning bells: ${want} not sent: ${JSON.stringify(bells)}`)
+  }
+  console.log('ok warning bells: add, change time and beeps, remove')
 
   // A+ held for one second repeats (one step at once, then every 80 ms after 400 ms).
   const r = await js<number[]>(`(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === 'A+'); const r = b.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2] })()`)
@@ -233,6 +240,8 @@ app.whenReady().then(async () => {
     await shot(false, 'window-picker', 'console', 'light')
     await shot(false, 'start', 'console', 'light')
     await shot(false, 'crowd', 'toolbar', 'light')
+    await shot(false, 'bells')
+    await shot(false, 'bells', 'console', 'light')
     console.log('CONSOLE OK')
   } catch (error) {
     console.error(String(error))

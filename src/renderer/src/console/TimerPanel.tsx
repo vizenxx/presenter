@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { mmss } from '../../../shared/format'
+import { MAX_BEEPS, MAX_WARNINGS, type TimerWarning } from '../../../shared/timer'
 import type { AppState } from '../../../shared/types'
 import { useT } from './i18n'
 import { Btn, HoldBtn, NumberField } from './ui'
@@ -42,23 +43,42 @@ export function CustomTime({ planned, buttonClass = SMALL }: { planned: number |
   )
 }
 
-/** When the class timer warns with three beeps: minutes : seconds left (0 : 00 = no warning). Presenter remembers it. */
-function WarnSetting({ warnSec }: { warnSec: number }) {
+/**
+ * The warning bells: each beeps its own number of times when its time is left (minutes : seconds).
+ * Up to 5; ✕ removes one, ＋ adds one. Presenter remembers them.
+ */
+function WarningBells({ warnings }: { warnings: TimerWarning[] }) {
   const t = useT()
-  const minutes = Math.floor(warnSec / 60)
-  const seconds = warnSec % 60
+  const send = (list: TimerWarning[]): void => window.presenter.timerWarnings(list)
+  const change = (i: number, next: Partial<TimerWarning>): void => send(warnings.map((w, j) => (j === i ? { ...w, ...next } : w)))
+  const add = (): void => send([...warnings, warnings.length === 0 ? { sec: 60, beeps: 3 } : { sec: 30, beeps: 1 }])
   return (
-    <div className="mt-1.5 flex items-center gap-1 text-sm text-muted" title={t.warnTitle}>
-      <span>🔔 {t.warnAt}</span>
-      <NumberField value={minutes} min={0} max={60} onChange={(m) => window.presenter.timerWarn(m * 60 + seconds)} title={t.warnMinutes} className="w-11 text-ink" />
-      <span>:</span>
-      <NumberField value={seconds} min={0} max={59} digits={2} onChange={(s) => window.presenter.timerWarn(minutes * 60 + s)} title={t.warnSeconds} className="w-11 text-ink" />
-      <span>{warnSec === 0 ? t.warnOff : t.warnLeft}</span>
+    <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-sm text-muted" title={t.warnTitle}>
+      <span>🔔 {t.warnBells}</span>
+      {warnings.length === 0 && <span>{t.warnNone}</span>}
+      {warnings.map((w, i) => (
+        <span key={i} className="flex items-center gap-1 rounded-full py-0.5 pr-0.5 pl-1 ring-1 ring-line/70">
+          <NumberField value={Math.floor(w.sec / 60)} min={0} max={60} onChange={(m) => change(i, { sec: m * 60 + (w.sec % 60) })} title={t.warnMinutes} className="w-10 text-ink" />
+          <span>:</span>
+          <NumberField value={w.sec % 60} min={0} max={59} digits={2} onChange={(sec) => change(i, { sec: Math.floor(w.sec / 60) * 60 + sec })} title={t.warnSeconds} className="w-10 text-ink" />
+          <span>{t.warnLeft} ·</span>
+          <NumberField value={w.beeps} min={1} max={MAX_BEEPS} onChange={(beeps) => change(i, { beeps })} title={t.warnBeepsTitle} className="w-8 text-ink" />
+          <span>{t.warnBeeps(w.beeps)}</span>
+          <button type="button" title={t.warnRemove} aria-label={t.warnRemove} onClick={() => send(warnings.filter((_, j) => j !== i))} className="grid h-6 w-6 place-items-center rounded-full hover:bg-line">
+            ✕
+          </button>
+        </span>
+      ))}
+      {warnings.length < MAX_WARNINGS && (
+        <button type="button" onClick={add} className="rounded-full px-2 py-0.5 text-tint hover:bg-panel-2">
+          ＋ {t.warnAdd}
+        </button>
+      )}
     </div>
   )
 }
 
-/** The class timer (students see it on the projector): the time, presets and own time, and the warning time. */
+/** The class timer (students see it on the projector): the time, presets and own time, and the warning bells. */
 export function TimerPanel({ state }: { state: AppState }) {
   const t = useT()
   const timer = state.timer
@@ -88,7 +108,7 @@ export function TimerPanel({ state }: { state: AppState }) {
           <CustomTime planned={state.plannedMinutes} />
         </span>
       </div>
-      <WarnSetting warnSec={timer.warnSec} />
+      <WarningBells warnings={timer.warnings} />
     </section>
   )
 }

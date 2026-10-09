@@ -36,7 +36,7 @@ Presenter is a folder you unzip; there is no installer and no administrator pass
 | Top bar | **Open deck**, **Recent**, **🎲 Name picker**, **📘 Guide**, **☀ / ☾** (light or dark look), **▶ Start projecting** |
 | Current slide (left) | What Projector 1 shows. Before projecting it is the deck itself; while projecting it is a live copy of what the audience sees. The mark tools are above it. |
 | Next slide (right) | The slide after the selected card's slide. Click it to look further ahead. |
-| Class timer | The countdown the audience sees on the projector, with warning beeps at a time you choose. |
+| Class timer | The countdown the audience sees on the projector, with warning bells at times you choose. |
 | My timer | Your own timer. Only you see it. |
 | Slides / Notes | The slide list and speaker notes of the selected card (buttons above the current slide). |
 | Bottom bar | One card per content (deck or program window), each with its **Projector ▾** button. **＋ Add screen** at the end. |
@@ -128,7 +128,7 @@ The bar above the current slide: **Pointer, Pen, Highlighter, Box, Arrow, Laser,
 
 - Click a preset (**1 min**, **5 min** …) to start at once, or type minutes **:** seconds and click **Start** (or press Enter). **−** and **+** change the minutes; hold them to go fast. A box can be emptied while you type.
 - When a deck plans a time for a slide, the timer shows it.
-- It beeps three times at the warning time: **🔔 Warning beeps at 1 : 00 left** under the presets (minutes : seconds; **0 : 00** = no warning). Presenter remembers it. In the last 5 seconds it beeps once a second.
+- **🔔 Warning bells** (under the presets): each bell beeps its own number of times (1–9) when its time is left (minutes : seconds). **＋ Add a bell** adds one (up to 5); **✕** removes one. At first there is one bell: 1:00 left, 3 beeps. Presenter remembers the bells. In the last 5 seconds it always beeps once a second.
 - At zero the alarm rings until you press any key or click. That key does not turn the page.
 - UXD202 decks show the countdown in their own bar; everything else shows it at the bottom right of the projector.
 

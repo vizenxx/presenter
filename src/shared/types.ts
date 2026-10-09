@@ -1,3 +1,4 @@
+import type { TimerWarning } from './timer'
 import type { DeckKind } from './deckKinds'
 import type { GuideFile } from './guide'
 import type { InkOp, InkSettings, InkStroke, InkTool } from './ink'
@@ -98,8 +99,8 @@ export interface TimerView {
   remainingSec: number
   durationSec: number
   alarming: boolean
-  /** Three warning beeps when this many seconds are left; 0 = no warning. */
-  warnSec: number
+  /** Warning bells: beep a set number of times when a set time is left. Empty = no bells. */
+  warnings: TimerWarning[]
 }
 
 export interface RollerListInfo {
@@ -232,8 +233,8 @@ export interface ConsoleApi {
   timerToggle(): void
   timerReset(): void
   timerDismiss(): void
-  /** When the class timer warns (seconds left; 0 = never). Remembered. */
-  timerWarn(seconds: number): void
+  /** The class timer's warning bells (time left and number of beeps each). Remembered. */
+  timerWarnings(list: TimerWarning[]): void
   layoutPreview(rect: PreviewRect | null): void
   layoutCurrent(rect: PreviewRect | null): void
   startProjecting(): void

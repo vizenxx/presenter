@@ -27,7 +27,7 @@ import { WindowsHelper, windowHandle } from './windowsHelper'
 import { WindowTools } from './windowTools'
 import { rememberZoom, zoomFor } from './zoomMemory'
 import { loadTheme, saveTheme, themeBackground } from './themeMemory'
-import { clampWarn, loadWarn, saveWarn } from './timerMemory'
+import { loadWarnings, saveWarnings } from './timerMemory'
 import { loadFolder, saveFolder } from './folderMemory'
 
 export interface StorePaths {
@@ -83,7 +83,7 @@ export class Store {
   private tracking = false
   private speaker: SpeakerTimerView = { mode: 'up', minutes: 45, startedAt: null, heldMs: 0 }
   private theme: UiTheme | null = null
-  private warnSec = T.DEFAULT_WARN_SEC
+  private warnings: T.TimerWarning[] = T.DEFAULT_WARNINGS.map((w) => ({ ...w }))
   /** Folder of the deck opened last; Open deck starts there. */
   private lastFolder: string | null = null
   /** Projector page the marks belong to; marks clear when it changes. */
@@ -114,7 +114,7 @@ export class Store {
   start(): void {
     this.recent = loadRecent()
     this.theme = loadTheme()
-    this.warnSec = loadWarn()
+    this.warnings = loadWarnings()
     this.lastFolder = loadFolder()
     const projector = this.createOutput('projector', 1, 'projector', 0)
     // The next preview is not a screen: it shows the slide after the selected screen's slide.
@@ -720,10 +720,10 @@ export class Store {
     this.syncTimer(true)
   }
 
-  /** When the class timer warns (seconds left; 0 = never). */
-  timerWarn(seconds: number): void {
-    this.warnSec = clampWarn(Number(seconds))
-    saveWarn(this.warnSec)
+  /** The class timer's warning bells: time left and number of beeps for each. */
+  timerWarnings(list: unknown): void {
+    this.warnings = T.cleanWarnings(list)
+    saveWarnings(this.warnings)
     this.syncTimer(true)
   }
 
@@ -1017,7 +1017,7 @@ export class Store {
   private syncTimer(force: boolean): void {
     if (!this.projectorWin) return
     const view = this.timerView()
-    const key = `${view.status}|${view.remainingSec}|${view.alarming}|${view.durationSec}|${view.warnSec}`
+    const key = `${view.status}|${view.remainingSec}|${view.alarming}|${view.durationSec}|${JSON.stringify(view.warnings)}`
     if (!force && key === this.lastTimerKey) return
     this.lastTimerKey = key
     if (force) this.lastTimerCmd = Date.now()
@@ -1032,7 +1032,7 @@ export class Store {
   }
 
   private timerView(): TimerView {
-    return { status: this.timer.status, remainingSec: T.remainingSec(this.timer), durationSec: this.timer.durationSec, alarming: this.timer.alarming, warnSec: this.warnSec }
+    return { status: this.timer.status, remainingSec: T.remainingSec(this.timer), durationSec: this.timer.durationSec, alarming: this.timer.alarming, warnings: this.warnings }
   }
 
   private plannedMinutes(): number | null {

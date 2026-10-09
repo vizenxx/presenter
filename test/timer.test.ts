@@ -37,21 +37,38 @@ describe('timer', () => {
   })
   it('warns when one minute is left (the default), and once for each of the last five seconds', () => {
     const run = (sec: number) => ({ status: 'running' as const, remainingSec: sec })
-    expect(T.timerCue(run(61), run(60))).toBe('warning')
-    expect(T.timerCue(run(62), run(59))).toBe('warning')
+    expect(T.timerCue(run(61), run(60))).toEqual({ kind: 'warning', beeps: 3 })
+    expect(T.timerCue(run(62), run(59))).toEqual({ kind: 'warning', beeps: 3 })
     expect(T.timerCue(run(60), run(59))).toBeNull()
-    expect(T.timerCue(run(6), run(5))).toBe('last-seconds')
-    expect(T.timerCue(run(2), run(1))).toBe('last-seconds')
+    expect(T.timerCue(run(6), run(5))).toEqual({ kind: 'last-seconds' })
+    expect(T.timerCue(run(2), run(1))).toEqual({ kind: 'last-seconds' })
     expect(T.timerCue(run(7), run(6))).toBeNull()
     expect(T.timerCue(run(1), { status: 'done', remainingSec: 0 })).toBeNull()
   })
-  it('warns at the time the teacher set, or never when it is 0', () => {
+  it('rings each bell the teacher set, with its own number of beeps', () => {
     const run = (sec: number) => ({ status: 'running' as const, remainingSec: sec })
-    expect(T.timerCue(run(121), run(120), 120)).toBe('warning')
-    expect(T.timerCue(run(61), run(60), 120)).toBeNull()
-    expect(T.timerCue(run(31), run(30), 30)).toBe('warning')
-    expect(T.timerCue(run(61), run(60), 0)).toBeNull()
-    expect(T.timerCue(run(6), run(5), 0)).toBe('last-seconds')
+    const bells = [
+      { sec: 300, beeps: 1 },
+      { sec: 120, beeps: 2 },
+      { sec: 30, beeps: 5 }
+    ]
+    expect(T.timerCue(run(301), run(300), bells)).toEqual({ kind: 'warning', beeps: 1 })
+    expect(T.timerCue(run(121), run(120), bells)).toEqual({ kind: 'warning', beeps: 2 })
+    expect(T.timerCue(run(31), run(30), bells)).toEqual({ kind: 'warning', beeps: 5 })
+    expect(T.timerCue(run(61), run(60), bells)).toBeNull()
+  })
+  it('rings the bell nearest the end when one step passes several, and never at 0:00 or with no bells', () => {
+    const run = (sec: number) => ({ status: 'running' as const, remainingSec: sec })
+    expect(T.timerCue(run(130), run(100), [{ sec: 120, beeps: 2 }, { sec: 110, beeps: 4 }])).toEqual({ kind: 'warning', beeps: 4 })
+    expect(T.timerCue(run(61), run(60), [])).toBeNull()
+    expect(T.timerCue(run(2), run(1), [{ sec: 0, beeps: 3 }])).toEqual({ kind: 'last-seconds' })
+    expect(T.timerCue(run(6), run(5), [])).toEqual({ kind: 'last-seconds' })
+  })
+  it('puts a sent list into range', () => {
+    expect(T.cleanWarnings([{ sec: -5, beeps: 0 }, { sec: 99999, beeps: 20 }, null, 'x'])).toEqual([{ sec: 0, beeps: 1 }, { sec: T.MAX_WARN_SEC, beeps: T.MAX_BEEPS }])
+    expect(T.cleanWarnings(Array.from({ length: 8 }, () => ({ sec: 60, beeps: 3 })))).toHaveLength(T.MAX_WARNINGS)
+    expect(T.cleanWarnings('nonsense')).toEqual(T.DEFAULT_WARNINGS)
+    expect(T.cleanWarnings([])).toEqual([])
   })
   it('does not beep on a start, a resume, a reset or a pause', () => {
     const run = (sec: number) => ({ status: 'running' as const, remainingSec: sec })

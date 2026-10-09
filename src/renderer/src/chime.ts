@@ -31,7 +31,7 @@ export function chime(): void {
   }
 }
 
-/** Short clear beeps before the class timer ends: 3 at the warning time, 1 for each of the last five seconds. */
+/** Short clear beeps before the class timer ends: a warning bell's beeps, 1 for each of the last five seconds. */
 export function beep(count = 1): void {
   try {
     for (let i = 0; i < count; i++) note('sine', 1046.5, 0.32, 0.14, i * 0.44)
