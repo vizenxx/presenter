@@ -82,6 +82,7 @@ function wireIpc(store: Store): void {
   ipcMain.handle('console:guide', () => ({ aiRequest: AI_REQUEST }))
   ipcMain.on('console:copy-text', (_e, text: string) => copyText(String(text)))
   ipcMain.handle('console:save-guide-file', (_e, which: GuideFile) => store.saveGuideFile(which))
+  ipcMain.handle('console:save-picture', () => store.savePicture())
   ipcMain.on('console:open-dialog', () => void store.openDialog())
   ipcMain.on('console:open-path', (_e, p: string) => void store.openMainDeck(p))
   ipcMain.on('console:dismiss-deck-status', () => store.dismissDeckStatus())

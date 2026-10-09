@@ -291,4 +291,6 @@ export interface ConsoleApi {
   copyText(text: string): void
   /** Save dialog; resolves to the saved path, or null when cancelled. */
   saveGuideFile(which: GuideFile): Promise<string | null>
+  /** Saves what Projector 1 shows, with its marks, as a PNG (a save dialog); the path, or null. */
+  savePicture(): Promise<string | null>
 }

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { AppState, OutputView, PreviewRect } from '../../../shared/types'
 import type { DrawerTab } from './Drawer'
 import { screenLabel, useT } from './i18n'
@@ -38,6 +39,24 @@ function EmptyState({ state, onGuide, onPickWindow }: { state: AppState; onGuide
   )
 }
 
+/** 📷: saves what Projector 1 shows, with its marks, as a picture; says "Saved" for a moment. */
+function SavePicture() {
+  const t = useT()
+  const [saved, setSaved] = useState<string | null>(null)
+  const save = (): void => {
+    void window.presenter.savePicture().then((p) => {
+      if (!p) return
+      setSaved(p)
+      window.setTimeout(() => setSaved(null), 4000)
+    })
+  }
+  return (
+    <Btn title={saved ? t.pictureSavedTo(saved) : t.savePictureTitle} onClick={save}>
+      {saved ? t.pictureSaved : '📷'}
+    </Btn>
+  )
+}
+
 /**
  * Not projecting: the deck itself, live, in the console (marks drawn here are on it).
  * Projecting: a live video of what the students see, with a marking canvas on top.
@@ -73,6 +92,7 @@ export function CurrentPane(props: {
           <Btn tone={drawer === 'notes' ? 'primary' : 'default'} onClick={() => onDrawer(drawer === 'notes' ? null : 'notes')}>
             {t.notes}
           </Btn>
+          <SavePicture />
         </div>
       </div>
       <InkToolbar ink={state.ink} enabled={projector.deck !== null && projector.adapter !== 'loading'} />

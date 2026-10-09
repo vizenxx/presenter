@@ -239,6 +239,14 @@ try {
   await call(() => globalThis.__presenter.inkOp({ t: 'clear' }, 'main'))
   console.log('ok 7h marks stay with their slide')
 
+  // 7i. 📷 saves what Projector 1 shows, with its marks, as a PNG.
+  const picture = path.join(USER_DATA, 'slide.png')
+  const savedTo = await call((_e, p) => globalThis.__presenter.savePicture(p), picture)
+  assert.equal(savedTo, picture, 'the picture is saved')
+  const png = fs.readFileSync(picture)
+  assert.ok(png.length > 1000 && png.subarray(1, 4).toString() === 'PNG', 'it is a PNG picture')
+  console.log('ok 7i the slide saved as a picture')
+
   // 7g. A deck opens again on the page it showed last (within 3 hours), with a notice; a page move ends the notice.
   await call(() => globalThis.__presenter.navigate({ type: 'goto', index: 4 }))
   s = await waitFor('on slide 5', (s) => out(s, 'projector').shownIndex === 4)

@@ -12,5 +12,6 @@ export const MAIN_STRINGS = {
   deckFilter: 'Decks (PPT, Keynote, PDF, HTML)',
   defaultList: 'Sample list (click Edit)',
   untitledList: 'Untitled list',
-  saveCopy: 'Save a copy'
+  saveCopy: 'Save a copy',
+  savePicture: 'Save the slide as a picture'
 }

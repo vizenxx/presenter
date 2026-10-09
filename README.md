@@ -123,6 +123,7 @@ The bar above the current slide: **Pointer, Pen, Highlighter, Box, Arrow, Laser,
 - Marks stay with their slide: when you come back to a slide, its marks are there again (until the deck closes or opens again). **Clear** removes the marks of the slide shown. Marks on a program window stay until you clear them or the window leaves its projector.
 - **Arrow**: drag from where the arrow starts to where it points. The tip has an open V head.
 - Hold **Shift** while you draw: the pen and the highlighter draw one straight line (any angle), the box becomes a square, the arrow turns in 45° steps.
+- **📷** (above the slide) saves the slide with its marks as a picture (PNG); the save dialog starts in the deck's folder.
 - Keys in the console and on the floating toolbar: **P** pen, **H** highlighter, **R** box, **A** arrow, **L** laser, **E** eraser, **Ctrl+Z** (⌘Z) undo, **Delete** clear.
 - **Ctrl+Z** and **Esc** also work after you click on a slide (in the console or on the projector).
 - **Esc** leaves any drawing tool (back to the pointer); in the console a second **Esc** stops projecting.

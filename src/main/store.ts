@@ -1413,6 +1413,28 @@ export class Store {
     return deck
   }
 
+  /**
+   * Saves what Projector 1 shows, with its marks, as a PNG picture: the save dialog starts in the
+   * deck's folder with the name "<deck> - slide <n>.png". filePath (the end-to-end test) skips the dialog.
+   */
+  async savePicture(filePath?: string): Promise<string | null> {
+    const onAir = this.onAir()
+    const wc = onAir?.view.webContents
+    if (!onAir || !wc || wc.isDestroyed()) return null
+    const image = await wc.capturePage()
+    if (image.isEmpty()) return null
+    let target = filePath
+    if (!target) {
+      const base = onAir.deck ? `${onAir.deck.name} - slide ${onAir.shownIndex() + 1}` : (onAir.capture?.name ?? 'Presenter').replace(/[\\/:*?"<>|]/g, '-')
+      const folder = onAir.deck ? path.dirname(onAir.deck.path) : app.getPath('pictures')
+      const r = await dialog.showSaveDialog(this.consoleWin.win, { title: this.strings().savePicture, defaultPath: path.join(folder, `${base}.png`), filters: [{ name: 'PNG', extensions: ['png'] }] })
+      if (r.canceled || !r.filePath) return null
+      target = r.filePath
+    }
+    fs.writeFileSync(target, image.toPNG())
+    return target
+  }
+
   /** Where Open deck starts: the folder of the deck opened last (any way: dialog, drop, Recent). */
   deckFolder(): string | undefined {
     if (this.lastFolder && fs.existsSync(this.lastFolder)) return this.lastFolder

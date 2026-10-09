@@ -82,7 +82,8 @@ const api: ConsoleApi = {
   mirrorMode: (mode) => ipcRenderer.send('console:mirror-mode', mode),
   guide: () => ipcRenderer.invoke('console:guide'),
   copyText: (text) => ipcRenderer.send('console:copy-text', text),
-  saveGuideFile: (which) => ipcRenderer.invoke('console:save-guide-file', which)
+  saveGuideFile: (which) => ipcRenderer.invoke('console:save-guide-file', which),
+  savePicture: () => ipcRenderer.invoke('console:save-picture')
 }
 
 contextBridge.exposeInMainWorld('presenter', api)
