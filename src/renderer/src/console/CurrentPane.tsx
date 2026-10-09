@@ -2,7 +2,7 @@ import type { AppState, OutputView, PreviewRect } from '../../../shared/types'
 import type { DrawerTab } from './Drawer'
 import { screenLabel, useT } from './i18n'
 import { InkToolbar, MirrorView } from './Ink'
-import { Btn, Milestones, PageText, ZoomControl } from './ui'
+import { Btn, goToSlide, Milestones, PageText, ZoomControl } from './ui'
 import { ViewSlot } from './ViewSlot'
 
 const layoutCurrent = (rect: PreviewRect | null): void => window.presenter.layoutCurrent(rect)
@@ -88,6 +88,14 @@ export function CurrentPane(props: {
           <PageText o={projector} />
         </span>
         <span className="min-w-0 truncate text-base font-semibold">{projector.title}</span>
+        {state.resumedAt !== null && (
+          <span className="flex shrink-0 items-center gap-1 rounded-full bg-accent/15 py-0.5 pr-0.5 pl-3 text-sm text-tint" title={t.resumedTitle}>
+            {t.resumed(state.resumedAt + 1)}
+            <button type="button" onClick={() => goToSlide(0, state.onAirId ?? 'projector')} className="rounded-full px-2 py-0.5 hover:bg-accent/20">
+              {t.resumedFirst}
+            </button>
+          </span>
+        )}
         <Milestones state={state} index={projector.shownIndex} />
       </div>
     </section>

@@ -225,6 +225,19 @@ try {
   await waitFor('Esc on the floating toolbar leaves the arrow', (s) => s.ink.tool === 'pointer')
   console.log('ok 7d Ctrl+Z and Esc on a slide and on the floating toolbar')
 
+  // 7g. A deck opens again on the page it showed last (within 3 hours), with a notice; a page move ends the notice.
+  await call(() => globalThis.__presenter.navigate({ type: 'goto', index: 4 }))
+  s = await waitFor('on slide 5', (s) => out(s, 'projector').shownIndex === 4)
+  await sleep(300)
+  await call((_e, p) => globalThis.__presenter.openMainDeck(p), UXD_DECK)
+  s = await waitFor('opened again on slide 5', (s) => out(s, 'projector').shownIndex === 4 && s.resumedAt === 4, 20000)
+  await call(() => globalThis.__presenter.navigate({ type: 'first' }))
+  s = await waitFor('Go to slide 1 ends the notice', (s) => out(s, 'projector').shownIndex === 0 && s.resumedAt === null)
+  console.log('ok 7g a deck opens again on the page it showed last')
+  // Back to slide 6, where the next steps expect the deck.
+  await call(() => globalThis.__presenter.navigate({ type: 'goto', index: 5 }))
+  s = await waitFor('back on slide 6', (s) => out(s, 'projector').shownIndex === 5)
+
   // 7f. Black or white projectors (B / W) and keeping the screens awake.
   assert.equal(await call(() => globalThis.__presenter.keepsAwake()), false, 'nothing keeps the screens awake while nothing runs')
   await call(() => globalThis.__presenter.timerStart(60))
@@ -418,7 +431,7 @@ try {
     await call(() => globalThis.__presenter.stopProjecting())
     console.log('ok 11 overlay')
 
-    // 12. Zoom is remembered per deck file.
+    // 12. Zoom is remembered per deck file (and the deck opens again on the page it showed last).
     await call((_e, p) => globalThis.__presenter.openMainDeck(p), UXD_DECK)
     s = await waitFor('zoom remembered', (s) => out(s, 'projector').zoomPercent === 105 && out(s, 'next').zoomPercent === 105)
     await press('Control+Digit0')

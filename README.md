@@ -69,6 +69,8 @@ The **📘 Guide** in the app has the same help in two parts: **1 · Use Present
 
 ## Turn pages
 
+- A deck you open again within 3 hours (for example after a restart in class) opens on the slide it showed last; a note says so, with **Go to slide 1**. Later it opens on slide 1.
+
 - A clicker, the arrow keys, PageUp / PageDown and Space turn pages. Home and End go to the first and last page.
 - **The selected card turns.** If it is **Linked**, every linked card turns with it; if not, it turns alone.
 - Select a card by clicking it, or by clicking its picture. The selected card has a blue border.

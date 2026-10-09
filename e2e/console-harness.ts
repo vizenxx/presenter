@@ -53,7 +53,8 @@ function sampleState(projecting: boolean, crowd = false, theme: UiTheme = 'dark'
     deckStatus: { state: 'ready' },
     ink: { tool: 'pen', color: '#ef4444' },
     theme,
-    blank: null
+    blank: null,
+    resumedAt: null
   }
 }
 

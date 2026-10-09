@@ -200,6 +200,8 @@ export interface AppState {
   theme: UiTheme | null
   /** The projectors are black or white (B / W); null = the slides show. */
   blank: 'black' | 'white' | null
+  /** The main deck opened again on the page it showed last (0-based), for a short notice; null otherwise. */
+  resumedAt: number | null
 }
 
 export type NavAction =

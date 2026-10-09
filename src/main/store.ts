@@ -26,6 +26,7 @@ import { startupLog } from './startupLog'
 import { WindowsHelper, windowHandle } from './windowsHelper'
 import { WindowTools } from './windowTools'
 import { rememberZoom, zoomFor } from './zoomMemory'
+import { rememberPages, resumePage } from './pageMemory'
 import { loadTheme, saveTheme, themeBackground } from './themeMemory'
 import { loadWarnings, saveWarnings } from './timerMemory'
 import { loadMyTimer, saveMyTimer } from './myTimerMemory'
@@ -85,6 +86,9 @@ export class Store {
   private speaker: SpeakerTimerView = { mode: 'up', minutes: 45, startedAt: null, heldMs: 0, periods: T.cleanPeriods(T.DEFAULT_PERIODS), clockExtra: null }
   private theme: UiTheme | null = null
   private warnings: T.TimerWarning[] = T.DEFAULT_WARNINGS.map((w) => ({ ...w }))
+  /** The main deck opened again on the page it showed last (0-based); null after the next page move. */
+  private resumed: number | null = null
+  private resumedTimer: ReturnType<typeof setTimeout> | null = null
   /** Black or white projectors (B / W); null = the slides show. */
   private blank: BlankKind | null = null
   /** Keeps the screens from sleeping while a class needs them. */
@@ -200,10 +204,13 @@ export class Store {
     this.scene('projector').apply({ t: 'clear' })
     this.inkPage = 0
     const zoom = zoomFor(deck.path)
-    this.projector().index = 0
+    // A restart in class goes back to the page shown last (within 3 hours); otherwise page 1.
+    const start = resumePage(deck.path) ?? 0
+    this.projector().index = start
+    this.setResumed(start > 0 ? start : null)
     for (const o of this.outputs.values()) {
       if (o.kind === 'preview' || (o.kind === 'window' && !o.followsMain)) continue
-      if (o.kind === 'window') o.index = 0
+      if (o.kind === 'window') o.index = start
       o.setZoomPercent(zoom)
       o.load(deck, prepared)
     }
@@ -265,7 +272,7 @@ export class Store {
     const n = this.screenSeq++
     const id = `screen-${n}`
     // A new content waits (it opens no window); its card's projector menu shows it somewhere.
-    const o = this.createOutput(id, n, 'window', sameDeck ? this.projector().index : 0)
+    const o = this.createOutput(id, n, 'window', sameDeck ? this.projector().index : (resumePage(deck.path) ?? 0))
     o.followsMain = sameDeck
     o.setZoomPercent(zoomFor(deck.path))
     o.load(deck, prepared)
@@ -695,7 +702,16 @@ export class Store {
     this.navigate(intentToAction(intent))
   }
 
+  /** The "continued at page n" notice in the console: until the next page move, at most 30 seconds. */
+  private setResumed(index: number | null): void {
+    this.resumed = index
+    if (this.resumedTimer) clearTimeout(this.resumedTimer)
+    this.resumedTimer = index === null ? null : setTimeout(() => this.setResumed(null), 30_000)
+    this.emit()
+  }
+
   navigate(action: NavAction): void {
+    if (this.resumed !== null) this.setResumed(null)
     const selected = this.outputs.get(this.selectedId)
     // The selected next preview turns alone: the teacher looks ahead; students see nothing change.
     if (selected?.kind === 'preview') {
@@ -876,7 +892,8 @@ export class Store {
       deckStatus: this.deckStatus,
       ink: this.inkSettings,
       theme: this.theme,
-      blank: this.blank
+      blank: this.blank,
+      resumedAt: this.resumed
     }
   }
 
@@ -1101,6 +1118,8 @@ export class Store {
   }
 
   private afterMove(): void {
+    // Each deck file remembers its page, for a restart in class.
+    rememberPages([...this.outputs.values()].filter((o) => o.deck && o.kind !== 'preview').map((o) => ({ path: (o.deck as DeckRef).path, index: o.shownIndex() })))
     this.clearInkIfPageChanged()
     this.followPreview()
     if (this.timer.status === 'idle') this.timer = T.reset(this.timer, this.defaultDuration())
