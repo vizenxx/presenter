@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { parseNameList } from '../../../shared/roller'
 import type { AppState, RollerView } from '../../../shared/types'
 import { useT } from './i18n'
-import { Btn } from './ui'
+import { Btn, NumberField } from './ui'
 
 interface Draft {
   id: string | null
@@ -67,6 +67,34 @@ function ListEditor({ draft, onDone }: { draft: Draft; onDone: () => void }) {
           </Btn>
         )}
       </div>
+    </div>
+  )
+}
+
+/** Random groups of the active list: how many groups, then Make groups; they show on the students' screens. */
+function GroupsMaker({ r, audience }: { r: RollerView; audience: boolean }) {
+  const t = useT()
+  const [count, setCount] = useState(4)
+  const most = Math.max(2, r.people.length)
+  return (
+    <div className="flex flex-col gap-2 rounded-card bg-panel-2 p-3">
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-semibold">{t.groupsTitle}</span>
+        <NumberField value={Math.min(count, most)} min={2} max={most} onChange={setCount} title={t.groupsCount} className="ml-auto w-12 bg-panel" />
+        <Btn tone="primary" disabled={r.people.length < 2} onClick={() => window.presenter.rollerGroups(Math.min(count, most))}>
+          {t.groupsMake}
+        </Btn>
+      </div>
+      {r.groups && (
+        <ol className="flex flex-col gap-1 text-sm">
+          {r.groups.map((names, i) => (
+            <li key={i}>
+              <span className="font-semibold text-tint">{t.groupN(i + 1)}</span> <span className="select-text">{names.join(', ')}</span>
+            </li>
+          ))}
+        </ol>
+      )}
+      {r.groups && !audience && <p className="text-sm text-muted">{t.noAudienceGroups}</p>}
     </div>
   )
 }
@@ -142,6 +170,8 @@ export function RollerPanel({ state }: { state: AppState }) {
         <input type="checkbox" checked={r.superLucky} onChange={(e) => window.presenter.rollerSetSuperLucky(e.target.checked)} className="mt-0.5 h-4 w-4 accent-link" />
         <span>{t.superLucky}</span>
       </label>
+
+      <GroupsMaker r={r} audience={audience} />
 
       <h3 className="text-sm font-semibold text-muted">{t.listCount(r.people.length)}</h3>
       <ul className="flex flex-col gap-0.5">

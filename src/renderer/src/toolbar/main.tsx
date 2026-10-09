@@ -66,7 +66,7 @@ function Toolbar() {
   const clockMode = !!state && state.speaker.mode === 'clock'
   const running = !!state && (state.speaker.startedAt !== null || (clockMode && clockNow(state.speaker, Date.now()).phase === 'during'))
   const now = useNow(running || clockMode)
-  const face = useRollFace(state?.roller ?? { lists: [], activeListId: null, activeText: '', people: [], superLucky: false, roll: null, showing: false })
+  const face = useRollFace(state?.roller ?? { lists: [], activeListId: null, activeText: '', people: [], superLucky: false, roll: null, showing: false, groups: null })
 
   // Keys while the toolbar has the keyboard (it takes it while you draw on a window): Esc returns
   // to the pointer, Ctrl+Z (⌘Z) undoes, Delete clears, P H R A L E pick a tool. Any key stops a ringing alarm.

@@ -160,6 +160,7 @@ Click **🎲 Name picker** (top bar). Choose a list and click **🎲 Roll**: the
 - **Picked so far: X of Y** counts the picks; **↺ Reset** (after a confirmation) makes everyone unpicked again. Picks last while the app is open.
 - The first start has a sample list: click **Edit** and paste your class (one person per line; a number in front is optional). **New** makes another list. Lists are saved.
 - Without projecting, only you see the roll (in the console, or next to **Roll** on the floating toolbar).
+- **Random groups** (in the Name picker): choose how many groups and click **Make groups**. Everyone in the list is in one group; group sizes differ by at most one. The groups show on the projectors (any key or click hides them) and stay listed in the console.
 
 ## Light or dark look
 

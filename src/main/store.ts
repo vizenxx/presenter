@@ -502,6 +502,17 @@ export class Store {
     this.emit()
   }
 
+  /** Random groups of the active list: on every students' screen, and in the console's picker. */
+  rollerGroups(count: number): void {
+    const groups = this.roller.groups(Number(count))
+    if (groups) {
+      const targets = this.audienceRollers()
+      targets.forEach((overlay, i) => overlay.showGroups(groups, i === 0))
+      this.roller.showing = targets.length > 0
+    }
+    this.emit()
+  }
+
   rollerHide(): void {
     this.projectorRoller.hide()
     for (const x of this.extras.values()) x.roller.hide()

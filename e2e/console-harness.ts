@@ -13,7 +13,7 @@ const OUT = path.join(ROOT, 'e2e', 'out')
 const STUB = path.join(OUT, 'harness', 'console-stub-preload.cjs')
 const AI_REQUEST = aiRequestText(fs.readFileSync(path.join(ROOT, 'docs', 'ai-integration.md'), 'utf8'))
 /** Every ConsoleApi method (contextBridge copies plain objects only, so no Proxy). */
-const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "listWindows", "addWindowScreen", "setTheme", "timerWarnings", "speakerAdjust", "timerAdjust", "timerSet", "speakerPeriods", "setBlank", "savePicture", "addWhiteboard"]
+const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "listWindows", "addWindowScreen", "setTheme", "timerWarnings", "speakerAdjust", "timerAdjust", "timerSet", "speakerPeriods", "setBlank", "savePicture", "addWhiteboard", "rollerGroups"]
 
 app.disableHardwareAcceleration()
 // Each screenshot closes its window; keep the app alive between them.
@@ -49,7 +49,7 @@ function sampleState(projecting: boolean, crowd = false, theme: UiTheme = 'dark'
     projecting,
     projectorSize: { width: 1920, height: 1080 },
     previewSize: { width: 1920, height: 1080 },
-    roller: { lists: [{ id: 'l', name: 'Class list', count: 6 }], activeListId: 'l', activeText: '', people: ['Ann Lee', 'Bo Chen', 'Cai Dorji', 'Dema Wangmo', 'Eli Tashi', 'Fay Zangpo'].map((name, i) => ({ id: `1225010${i}`, name, wins: [1, 0, 2, 0, 0, 0][i] })), superLucky: true, roll: null, showing: false },
+    roller: { lists: [{ id: 'l', name: 'Class list', count: 6 }], activeListId: 'l', activeText: '', people: ['Ann Lee', 'Bo Chen', 'Cai Dorji', 'Dema Wangmo', 'Eli Tashi', 'Fay Zangpo'].map((name, i) => ({ id: `1225010${i}`, name, wins: [1, 0, 2, 0, 0, 0][i] })), superLucky: true, roll: null, showing: false, groups: null },
     deckStatus: { state: 'ready' },
     ink: { tool: 'pen', color: '#ef4444' },
     theme,
@@ -342,6 +342,32 @@ async function clockTimes(): Promise<void> {
   await wait(300)
 }
 
+/** The students' screen with random groups (23 people in 5 groups), at 1280 x 720. */
+async function groupsShot(): Promise<void> {
+  const stub = path.join(OUT, 'harness', 'roller-stub-preload.cjs')
+  const names = Array.from({ length: 23 }, (_, i) => `Student ${String.fromCharCode(65 + (i % 26))}${i + 1} Wangmo`)
+  const groups = [0, 1, 2, 3, 4].map((g) => names.filter((_, i) => i % 5 === g))
+  fs.writeFileSync(stub, `const { contextBridge } = require('electron')
+contextBridge.exposeInMainWorld('roller', {
+  onPlay: () => {},
+  onGroups: (cb) => setTimeout(() => cb(${JSON.stringify(groups)}, false), 100),
+  onHide: () => {},
+  pointer: () => {}
+})
+`)
+  const win = new BrowserWindow({ show: false, width: 1280, height: 720, useContentSize: true, backgroundColor: '#ffffff', webPreferences: { preload: stub, contextIsolation: true, sandbox: true, offscreen: true } })
+  await win.loadFile(path.join(ROOT, 'out', 'renderer', 'roller.html'))
+  await wait(1500)
+  const shown = await win.webContents.executeJavaScript(`document.querySelectorAll('.group').length`)
+  if (shown !== 5) throw new Error(`the students' screen shows ${shown} groups`)
+  const cut = await win.webContents.executeJavaScript(`[...document.querySelectorAll('.group')].some((g) => g.getBoundingClientRect().bottom > innerHeight)`)
+  if (cut) throw new Error('a group runs off the students screen')
+  fs.writeFileSync(path.join(OUT, 'roller-groups.png'), (await win.webContents.capturePage()).toPNG())
+  console.log('ok random groups on the students screen: 5 groups fit')
+  win.destroy()
+  await wait(300)
+}
+
 /** The floating toolbar's ⏱ settings: the same Set as the console, and one Start. */
 async function toolbarTimer(): Promise<void> {
   const state = sampleState(false, true)
@@ -369,6 +395,7 @@ app.whenReady().then(async () => {
   try {
     await inputs()
     await toolbarTimer()
+    await groupsShot()
     await shot(false)
     await shot(true)
     await shot(false, 'guide')

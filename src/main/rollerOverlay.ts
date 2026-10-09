@@ -19,6 +19,14 @@ export class RollerOverlay {
     wc.send('roller:play', payload)
   }
 
+  /** Random groups on the students' screen (sound: this screen plays the landing sound). */
+  showGroups(groups: string[][], sound: boolean): void {
+    const wc = this.view.webContents
+    if (wc.isDestroyed()) return
+    this.view.setVisible(true)
+    wc.send('roller:groups', groups, sound)
+  }
+
   hide(): void {
     const wc = this.view.webContents
     if (wc.isDestroyed()) return

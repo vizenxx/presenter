@@ -8,6 +8,9 @@ const bName = $<HTMLDivElement>('bName')
 const bId = $<HTMLDivElement>('bId')
 const bBadge = $<HTMLDivElement>('bBadge')
 const count = $<HTMLDivElement>('count')
+const groupsBox = $<HTMLDivElement>('groups')
+const eyebrow = $<HTMLDivElement>('eyebrow')
+const title = $<HTMLHeadingElement>('title')
 let timers: number[] = []
 
 const badgeText = (wins: number): string => (wins > 1 ? `Lucky × ${wins}` : 'Lucky')
@@ -49,6 +52,8 @@ function card(name: string, id: string, winsBefore: number): HTMLDivElement {
 
 window.roller.onPlay((play: RollerPlay) => {
   clearTimers()
+  eyebrow.textContent = 'Lucky Roller'
+  title.textContent = "Who's the Lucky One?"
   const { cols, nameSize } = layoutFor(play.people.length)
   grid.style.setProperty('--cols', String(cols))
   grid.style.setProperty('--name-size', nameSize)
@@ -89,6 +94,36 @@ window.roller.onPlay((play: RollerPlay) => {
       }, Math.max(0, play.startAt + step.at - now))
     )
   })
+})
+
+/** Random groups: one card per group with its names; sized so every group fits on one screen. */
+window.roller.onGroups((groups: string[][], sound: boolean) => {
+  clearTimers()
+  eyebrow.textContent = 'Random groups'
+  title.textContent = `${groups.length} groups`
+  const people = groups.reduce((n, g) => n + g.length, 0)
+  count.textContent = `${people} people`
+  const cols = groups.length <= 4 ? groups.length : groups.length <= 6 ? 3 : groups.length <= 8 ? 4 : 5
+  const perGroup = Math.max(...groups.map((g) => g.length))
+  const rows = Math.ceil(groups.length / cols)
+  groupsBox.style.setProperty('--gcols', String(cols))
+  groupsBox.style.setProperty('--gname-size', `${Math.max(0.9, Math.min(2.2, 60 / (perGroup * rows + rows * 2)))}vw`)
+  groupsBox.replaceChildren(
+    ...groups.map((names, i) => {
+      const box = document.createElement('section')
+      box.className = 'group'
+      box.style.animationDelay = `${i * 0.08}s`
+      const h = document.createElement('h2')
+      h.textContent = `Group ${i + 1}`
+      const list = document.createElement('ul')
+      list.append(...names.map((name) => Object.assign(document.createElement('li'), { textContent: name })))
+      box.append(h, list)
+      return box
+    })
+  )
+  stage.dataset['phase'] = 'groups'
+  stage.hidden = false
+  if (sound) ding()
 })
 
 window.roller.onHide(() => {

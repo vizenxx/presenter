@@ -1,7 +1,7 @@
 import { app } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
-import { parseNameList, pickWinner, rollPath, type RollerPerson } from '../shared/roller'
+import { makeGroups, parseNameList, pickWinner, rollPath, type RollerPerson } from '../shared/roller'
 import type { RollerPersonView, RollerRoll, RollerView } from '../shared/types'
 
 interface NameList {
@@ -37,6 +37,8 @@ export class RollerController {
   private people: RollerPerson[] = []
   private readonly winsByList = new Map<string, number[]>()
   private current: RollerRoll | null = null
+  /** The last random groups (names), until another roll, list or reset. */
+  private groupsMade: string[][] | null = null
   private rollSeq = 0
 
   /** names() gives the default and untitled list names in the chosen language. */
@@ -50,6 +52,7 @@ export class RollerController {
     const winner = pickWinner(wins, this.saved.superLucky)
     if (winner === null) return null
     wins[winner]++
+    this.groupsMade = null
     this.current = { rollId: ++this.rollSeq, path: rollPath(this.people.length, winner), winner, startAt: Date.now() + 150 }
     return this.current
   }
@@ -64,6 +67,15 @@ export class RollerController {
   reset(): void {
     this.winsByList.set(this.activeKey(), this.people.map(() => 0))
     this.current = null
+    this.groupsMade = null
+  }
+
+  /** Random groups of the active list (names); null when the list is empty. */
+  groups(count: number): string[][] | null {
+    if (this.people.length === 0) return null
+    this.groupsMade = makeGroups(this.people.length, count).map((g) => g.map((i) => this.people[i].name))
+    this.current = null
+    return this.groupsMade
   }
 
   setSuperLucky(on: boolean): void {
@@ -116,7 +128,8 @@ export class RollerController {
       people: this.peopleView(),
       superLucky: this.saved.superLucky,
       roll: this.current,
-      showing: this.showing
+      showing: this.showing,
+      groups: this.groupsMade
     }
   }
 
@@ -142,6 +155,7 @@ export class RollerController {
     const list = this.activeList()
     this.people = list ? parseNameList(list.text) : []
     this.current = null
+    this.groupsMade = null
   }
 
   private load(): Saved {

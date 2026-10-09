@@ -79,3 +79,19 @@ export function rollPath(count: number, winner: number, random: () => number = M
   }
   return path
 }
+
+/**
+ * Random groups: everyone in the list once, in groups whose sizes differ by at most one.
+ * Returns the people's places in the list, group by group.
+ */
+export function makeGroups(count: number, groups: number, random: () => number = Math.random): number[][] {
+  const n = Math.max(1, Math.min(Math.max(1, count), Math.round(groups) || 1))
+  const order = Array.from({ length: count }, (_, i) => i)
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1))
+    ;[order[i], order[j]] = [order[j], order[i]]
+  }
+  const result: number[][] = Array.from({ length: n }, () => [])
+  order.forEach((person, k) => result[k % n].push(person))
+  return result
+}

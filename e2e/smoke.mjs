@@ -413,6 +413,14 @@ try {
   await call((_e, id) => globalThis.__presenter.removeScreen(id), board.id)
   console.log('ok 8d whiteboard')
 
+  // 8e. Random groups: everyone once, sizes differ by at most one.
+  await call(() => globalThis.__presenter.rollerGroups(3))
+  s = await waitFor('groups made', (s) => Array.isArray(s.roller.groups) && s.roller.groups.length === 3)
+  const sizes = s.roller.groups.map((g) => g.length)
+  assert.equal(sizes.reduce((a, b) => a + b, 0), s.roller.people.length, 'everyone is in a group')
+  assert.ok(Math.max(...sizes) - Math.min(...sizes) <= 1, 'group sizes differ by at most one')
+  console.log('ok 8e random groups')
+
   // Steps 9-15 show the projector window and capture the desktop.
   if (!HEADLESS) {
     // 9. Screenshots before projecting: console DOM, and the real desktop with the live views.

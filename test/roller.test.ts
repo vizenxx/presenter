@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseNameList, pickWinner, rollPath, rollWeight, ROLL_MS } from '../src/shared/roller'
+import { makeGroups, parseNameList, pickWinner, rollPath, rollWeight, ROLL_MS } from '../src/shared/roller'
 
 /** Deterministic random sequence for tests. */
 const seq = (...values: number[]): (() => number) => {
@@ -67,5 +67,25 @@ describe('rollPath', () => {
   it('handles one person and an empty list', () => {
     expect(rollPath(1, 0)).toEqual([{ index: 0, at: 0 }])
     expect(rollPath(0, 0)).toEqual([])
+  })
+})
+
+describe('makeGroups', () => {
+  it('puts everyone in exactly one group, sizes differing by at most one', () => {
+    const groups = makeGroups(23, 4)
+    expect(groups).toHaveLength(4)
+    expect(groups.flat().sort((a, b) => a - b)).toEqual(Array.from({ length: 23 }, (_, i) => i))
+    const sizes = groups.map((g) => g.length)
+    expect(Math.max(...sizes) - Math.min(...sizes)).toBeLessThanOrEqual(1)
+  })
+  it('never makes more groups than people, nor fewer than one', () => {
+    expect(makeGroups(3, 10)).toHaveLength(3)
+    expect(makeGroups(5, 0)).toHaveLength(1)
+  })
+  it('mixes the order', () => {
+    const seq = [0.1, 0.9, 0.5, 0.3, 0.7, 0.2]
+    let k = 0
+    const groups = makeGroups(6, 2, () => seq[k++ % seq.length])
+    expect(groups.flat()).not.toEqual([0, 2, 4, 1, 3, 5])
   })
 })

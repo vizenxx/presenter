@@ -146,8 +146,10 @@ export interface RollerView {
   people: RollerPersonView[]
   superLucky: boolean
   roll: RollerRoll | null
-  /** The roll is on the students' screens right now. */
+  /** The roll (or the groups) is on the students' screens right now. */
   showing: boolean
+  /** The last random groups (names), until another roll, list or reset. */
+  groups: string[][] | null
 }
 
 /** What a students' screen needs to play one roll. */
@@ -274,6 +276,8 @@ export interface ConsoleApi {
   rollerRoll(): void
   rollerHide(): void
   rollerReset(): void
+  /** Random groups of the active list, shown on the students' screens. */
+  rollerGroups(count: number): void
   rollerSetSuperLucky(on: boolean): void
   rollerSelectList(id: string): void
   /** id null = a new list. */

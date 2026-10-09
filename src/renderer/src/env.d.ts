@@ -4,7 +4,7 @@ declare global {
   interface Window {
     presenter: ConsoleApi
     overlay: { onTimer(cb: (t: TimerView) => void): void; pointer(): void }
-    roller: { onPlay(cb: (play: RollerPlay) => void): void; onHide(cb: () => void): void; pointer(): void }
+    roller: { onPlay(cb: (play: RollerPlay) => void): void; onGroups(cb: (groups: string[][], sound: boolean) => void): void; onHide(cb: () => void): void; pointer(): void }
   }
 }
 
