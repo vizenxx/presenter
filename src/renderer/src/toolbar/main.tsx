@@ -81,7 +81,8 @@ function Toolbar() {
         return
       }
       const action = inkKeyAction(e.key, { control: e.ctrlKey, alt: e.altKey, meta: e.metaKey }, IS_MAC, tool)
-      if (!action) return
+      // Text is typed on slides only, not on a program window.
+      if (!action || (action.type === 'tool' && action.tool === 'text')) return
       e.preventDefault()
       if (action.type === 'undo') window.presenter.inkOp({ t: 'undo' }, false)
       else if (action.type === 'clear') window.presenter.inkOp({ t: 'clear' }, false)
@@ -129,7 +130,7 @@ function Toolbar() {
         ) : (
           <>
             <span className="flex items-center gap-0.5" title={target ? t.toolbarFor(screenLabel(t, target)) : undefined}>
-              {INK_TOOLS.map((name) => (
+              {INK_TOOLS.filter((name) => name !== 'text').map((name) => (
                 <button key={name} type="button" title={inkToolTitle(t, name)} onClick={() => window.presenter.setInkTool(name)} className={`${ICON_BTN} ${tool === name ? 'bg-accent text-white' : ''}`}>
                   <Icon name={name} />
                 </button>

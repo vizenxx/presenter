@@ -5,6 +5,7 @@ export const INK_ICONS = {
   highlighter: '<path d="M9 11.5l-4.5 4.5v3.5H8l4.5-4.5"/><path d="M9 11.5l6.5-6.5 3.5 3.5-6.5 6.5z"/><path d="M4 21.5h8"/>',
   rect: '<rect x="3.5" y="5" width="17" height="14" rx="2" stroke-dasharray="3.5 2.5"/>',
   arrow: '<path d="M5 19L19 5"/><path d="M10.5 5H19v8.5"/>',
+  text: '<path d="M5 7V5h14v2"/><path d="M12 5v14"/><path d="M9 19h6"/>',
   laser: '<circle cx="12" cy="12" r="3.5" fill="currentColor"/><circle cx="12" cy="12" r="8" opacity=".4"/>',
   zoom: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/><path d="M10.5 7.5v6M7.5 10.5h6"/>',
   eraser: '<path d="M8 20h12"/><path d="M5.5 15.5l8.8-8.8a2 2 0 012.8 0l2.2 2.2a2 2 0 010 2.8L12.5 18H8z"/>',

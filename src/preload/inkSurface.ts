@@ -15,7 +15,7 @@ interface SurfaceSettings extends InkSettings {
 }
 
 const PALETTE_IDLE_MS = 2500
-const CURSORS: Record<InkTool, string> = { pointer: 'default', pen: 'crosshair', highlighter: 'crosshair', rect: 'crosshair', arrow: 'crosshair', laser: 'none', eraser: 'cell', zoom: 'zoom-in' }
+const CURSORS: Record<InkTool, string> = { pointer: 'default', pen: 'crosshair', highlighter: 'crosshair', rect: 'crosshair', arrow: 'crosshair', text: 'text', laser: 'none', eraser: 'cell', zoom: 'zoom-in' }
 
 const CSS = `
   :host { all: initial; }
@@ -39,16 +39,17 @@ export function mountInkSurface(): void {
   host.style.cssText = 'position:fixed;inset:0;z-index:2147483647;pointer-events:none;display:none;'
   const root = host.attachShadow({ mode: 'closed' })
   const tool = (name: InkTool): string => `<button data-tool="${name}" title="${name}">${inkSvg(name as InkIconName)}</button>`
-  root.innerHTML = `<style>${CSS}</style><canvas></canvas>
+  root.innerHTML = `<style>${CSS}</style><canvas></canvas><div class="text-host"></div>
     <div class="palette">
-      <div class="row">${INK_TOOLS.slice(0, 4).map(tool).join('')}</div>
-      <div class="row">${INK_TOOLS.slice(4).map(tool).join('')}</div>
+      <div class="row">${INK_TOOLS.slice(0, 5).map(tool).join('')}</div>
+      <div class="row">${INK_TOOLS.slice(5).map(tool).join('')}</div>
       <div class="row">${INK_COLORS.slice(0, 3).map((c) => `<button class="swatch" data-color="${c}" style="background:${c}"></button>`).join('')}</div>
       <div class="row">${INK_COLORS.slice(3).map((c) => `<button class="swatch" data-color="${c}" style="background:${c}"></button>`).join('')}</div>
       <div class="row"><button data-action="undo">${inkSvg('undo')}</button><button data-action="clear">${inkSvg('clear')}</button></div>
     </div>`
   const canvas = root.querySelector('canvas') as HTMLCanvasElement
   const palette = root.querySelector('.palette') as HTMLDivElement
+  const textHost = root.querySelector('.text-host') as HTMLDivElement
   const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
 
   let frame = 0
@@ -105,7 +106,8 @@ export function mountInkSurface(): void {
 
   const apply = (): void => {
     host.style.display = settings.active ? 'block' : 'none'
-    const drawing = settings.tool !== 'pointer'
+    // Text is typed on the slide only; the ink pad over a program window leaves the clicks to the window.
+    const drawing = settings.tool !== 'pointer' && !(isPad && settings.tool === 'text')
     canvas.style.pointerEvents = drawing ? 'auto' : 'none'
     canvas.style.cursor = CURSORS[settings.tool]
     for (const b of root.querySelectorAll<HTMLButtonElement>('[data-tool]')) b.classList.toggle('on', b.dataset['tool'] === settings.tool)
@@ -113,7 +115,18 @@ export function mountInkSurface(): void {
     if (!settings.projecting) palette.classList.remove('show')
   }
 
-  attachInkInput({ element: canvas, settings: () => settings, scene, onOp: send })
+  attachInkInput({
+    element: canvas,
+    settings: () => settings,
+    scene,
+    onOp: send,
+    textHost: isPad ? undefined : textHost,
+    // The deck's preload tells the main process that a text is being typed, so keys are not taken for page turns.
+    onTyping: (typing) => {
+      if (typing) host.dataset['presenterTyping'] = '1'
+      else delete host.dataset['presenterTyping']
+    }
+  })
 
   // While drawing, the deck must not react to the same clicks (some decks advance on click).
   for (const type of ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'click']) {
@@ -152,8 +165,7 @@ export function mountInkSurface(): void {
     if (op.t === 'zoom') applyZoom()
   })
   ipcRenderer.on('ink:snapshot', (_e, strokes: InkStroke[]) => {
-    scene.strokes = strokes.map((s) => ({ ...s, points: [...s.points] }))
-    scene.laser = null
+    scene.replace(strokes)
     redraw()
   })
   ipcRenderer.on('ink:settings', (_e, next: SurfaceSettings) => {

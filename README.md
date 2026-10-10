@@ -124,16 +124,17 @@ The audience never sees the toolbar. It hides when you switch to the console or 
 
 ## Marks
 
-The bar above the current slide: **Pointer, Pen, Highlighter, Box, Arrow, Laser, Eraser, Zoom**, six colours, **Undo** and **Clear**.
+The bar above the current slide: **Pointer, Pen, Highlighter, Box, Arrow, Text, Laser, Eraser, Zoom**, six colours, **Undo** and **Clear**.
 
 - Draw on the console's slide picture or directly on the projector; both show the same marks at once.
 - While projecting, moving the mouse on the projector shows a small tool palette at its bottom left (it hides after a few seconds).
 - Marks stay with their slide: when you come back to a slide, its marks are there again (until the deck closes or opens again). **Clear** removes the marks of the slide shown. Marks on a program window stay until you clear them or the window leaves its projector.
 - **Arrow**: drag from where the arrow starts to where it points. The tip has an open V head.
+- **Text** (T): click the slide and type: one line. Or drag a box: the text wraps inside it and gets smaller when there is a lot of it, so it always stays in the box; at the smallest size typing stops. Click a text to change it; drag a text to move it. **Esc** (or a click elsewhere) ends the typing. The text has the colour you picked; the **Eraser** and **Undo** remove it like any mark. Letters that are shortcuts (T, B, digits …) are typed into the text while you type. Text works on slides, not on program windows.
 - **Zoom** (Z): drag a box over small text; on the projector that box fills the screen (up to 8 times larger), marks included. A click with Zoom, **Esc** or the next page shows the whole slide again. It works on PDF and PPT slides and on program windows too.
 - Hold **Shift** while you draw: the pen and the highlighter draw one straight line (any angle), the box becomes a square, the arrow turns in 45° steps.
 - **📷** (above the slide) saves the slide with its marks as a picture (PNG); the save dialog starts in the deck's folder.
-- Keys in the console and on the floating toolbar: **P** pen, **H** highlighter, **R** box, **A** arrow, **L** laser, **E** eraser, **Z** zoom, **Ctrl+Z** (⌘Z) undo, **Delete** clear.
+- Keys in the console and on the floating toolbar: **P** pen, **H** highlighter, **R** box, **A** arrow, **T** text, **L** laser, **E** eraser, **Z** zoom, **Ctrl+Z** (⌘Z) undo, **Delete** clear.
 - **Ctrl+Z** and **Esc** also work after you click on a slide (in the console or on the projector).
 - **Esc** leaves any drawing tool (back to the pointer); in the console a second **Esc** stops projecting.
 
@@ -190,7 +191,7 @@ Click **🎲 Name picker** (top bar). Choose a list and click **🎲 Roll**: the
 
 - Source: `src/`. Design: `docs/specs/`. Plans: `docs/superpowers/plans/`.
 - `npm run build` (build), `npm test` (unit tests), `npm run e2e` (end-to-end, 17 steps). With one display it opens windows and plays sounds; with a second display connected (a class may be on the projector) it runs hidden and muted, without the projecting steps. It never takes pictures of the screen. `PRESENTER_E2E_HIDDEN=1 npm run e2e` runs it hidden and muted on one display too.
-- Checks that open no window: `npm run check:viewer` (PPT/PDF), `npm run check:ink` (marks: pen, box, eraser, arrow, Shift shapes), `npm run check:frameworks` (Reveal.js, remark, impress.js, Marp, plain slides, protocol example), `npm run check:console` (console layout in the dark and the light look, menus, start screen, floating toolbar and its timer, typing in the timer boxes, the 🔔 and ± pop-ups, holding A+), `npm run check:start` (starts hidden and muted, one by one and 8 at once).
+- Checks that open no window: `npm run check:viewer` (PPT/PDF), `npm run check:ink` (marks: pen, box, eraser, arrow, Shift shapes, text), `npm run check:frameworks` (Reveal.js, remark, impress.js, Marp, plain slides, protocol example), `npm run check:console` (console layout in the dark and the light look, menus, start screen, floating toolbar and its timer, typing in the timer boxes, the 🔔 and ± pop-ups, holding A+), `npm run check:start` (starts hidden and muted, one by one and 8 at once).
 - Real conversions: `PRESENTER_CONVERT_IT=libreoffice npm test` (or `powerpoint`, or `keynote` on a Mac).
 - The LibreOffice inside the app: `node scripts/libreoffice.mjs prepare` downloads the official release (checked against its SHA-256), keeps only what turning slides into pages needs, and puts it in `vendor/` (`--from "C:/Program Files/LibreOffice"` uses an installed copy instead); `node scripts/libreoffice.mjs check` converts a test deck with click animations with it. LibreOffice is under the Mozilla Public License 2.0; its licence files go along.
 - Zips: `npm run dist:win` (Windows) and `npm run dist:mac` (only on a Mac); run `prepare` first. Without a Mac, run the **Build app zips** workflow on GitHub (Actions tab, or `gh workflow run build.yml`; a push alone does not start it): it builds the three zips and replaces the Releases page of this version (text: `.github/release-notes.md`); untick **publish** for a test build. Raise `version` in `package.json` for a new version. Icon source: `build/icon.svg` (`npx electron tools/make-icon.cjs build`).

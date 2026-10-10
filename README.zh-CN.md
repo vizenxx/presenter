@@ -124,16 +124,17 @@ Presenter 是一个解压即用的文件夹。没有安装程序，也不需要�
 
 ## 标注
 
-当前页上方有一排工具：**Pointer**（鼠标）、**Pen**（画笔）、**Highlighter**（荧光笔）、**Box**（框选）、**Arrow**（箭头）、**Laser**（红点）、**Eraser**（橡皮擦）、**Zoom**（放大镜），6 种颜色，以及 **Undo** 和 **Clear**。
+当前页上方有一排工具：**Pointer**（鼠标）、**Pen**（画笔）、**Highlighter**（荧光笔）、**Box**（框选）、**Arrow**（箭头）、**Text**（文字）、**Laser**（红点）、**Eraser**（橡皮擦）、**Zoom**（放大镜），6 种颜色，以及 **Undo** 和 **Clear**。
 
 - 在控制台的课件画面上画，或者直接在投影屏上画，两边同时显示同样的笔迹。
 - 投影时，鼠标在投影屏上移动，左下角会出现一个小工具条，几秒后自动隐藏。
 - 笔迹跟着它的那一页：翻走再翻回来，笔迹还在（直到关闭或重新打开课件）。**Clear** 只清空当前这一页。程序窗口上的笔迹一直保留，直到你点清空，或这个窗口离开它的投影。
 - **Arrow**：从箭头起点拖到它指向的位置。箭头尖是开口的 V 形。
+- **Text**（文字，T）：点一下幻灯片再打字，得到一行文字；或者拖出一个框，文字在框内自动换行，文字多时字号自动变小，所以一直在框内；到最小字号就不再接受输入。点一下已有的文字可以修改，拖动文字可以移动。**Esc**（或点别处）结束输入。文字用你选的颜色；**Eraser** 和 **Undo** 像对待其他标注一样去掉它。打字时，T、B、数字等快捷键的字母直接打进文字里。文字只能用在幻灯片上，不能用在程序窗口上。
 - **Zoom**（Z，放大镜）：在小字上拖一个框；投影上这个框放大到整个屏幕（最多 8 倍），笔迹一起放大。用 Zoom 再点一下、按 **Esc** 或翻页，回到整页。PDF、PPT 和程序窗口也可以用。
 - 画的时候按住 **Shift**：画笔和荧光笔只画一条直线（任意角度），框选变成正方形，箭头按 45° 转向。
 - 当前页上方的 **📷** 把这一页连同笔迹存成图片（PNG），保存对话框先打开课件所在的文件夹。
-- 控制台和浮动工具条的快捷键：**P** 画笔、**H** 荧光笔、**R** 框选、**A** 箭头、**L** 红点、**E** 橡皮擦、**Z** 放大镜、**Ctrl+Z**（Mac：⌘Z）撤销、**Delete** 清空。
+- 控制台和浮动工具条的快捷键：**P** 画笔、**H** 荧光笔、**R** 框选、**A** 箭头、**T** 文字、**L** 红点、**E** 橡皮擦、**Z** 放大镜、**Ctrl+Z**（Mac：⌘Z）撤销、**Delete** 清空。
 - 在课件画面上点过之后（控制台里或投影屏上），**Ctrl+Z** 和 **Esc** 也有效。
 - 任何画笔状态下按 **Esc** 都回到鼠标；在控制台里再按一次 **Esc** 停止投影。
 
@@ -190,7 +191,7 @@ Presenter 是一个解压即用的文件夹。没有安装程序，也不需要�
 
 - 源码：`src/`。设计文档：`docs/specs/`。实施计划：`docs/superpowers/plans/`。
 - 常用命令：`npm run build`（构建）、`npm test`（单元测试）、`npm run e2e`（端到端测试，17 步）。只有一块屏幕时，它会弹出窗口、发出声音；接着第二块屏幕时，它隐藏、静音运行，并跳过投影步骤。它从不截取屏幕画面。`PRESENTER_E2E_HIDDEN=1 npm run e2e` 在只有一块屏幕时也隐藏、静音运行。
-- 不开窗口的检查：`npm run check:viewer`（PPT/PDF）、`npm run check:ink`（标注：画笔、框选、橡皮擦、箭头、Shift 形状）、`npm run check:frameworks`（Reveal.js、remark、impress.js、Marp、普通 slide 网页、协议示例）、`npm run check:console`（深色和浅色界面的控制台排版、菜单、开始画面、浮动工具条及其计时器、计时器输入格打字、🔔 和 ± 弹出框、按住 A+）、`npm run check:start`（隐藏静音启动，逐个启动和 8 个同时启动）。
+- 不开窗口的检查：`npm run check:viewer`（PPT/PDF）、`npm run check:ink`（标注：画笔、框选、橡皮擦、箭头、Shift 形状、文字）、`npm run check:frameworks`（Reveal.js、remark、impress.js、Marp、普通 slide 网页、协议示例）、`npm run check:console`（深色和浅色界面的控制台排版、菜单、开始画面、浮动工具条及其计时器、计时器输入格打字、🔔 和 ± 弹出框、按住 A+）、`npm run check:start`（隐藏静音启动，逐个启动和 8 个同时启动）。
 - 真实转换测试：`PRESENTER_CONVERT_IT=libreoffice npm test`（或 `powerpoint`；Mac 上用 `keynote`）。
 - App 自带的 LibreOffice：`node scripts/libreoffice.mjs prepare` 下载官方版本（核对 SHA-256），只保留转换幻灯片需要的部分，放进 `vendor/`（加 `--from "C:/Program Files/LibreOffice"` 则改用已安装的副本）；`node scripts/libreoffice.mjs check` 用它转换一份带点击动画的测试课件。LibreOffice 使用 Mozilla Public License 2.0，它的许可文件随 App 一起提供。
 - 压缩包：`npm run dist:win`（Windows）、`npm run dist:mac`（只能在 Mac 上运行）；先运行 `prepare`。没有 Mac 时，在 GitHub 上运行 **Build app zips** 工作流（Actions 页面，或 `gh workflow run build.yml`；只推送不会自动运行），它生成三个压缩包，并替换这个版本的 Releases 页（说明文字：`.github/release-notes.md`）；测试构建时取消勾选 **publish**。发新版本时先改 `package.json` 里的 `version`。图标源文件：`build/icon.svg`。

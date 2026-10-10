@@ -11,6 +11,7 @@ export const INK_TOOL_LIST: Array<{ tool: InkTool; key: string; label: (t: Strin
   { tool: 'highlighter', key: 'H', label: (t) => t.inkHighlighter, shift: (t) => t.inkShiftLine },
   { tool: 'rect', key: 'R', label: (t) => t.inkRect, shift: (t) => t.inkShiftSquare },
   { tool: 'arrow', key: 'A', label: (t) => t.inkArrow, shift: (t) => t.inkShiftArrow },
+  { tool: 'text', key: 'T', label: (t) => t.inkText },
   { tool: 'laser', key: 'L', label: (t) => t.inkLaser },
   { tool: 'eraser', key: 'E', label: (t) => t.inkEraser },
   { tool: 'zoom', key: 'Z', label: (t) => t.inkZoom }
@@ -23,7 +24,7 @@ export function inkToolTitle(t: Strings, tool: InkTool): string {
   return entry ? t.inkToolTitle(entry.label(t), entry.key, entry.shift?.(t)) : tool
 }
 
-const CURSORS: Record<InkTool, string> = { pointer: 'pointer', pen: 'crosshair', highlighter: 'crosshair', rect: 'crosshair', arrow: 'crosshair', laser: 'none', eraser: 'cell', zoom: 'zoom-in' }
+const CURSORS: Record<InkTool, string> = { pointer: 'pointer', pen: 'crosshair', highlighter: 'crosshair', rect: 'crosshair', arrow: 'crosshair', text: 'text', laser: 'none', eraser: 'cell', zoom: 'zoom-in' }
 
 function Icon({ name }: { name: InkIconName }) {
   return <span className="grid shrink-0 place-items-center" dangerouslySetInnerHTML={{ __html: inkSvg(name, 18) }} />
@@ -33,18 +34,21 @@ function Icon({ name }: { name: InkIconName }) {
 export function InkToolbar({ ink, enabled }: { ink: InkSettings; enabled: boolean }) {
   const t = useT()
   return (
-    <div className="mb-2 flex flex-wrap items-center gap-0.5 rounded-[20px] bg-panel-2 px-1.5 py-1" title={t.inkHint}>
+    // The names show when the pane is wide enough for them; otherwise the icons alone (the name is in the tooltip).
+    <div className="@container mb-2">
+    <div className="flex flex-wrap items-center gap-0.5 rounded-[20px] bg-panel-2 px-1.5 py-1" title={t.inkHint}>
       {INK_TOOL_LIST.map(({ tool, label }) => (
         <button
           key={tool}
           type="button"
           disabled={!enabled}
           title={inkToolTitle(t, tool)}
+          aria-label={label(t)}
           onClick={() => window.presenter.setInkTool(tool)}
           className={`flex items-center gap-1 rounded-full px-1.5 py-1 text-sm disabled:opacity-40 ${ink.tool === tool ? 'bg-accent font-semibold text-white' : 'text-ink hover:bg-line'}`}
         >
           <Icon name={tool} />
-          {label(t)}
+          <span className="hidden @min-[900px]:inline">{label(t)}</span>
         </button>
       ))}
       <span className="mx-0.5 h-5 w-px bg-line" />
@@ -67,6 +71,7 @@ export function InkToolbar({ ink, enabled }: { ink: InkSettings; enabled: boolea
       <button type="button" disabled={!enabled} title={`${t.inkClear} · ${t.inkClearTitle}`} aria-label={t.inkClear} onClick={() => window.presenter.inkOp({ t: 'clear' }, false)} className="rounded-full p-1.5 text-ink hover:bg-line disabled:opacity-40">
         <Icon name="clear" />
       </button>
+    </div>
     </div>
   )
 }
@@ -133,7 +138,7 @@ export function MirrorView({ aspect, ink, fallback }: { aspect: number; ink: Ink
       })
     }
     void window.presenter.inkSnapshot().then((strokes) => {
-      scene.strokes = strokes.map((s) => ({ ...s, points: [...s.points] }))
+      scene.replace(strokes)
       redraw()
     })
     const follow = (): void => {
@@ -154,6 +159,8 @@ export function MirrorView({ aspect, ink, fallback }: { aspect: number; ink: Ink
       element: el,
       settings: () => settings.current,
       scene,
+      // The box for typing a text is placed over the slide, in the window.
+      textHost: document.body,
       onOp: (op) => {
         scene.apply(op)
         redraw()

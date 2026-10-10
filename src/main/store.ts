@@ -597,7 +597,7 @@ export class Store {
   /** Picking a colour also picks the pen when no drawing tool is active. */
   setInkColor(color: string): void {
     if (!INK_COLORS.includes(color)) return
-    const drawing = this.inkSettings.tool === 'pen' || this.inkSettings.tool === 'highlighter' || this.inkSettings.tool === 'rect'
+    const drawing = ['pen', 'highlighter', 'rect', 'arrow', 'text'].includes(this.inkSettings.tool)
     this.inkSettings = { tool: drawing ? this.inkSettings.tool : 'pen', color }
     this.sendInkSettings()
     this.emit()

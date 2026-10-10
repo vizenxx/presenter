@@ -5,12 +5,14 @@
  * applies the same small operations; nothing is sent as pixels.
  */
 
-export type InkTool = 'pointer' | 'pen' | 'highlighter' | 'rect' | 'arrow' | 'laser' | 'eraser' | 'zoom'
-export const INK_TOOLS: InkTool[] = ['pointer', 'pen', 'highlighter', 'rect', 'arrow', 'laser', 'eraser', 'zoom']
-export type StrokeTool = 'pen' | 'highlighter' | 'rect' | 'arrow'
+import { canvasMeasure, drawText, hitText, textBounds, textHalo, TEXT_CLICK_FONT, TEXT_CLICK_ROOM, TEXT_FONT_FAMILY, TEXT_FONT_WEIGHT, TEXT_LINE_HEIGHT, layoutStroke, type Measure } from './inkText'
+
+export type InkTool = 'pointer' | 'pen' | 'highlighter' | 'rect' | 'arrow' | 'text' | 'laser' | 'eraser' | 'zoom'
+export const INK_TOOLS: InkTool[] = ['pointer', 'pen', 'highlighter', 'rect', 'arrow', 'text', 'laser', 'eraser', 'zoom']
+export type StrokeTool = 'pen' | 'highlighter' | 'rect' | 'arrow' | 'text'
 
 /** Tool keys (no modifier), the same in the console and on the floating toolbar. */
-export const INK_KEYS: Record<string, InkTool> = { p: 'pen', h: 'highlighter', r: 'rect', a: 'arrow', l: 'laser', e: 'eraser', z: 'zoom' }
+export const INK_KEYS: Record<string, InkTool> = { p: 'pen', h: 'highlighter', r: 'rect', a: 'arrow', t: 'text', l: 'laser', e: 'eraser', z: 'zoom' }
 
 export type InkKeyAction = { type: 'tool'; tool: InkTool } | { type: 'undo' } | { type: 'clear' } | { type: 'pointer' }
 
@@ -35,8 +37,10 @@ export interface InkStroke {
   id: string
   tool: StrokeTool
   color: string
-  /** Flat x,y pairs; a box has exactly two corners, an arrow its start and its tip. */
+  /** Flat x,y pairs; a box has exactly two corners, an arrow its start and its tip; a text one point (a click) or two corners (a dragged box). */
   points: number[]
+  /** The words of a text mark. */
+  text?: string
 }
 
 export interface InkLaser {
@@ -47,8 +51,10 @@ export interface InkLaser {
 export type InkOp =
   | { t: 'begin'; stroke: InkStroke }
   | { t: 'extend'; id: string; points: number[] }
-  /** Replaces all points: the free corner of a box, the tip of an arrow, the end of a straight line. */
+  /** Replaces all points: the free corner of a box, the tip of an arrow, the end of a straight line, or where a text stands. */
   | { t: 'rect'; id: string; points: number[] }
+  /** Sets the words of a text mark. */
+  | { t: 'text'; id: string; text: string }
   | { t: 'erase'; ids: string[] }
   | { t: 'undo' }
   | { t: 'clear' }
@@ -63,7 +69,7 @@ export interface InkSettings {
 }
 
 /** Line width as a fraction of the slide height. */
-export const STROKE_WIDTH: Record<StrokeTool, number> = { pen: 0.005, highlighter: 0.026, rect: 0.0045, arrow: 0.006 }
+export const STROKE_WIDTH: Record<StrokeTool, number> = { pen: 0.005, highlighter: 0.026, rect: 0.0045, arrow: 0.006, text: 0 }
 const LASER_RADIUS = 0.009
 /** Arrow head: the two lines of the V, as a fraction of the slide height, and their angle to the shaft. */
 const ARROW_HEAD = 0.035
@@ -108,6 +114,17 @@ export class InkScene {
   laser: InkLaser | null = null
   /** The enlarged part ([x0, y0, x1, y1]), or null. */
   zoom: number[] | null = null
+  /** The text being typed on this surface: its own text box shows it, so it is not drawn (not shared). */
+  editing: string | null = null
+  /** Called when the strokes are replaced as a whole (another page's marks). */
+  onReplace: (() => void) | null = null
+
+  /** Replaces all marks (another page's). */
+  replace(strokes: InkStroke[]): void {
+    this.strokes = strokes.map((s) => ({ ...s, points: [...s.points] }))
+    this.laser = null
+    this.onReplace?.()
+  }
 
   apply(op: InkOp): void {
     switch (op.t) {
@@ -122,6 +139,11 @@ export class InkScene {
       case 'rect': {
         const stroke = this.find(op.id)
         if (stroke) stroke.points = [...op.points]
+        break
+      }
+      case 'text': {
+        const stroke = this.find(op.id)
+        if (stroke) stroke.text = op.text
         break
       }
       case 'erase': {
@@ -189,7 +211,8 @@ function segmentDistance(px: number, py: number, ax: number, ay: number, bx: num
  * True when (x, y) is within `radius` (fraction of the slide height) of the stroke.
  * `aspect` = width / height, so distances are measured on the real slide shape.
  */
-export function hitStroke(stroke: InkStroke, x: number, y: number, radius: number, aspect: number): boolean {
+export function hitStroke(stroke: InkStroke, x: number, y: number, radius: number, aspect: number, measure?: Measure): boolean {
+  if (stroke.tool === 'text') return measure ? hitText(stroke, x, y, radius, aspect, measure) : false
   const p = stroke.points
   const X = (v: number): number => v * aspect
   const reach = radius + STROKE_WIDTH[stroke.tool] / 2
@@ -215,7 +238,11 @@ export function hitStroke(stroke: InkStroke, x: number, y: number, radius: numbe
 
 export function drawInk(ctx: CanvasRenderingContext2D, width: number, height: number, scene: InkScene): void {
   ctx.clearRect(0, 0, width, height)
-  for (const stroke of scene.strokes) drawStroke(ctx, width, height, stroke)
+  let measure: Measure | null = null
+  for (const stroke of scene.strokes) {
+    if (stroke.tool !== 'text') drawStroke(ctx, width, height, stroke)
+    else if (stroke.id !== scene.editing) drawText(ctx, width, height, stroke, (measure ??= canvasMeasure()))
+  }
   if (scene.laser) drawLaser(ctx, width, height, scene.laser)
 }
 
@@ -299,11 +326,18 @@ export interface InkInputOptions {
   scene: InkScene
   /** Called for every change: apply locally, redraw, and send it on. */
   onOp: (op: InkOp) => void
+  /** Where the box for typing a text goes (an element of this page; the box is placed over the slide). Without it the text tool does nothing. */
+  textHost?: HTMLElement
+  /** Called when typing a text starts or ends: the page's own key handling must then leave the keys to the text. */
+  onTyping?: (typing: boolean) => void
 }
 
 const ERASER_RADIUS = 0.015
 /** The box shown while the zoom tool is dragged (never kept). */
 const ZOOM_BOX_ID = 'zoom-box'
+/** The box shown while a text box is dragged (never kept), and the smallest drag (slide heights) that counts as a box. */
+const TEXT_BOX_ID = 'text-box'
+const MIN_TEXT_BOX = 0.04
 /** A box, an arrow or a straight line shorter than this (fraction of the slide height) is dropped: it was a click. */
 const MIN_SHAPE = 0.006
 let idSeq = 0
@@ -314,6 +348,14 @@ export function attachInkInput(opts: InkInputOptions): () => void {
   let current: { id: string; tool: StrokeTool; start: [number, number]; end: [number, number]; straight: boolean } | null = null
   let erasing = false
   let zooming: { start: [number, number]; end: [number, number]; shown: boolean } | null = null
+  // The text tool: a drag makes a box, a click a line; a click on a text edits it, a drag moves it.
+  let textGesture:
+    | { kind: 'create'; start: [number, number]; end: [number, number]; shown: boolean }
+    | { kind: 'move'; id: string; start: [number, number]; origin: number[]; moved: boolean }
+    | null = null
+  let typing: { id: string; area: HTMLTextAreaElement; good: string; observer: ResizeObserver } | null = null
+  let measure: Measure | null = null
+  const measurer = (): Measure => (measure ??= canvasMeasure())
 
   const at = (e: PointerEvent): [number, number] => {
     const r = element.getBoundingClientRect()
@@ -325,8 +367,133 @@ export function attachInkInput(opts: InkInputOptions): () => void {
     return r.width / Math.max(1, r.height)
   }
   const erase = (x: number, y: number): void => {
-    const ids = scene.strokes.filter((s) => hitStroke(s, x, y, ERASER_RADIUS, aspect())).map((s) => s.id)
+    const m = scene.strokes.some((s) => s.tool === 'text') ? measurer() : undefined
+    const ids = scene.strokes.filter((s) => hitStroke(s, x, y, ERASER_RADIUS, aspect(), m)).map((s) => s.id)
     if (ids.length > 0) onOp({ t: 'erase', ids })
+  }
+
+  // ---------- text ----------
+
+  const textStroke = (id: string): InkStroke | undefined => scene.strokes.find((s) => s.id === id && s.tool === 'text')
+  const textAt = (x: number, y: number): InkStroke | undefined => {
+    for (let i = scene.strokes.length - 1; i >= 0; i--) {
+      const s = scene.strokes[i]
+      if (s.tool === 'text' && hitText(s, x, y, 0.004, aspect(), measurer())) return s
+    }
+    return undefined
+  }
+  const newId = (): string => `${Date.now().toString(36)}-${(idSeq++).toString(36)}-${Math.random().toString(36).slice(2, 6)}`
+
+  /** Puts the typing box over the text, with the font size the text has now. */
+  const place = (): void => {
+    if (!typing) return
+    const s = textStroke(typing.id)
+    if (!s) return
+    const r = element.getBoundingClientRect()
+    const H = Math.max(1, r.height)
+    const { box, layout } = layoutStroke({ ...s, text: typing.area.value }, r.width / H, measurer())
+    const st = typing.area.style
+    st.left = `${r.left + box.x * r.width}px`
+    st.top = `${r.top + box.y * H}px`
+    const w = box.click ? Math.min(box.availW, layout.width + 0.05) : box.availW
+    const h = box.click ? Math.max(layout.height, TEXT_CLICK_FONT * TEXT_LINE_HEIGHT) : box.availH
+    st.width = `${Math.max(w, 0.06) * H}px`
+    st.height = `${h * H}px`
+    st.fontSize = `${layout.font * H}px`
+    st.setProperty('-webkit-text-stroke', `${Math.max(1, layout.font * H * 0.1)}px ${textHalo(s.color)}`)
+  }
+
+  const finish = (): void => {
+    const t = typing
+    if (!t) return
+    typing = null
+    t.observer.disconnect()
+    t.area.remove()
+    scene.editing = null
+    const s = textStroke(t.id)
+    // Nothing typed: no empty mark is left behind. (A text on a page that was replaced is already kept by the page.)
+    if (s) onOp((s.text ?? '').trim() === '' ? { t: 'erase', ids: [t.id] } : { t: 'text', id: t.id, text: s.text ?? '' })
+    opts.onTyping?.(false)
+  }
+  scene.onReplace = finish
+
+  /** Typing, only while it still fits (at the smallest size); an input method's composition is judged when it ends. */
+  const accept = (): void => {
+    const t = typing
+    if (!t) return
+    const s = textStroke(t.id)
+    if (!s) {
+      finish()
+      return
+    }
+    let value = t.area.value
+    const fits = (text: string): boolean => layoutStroke({ ...s, text }, aspect(), measurer()).layout.fits
+    if (!fits(value)) {
+      // Added at the end (typing, or a paste): keep the part that fits. Anywhere else: the letter is refused.
+      let keep = t.good
+      if (value.startsWith(t.good)) {
+        let lo = t.good.length
+        let hi = value.length
+        while (lo < hi) {
+          const mid = Math.ceil((lo + hi) / 2)
+          if (fits(value.slice(0, mid))) lo = mid
+          else hi = mid - 1
+        }
+        keep = value.slice(0, lo)
+      }
+      value = keep
+      t.area.value = keep
+      t.area.setSelectionRange(keep.length, keep.length)
+    }
+    t.good = value
+    onOp({ t: 'text', id: s.id, text: value })
+    place()
+  }
+
+  const startTyping = (id: string): void => {
+    const host = opts.textHost
+    const s = textStroke(id)
+    if (!host || !s) return
+    finish()
+    const area = document.createElement('textarea')
+    area.value = s.text ?? ''
+    area.spellcheck = false
+    area.setAttribute('aria-label', 'Text')
+    area.style.cssText = [
+      'position:fixed', 'box-sizing:border-box', 'margin:0', 'padding:0', 'border:0', 'resize:none', 'overflow:hidden', 'white-space:pre-wrap', 'overflow-wrap:anywhere',
+      `font-family:${TEXT_FONT_FAMILY}`, `font-weight:${TEXT_FONT_WEIGHT}`, `line-height:${TEXT_LINE_HEIGHT}`, `color:${s.color}`, 'background:rgba(0,113,227,0.10)', 'outline:2px dashed #0071e3', 'outline-offset:3px',
+      'paint-order:stroke fill', 'caret-color:#0071e3', 'z-index:2147483647', 'pointer-events:auto'
+    ].join(';')
+    // Keys, clicks and wheel belong to the text, not to the page below.
+    for (const type of ['keydown', 'keyup', 'keypress', 'pointerdown', 'pointerup', 'mousedown', 'mouseup', 'click', 'dblclick', 'wheel']) {
+      area.addEventListener(type, (e) => {
+        e.stopPropagation()
+        if (type === 'keydown' && (e as KeyboardEvent).key === 'Escape') {
+          e.preventDefault()
+          finish()
+        }
+      })
+    }
+    area.addEventListener('input', (e) => {
+      if (!(e as InputEvent).isComposing) accept()
+      else place()
+    })
+    area.addEventListener('compositionend', accept)
+    area.addEventListener('blur', finish)
+    const observer = new ResizeObserver(place)
+    observer.observe(element)
+    typing = { id, area, good: area.value, observer }
+    scene.editing = id
+    host.appendChild(area)
+    opts.onTyping?.(true)
+    place()
+    // Redraws this surface without the text (the box shows it) and tells the others the words.
+    onOp({ t: 'text', id, text: area.value })
+    window.setTimeout(() => {
+      if (typing?.area !== area) return
+      area.focus()
+      area.setSelectionRange(area.value.length, area.value.length)
+    }, 0)
   }
 
   const down = (e: PointerEvent): void => {
@@ -347,11 +514,43 @@ export function attachInkInput(opts: InkInputOptions): () => void {
       onOp({ t: 'laser', x, y })
     } else if (tool === 'zoom') {
       zooming = { start: [x, y], end: [x, y], shown: false }
+    } else if (tool === 'text') {
+      if (!opts.textHost) return
+      finish()
+      const hit = textAt(x, y)
+      textGesture = hit ? { kind: 'move', id: hit.id, start: [x, y], origin: [...hit.points], moved: false } : { kind: 'create', start: [x, y], end: [x, y], shown: false }
     }
   }
 
   const move = (e: PointerEvent): void => {
     const { tool } = settings()
+    if (textGesture && tool === 'text') {
+      const [x, y] = at(e)
+      const g = textGesture
+      if (g.kind === 'create') {
+        g.end = [x, y]
+        const a = aspect()
+        if (Math.abs(x - g.start[0]) * a >= MIN_TEXT_BOX && Math.abs(y - g.start[1]) >= MIN_TEXT_BOX) {
+          const points = [...g.start, x, y]
+          if (!g.shown) onOp({ t: 'begin', stroke: { id: TEXT_BOX_ID, tool: 'rect', color: '#0071e3', points } })
+          else onOp({ t: 'rect', id: TEXT_BOX_ID, points })
+          g.shown = true
+        }
+        return
+      }
+      const s = textStroke(g.id)
+      if (!s) return
+      let dx = x - g.start[0]
+      let dy = y - g.start[1]
+      if (!g.moved && Math.hypot(dx * aspect(), dy) < 0.006) return
+      g.moved = true
+      // The text stays on the slide.
+      const [bx0, by0, bx1, by1] = textBounds({ ...s, points: g.origin }, aspect(), measurer())
+      dx = Math.min(Math.max(dx, -bx0), 1 - bx1)
+      dy = Math.min(Math.max(dy, -by0), 1 - by1)
+      onOp({ t: 'rect', id: g.id, points: g.origin.map((v, i) => v + (i % 2 === 0 ? dx : dy)) })
+      return
+    }
     if (zooming && tool === 'zoom') {
       zooming.end = at(e)
       const points = [...zooming.start, ...zooming.end]
@@ -393,6 +592,24 @@ export function attachInkInput(opts: InkInputOptions): () => void {
   }
 
   const up = (): void => {
+    const g = textGesture
+    textGesture = null
+    if (g) {
+      if (g.kind === 'move') {
+        // A click on a text (it did not move): edit it.
+        if (!g.moved) startTyping(g.id)
+        return
+      }
+      if (g.shown) onOp({ t: 'erase', ids: [TEXT_BOX_ID] })
+      const a = aspect()
+      const [x0, y0, x1, y1] = [Math.min(g.start[0], g.end[0]), Math.min(g.start[1], g.end[1]), Math.max(g.start[0], g.end[0]), Math.max(g.start[1], g.end[1])]
+      const box = (x1 - x0) * a >= MIN_TEXT_BOX && y1 - y0 >= MIN_TEXT_BOX
+      const points = box ? [x0, y0, x1, y1] : [Math.min(g.start[0], 1 - TEXT_CLICK_ROOM.width / a), Math.min(g.start[1], 1 - TEXT_CLICK_ROOM.height)]
+      const id = newId()
+      onOp({ t: 'begin', stroke: { id, tool: 'text', color: settings().color, points, text: '' } })
+      startTyping(id)
+      return
+    }
     const z = zooming
     zooming = null
     if (z) {
@@ -424,6 +641,8 @@ export function attachInkInput(opts: InkInputOptions): () => void {
   element.addEventListener('pointercancel', up)
   element.addEventListener('pointerleave', leave)
   return () => {
+    finish()
+    scene.onReplace = null
     element.removeEventListener('pointerdown', down)
     element.removeEventListener('pointermove', move)
     element.removeEventListener('pointerup', up)

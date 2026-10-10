@@ -239,6 +239,20 @@ try {
   await call(() => globalThis.__presenter.inkOp({ t: 'clear' }, 'main'))
   console.log('ok 7h marks stay with their slide')
 
+  // 7h2. A text mark: its words and place travel with the slide, are moved by a rect op, and Undo removes it.
+  await call(() => globalThis.__presenter.inkOp({ t: 'begin', stroke: { id: 'page-text', tool: 'text', color: '#3b82f6', points: [0.2, 0.2, 0.7, 0.5], text: 'Hello' } }, 'main'))
+  await call(() => globalThis.__presenter.inkOp({ t: 'text', id: 'page-text', text: 'Hello class' }, 'main'))
+  await call(() => globalThis.__presenter.navigate({ type: 'step', delta: 1 }))
+  await waitFor('next slide again', (s) => out(s, 'projector').shownIndex === pageNow + 1)
+  await call(() => globalThis.__presenter.navigate({ type: 'step', delta: -1 }))
+  await waitFor('back again', (s) => out(s, 'projector').shownIndex === pageNow)
+  await waitUntil('the text is back with its words', async () => (await call(() => globalThis.__presenter.inkSnapshot())).some((m) => m.tool === 'text' && m.text === 'Hello class'))
+  await call(() => globalThis.__presenter.inkOp({ t: 'rect', id: 'page-text', points: [0.3, 0.3, 0.8, 0.6] }, 'main'))
+  assert.deepEqual((await call(() => globalThis.__presenter.inkSnapshot())).find((m) => m.id === 'page-text').points, [0.3, 0.3, 0.8, 0.6], 'the text moved')
+  await call(() => globalThis.__presenter.inkOp({ t: 'undo' }, 'main'))
+  assert.equal(await marks(), 0, 'Undo removed the text')
+  console.log('ok 7h2 a text mark stays with its slide, moves and is undone')
+
   // 7i. 📷 saves what Projector 1 shows, with its marks, as a PNG.
   const picture = path.join(USER_DATA, 'slide.png')
   const savedTo = await call((_e, p) => globalThis.__presenter.savePicture(p), picture)

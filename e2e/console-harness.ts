@@ -355,6 +355,55 @@ async function clockTimes(): Promise<void> {
   await wait(300)
 }
 
+/**
+ * Typing a text on the live copy of the projector in the console (while projecting): a click puts a
+ * text box over the slide, typing sends the words as marks, Esc ends it, a click on the text edits it
+ * again, and the keys typed do not work as shortcuts (T, B, digits …).
+ */
+async function consoleText(): Promise<void> {
+  const state = sampleState(true)
+  state.ink = { tool: 'text', color: '#ef4444' }
+  writeStub(state)
+  const win = new BrowserWindow({ show: false, width: 1536, height: 864, useContentSize: true, backgroundColor: '#475569', webPreferences: { preload: STUB, contextIsolation: true, sandbox: true, offscreen: true } })
+  await win.loadFile(path.join(ROOT, 'out', 'renderer', 'console.html'))
+  await wait(1500)
+  const wc = win.webContents
+  const rect = (await wc.executeJavaScript(`(() => { const c = document.querySelector('video ~ canvas'); const r = c.getBoundingClientRect(); return [r.left, r.top, r.width, r.height] })()`)) as number[]
+  const at = (fx: number, fy: number): [number, number] => [Math.round(rect[0] + rect[2] * fx), Math.round(rect[1] + rect[3] * fy)]
+  const click = async ([x, y]: [number, number]): Promise<void> => {
+    wc.sendInputEvent({ type: 'mouseDown', x, y, button: 'left', clickCount: 1 })
+    wc.sendInputEvent({ type: 'mouseUp', x, y, button: 'left', clickCount: 1 })
+    await wait(250)
+  }
+  const calls = (): Promise<Array<[string, ...unknown[]]>> => wc.executeJavaScript('window.presenter.__calls()')
+  const ops = async (): Promise<Array<{ t: string; text?: string; stroke?: { tool: string; points: number[] } }>> => (await calls()).filter((c) => c[0] === 'inkOp').map((c) => c[1] as { t: string; text?: string })
+  wc.focus()
+  await click(at(0.3, 0.3))
+  const begun = (await ops()).find((o) => o.t === 'begin')
+  if (!begun || begun.stroke?.tool !== 'text' || begun.stroke.points.length !== 2) throw new Error(`the console click did not begin a text: ${JSON.stringify(begun)}`)
+  const areas = await wc.executeJavaScript(`document.querySelectorAll('textarea').length`)
+  if (areas !== 1) throw new Error(`expected one typing box, found ${areas}`)
+  // Letters that are shortcuts (T = text tool, B = black screen) go into the text.
+  await wc.insertText('Tab 12')
+  await wait(150)
+  const typed = (await ops()).filter((o) => o.t === 'text').map((o) => o.text)
+  if (typed[typed.length - 1] !== 'Tab 12') throw new Error(`the typed words were not sent: ${JSON.stringify(typed)}`)
+  if ((await calls()).some((c) => c[0] === 'setBlank' || c[0] === 'setInkTool' || c[0] === 'navigate')) throw new Error('typing worked as a shortcut')
+  wc.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' })
+  wc.sendInputEvent({ type: 'keyUp', keyCode: 'Escape' })
+  await wait(200)
+  if ((await wc.executeJavaScript(`document.querySelectorAll('textarea').length`)) !== 0) throw new Error('Esc did not end the typing')
+  // Nothing was typed in a second click: no mark stays.
+  await click(at(0.6, 0.6))
+  wc.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' })
+  wc.sendInputEvent({ type: 'keyUp', keyCode: 'Escape' })
+  await wait(200)
+  if (!(await ops()).some((o) => o.t === 'erase')) throw new Error('an empty text was kept')
+  console.log('ok console: a click types a text over the slide; letters stay in the text; Esc ends it; empty text leaves nothing')
+  win.destroy()
+  await wait(300)
+}
+
 /** The students' screen with random groups (23 people in 5 groups), at 1280 x 720. */
 async function groupsShot(): Promise<void> {
   const stub = path.join(OUT, 'harness', 'roller-stub-preload.cjs')
@@ -409,6 +458,7 @@ app.whenReady().then(async () => {
     await inputs()
     await toolbarTimer()
     await groupsShot()
+    await consoleText()
     await shot(false)
     await shot(true)
     await shot(false, 'guide')

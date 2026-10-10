@@ -40,6 +40,8 @@ function isEditable(el: Element | null): boolean {
   if (!el) return false
   if (el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement) return true
   if (el instanceof HTMLInputElement) return !NOT_TEXT.has(el.type)
+  // The marking layer (a shadow root) while a text is typed on the slide.
+  if (el instanceof HTMLElement && el.tagName === 'PRESENTER-INK' && el.dataset['presenterTyping'] === '1') return true
   return el instanceof HTMLElement && el.isContentEditable
 }
 
