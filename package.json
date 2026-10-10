@@ -15,8 +15,9 @@
     "check:ink": "esbuild e2e/ink-harness.ts --bundle --platform=node --format=cjs --external:electron --outfile=e2e/out/harness/ink-harness.cjs --log-level=warning && electron e2e/out/harness/ink-harness.cjs",
     "check:console": "esbuild e2e/console-harness.ts --bundle --platform=node --format=cjs --external:electron --outfile=e2e/out/harness/console-harness.cjs --log-level=warning && electron e2e/out/harness/console-harness.cjs",
     "check:frameworks": "esbuild e2e/frameworks-harness.ts --bundle --platform=node --format=cjs --external:electron --outfile=e2e/out/harness/frameworks-harness.cjs --log-level=warning && electron e2e/out/harness/frameworks-harness.cjs",
-    "dist:win": "electron-vite build && electron-builder --win",
-    "dist:mac": "bash native/mac-helper/build.sh && electron-vite build && electron-builder --mac",
+    "dist:win": "node scripts/libreoffice.mjs check && electron-vite build && electron-builder --win",
+    "dist:mac": "bash native/mac-helper/build.sh && node scripts/libreoffice.mjs check --arch arm64 && electron-vite build && electron-builder --mac",
+    "libreoffice": "node scripts/libreoffice.mjs",
     "check:start": "node e2e/start-check.mjs"
   },
   "devDependencies": {
@@ -64,7 +65,8 @@
         {
           "target": "zip",
           "arch": [
-            "universal"
+            "arm64",
+            "x64"
           ]
         }
       ],
@@ -73,12 +75,16 @@
         "NSAppleEventsUsageDescription": "Presenter asks Keynote to turn PowerPoint and Keynote files into pages it can show.",
         "NSScreenCaptureUsageDescription": "Presenter shows a live copy of the projector in the console."
       },
-      "artifactName": "Presenter-${version}-mac.zip",
+      "artifactName": "Presenter-${version}-mac-${arch}.zip",
       "identity": "-",
       "extraResources": [
         {
           "from": "build/mac-helper/presenter-window-helper",
           "to": "presenter-window-helper"
+        },
+        {
+          "from": "vendor/libreoffice-darwin-${arch}",
+          "to": "libreoffice"
         }
       ]
     },
@@ -86,7 +92,13 @@
       "target": [
         "zip"
       ],
-      "artifactName": "Presenter-${version}-win.zip"
+      "artifactName": "Presenter-${version}-win.zip",
+      "extraResources": [
+        {
+          "from": "vendor/libreoffice-win32-x64",
+          "to": "libreoffice"
+        }
+      ]
     }
   }
 }

@@ -1,10 +1,18 @@
-# Builds the app zips (nothing to install): Presenter-<version>-mac.zip (Intel and Apple silicon)
-# and Presenter-<version>-win.zip, then publishes them on the Releases page ("Latest") with the
-# download steps from .github/release-notes.md. Run it from the Actions tab ("Run workflow").
+# Builds the app zips (nothing to install): Presenter-<version>-mac-arm64.zip (Apple silicon),
+# Presenter-<version>-mac-x64.zip (Intel) and Presenter-<version>-win.zip, each with a reduced
+# LibreOffice inside (scripts/libreoffice.mjs: the official release, checked against its SHA-256),
+# then publishes them on the Releases page ("Latest") with the download steps from
+# .github/release-notes.md. Run it from the Actions tab ("Run workflow"); untick "publish" for a
+# test build (the zips stay on the run page only).
 # A Mac app can only be built on a Mac, which is why this runs on GitHub's Mac machines.
 name: Build app zips
 on:
   workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish the zips on the Releases page (Latest)
+        type: boolean
+        default: true
 permissions:
   contents: write
 jobs:
@@ -22,6 +30,19 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      # The LibreOffice downloads are large; keep them between runs (same version = same files).
+      - uses: actions/cache@v4
+        with:
+          path: vendor/cache
+          key: libreoffice-${{ runner.os }}-${{ hashFiles('scripts/libreoffice.mjs') }}
+      - name: LibreOffice inside the app (Mac, both kinds)
+        if: runner.os == 'macOS'
+        run: |
+          node scripts/libreoffice.mjs prepare --arch arm64
+          node scripts/libreoffice.mjs prepare --arch x64
+      - name: LibreOffice inside the app (Windows)
+        if: runner.os == 'Windows'
+        run: node scripts/libreoffice.mjs prepare
       - name: Mac app
         if: runner.os == 'macOS'
         # Ad-hoc signed only (no paid Apple Developer ID): the first open needs
@@ -40,6 +61,7 @@ jobs:
   # and its tag always match the newest build.
   release:
     needs: build
+    if: ${{ inputs.publish }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -6,7 +6,7 @@ Presenter shows decks (HTML, PDF, PPT, PPTX, Keynote) and program windows (a bro
 
 ## Download
 
-The newest zips are on the **[Releases page](https://github.com/vizenxx/presenter/releases/latest)**, under **Assets**: `…-win.zip` for Windows, `…-mac.zip` for a Mac. Anyone can open that page: send other teachers the link.
+The newest zips are on the **[Releases page](https://github.com/vizenxx/presenter/releases/latest)**, under **Assets**: `…-win.zip` for Windows; for a Mac, `…-mac-arm64.zip` (Apple silicon: M1, M2 … — Apple menu → **About This Mac** shows **Chip: Apple M…**) or `…-mac-x64.zip` (Intel: it shows **Processor: … Intel**). Anyone can open that page: send other teachers the link.
 
 ## Open (nothing to install)
 
@@ -21,9 +21,9 @@ Presenter is a folder you unzip; there is no installer and no administrator pass
 
 **Mac** (macOS 13 Ventura or later, Intel or Apple silicon)
 
-1. Double-click the downloaded `Presenter-…-mac.zip`. It becomes **Presenter**. Double-click it to open (moving it to **Applications** is optional).
+1. Double-click the downloaded `Presenter-…-mac-arm64.zip` (or `…-mac-x64.zip`). It becomes **Presenter**. Double-click it to open (moving it to **Applications** is optional).
 2. The first time, macOS may say it cannot check the app. Open **System Settings → Privacy & Security**, scroll down and click **Open Anyway**. This is needed once.
-3. PPT and PPTX files open through **Keynote** (free on every Mac). The first time, macOS asks "Presenter wants to control Keynote": click **OK**. Keynote opens a window while it converts, then closes. Without Keynote, LibreOffice works too.
+3. PPT and PPTX files open with the LibreOffice inside Presenter: nothing else is needed. (Only if that fails, Presenter asks Keynote; then macOS asks "Presenter wants to control Keynote": click **OK**.)
 4. Mac shortcuts: **⌘ Return** or **fn F5** starts projecting; **⌘ +**, **⌘ −**, **⌘ 0** set the text size; **⌘ Z** undoes a mark; **delete** clears the marks.
 5. In **System Settings → Privacy & Security**, allow Presenter under:
    - **Screen & System Audio Recording**: needed to show program windows (and their titles in the list), and for a live copy of the projector in the console. Restart Presenter after allowing it.
@@ -61,14 +61,17 @@ The **📘 Guide** in the app has the same help in two parts: **1 · Use Present
 
 ### PPT, PPTX, Keynote and PDF
 
-- A PPT is converted for showing first. The first time takes about 10–20 seconds; the console shows the progress. After that the same file opens at once.
-- Conversion uses PowerPoint (Windows) or Keynote (Mac), else LibreOffice. With none of them, save the PPT as PDF first.
+- Presenter carries its own reduced LibreOffice (free software), so PPT, PPTX, ODP and Keynote files open on any computer: there is nothing else to install.
+- A file is converted for showing first. The first time takes about 5–20 seconds; the console shows the progress. After that the same file opens at once.
+- **Click animations play.** Each page key first shows the next click step of the slide; after the last step it turns the page. Back shows the step before; on the first step it goes to the slide before, with all its steps shown (as in PowerPoint). The next-slide preview shows each slide with all its steps. The console shows how many steps are shown, for example `Slide 3 / 18 · 1/3 clicks`.
+  - Common effects (appear, fade, wipe, zoom …) and many slide transitions play. Some effects show in a simpler way: for example, text that flies in appears without moving.
+  - LibreOffice draws the slides, so a font, a chart or a SmartArt can look a little different from PowerPoint. Check a new deck once before class.
+  - If the animated pages cannot be made, the slides show as still pages (each slide in its final state), made by the same LibreOffice or by PowerPoint or Keynote.
 - Videos and sounds in a PPTX play where they stand on the slide. Click **▶ Video** next to the slide title in the console, or click the ▶ on the video (on the projector, or in the console before projecting). A page turn stops it. No extra program is needed.
   - MP4, M4V, MOV (H.264), WebM, MP3, M4A, WAV and OGG play. WMV and AVI cannot play: the video shows a note; save it as MP4 and insert it again.
   - A linked video (not embedded) plays when its file is still where the PPTX points.
   - Old .ppt files: save them as .pptx first to play their videos.
-  - After this update, each PPTX is converted once more (once only) to take out its videos.
-- Click-by-click animations do not play yet: each slide shows its final picture.
+  - After an update that changes the conversion, each file is converted once more (once only).
 - Hidden slides are left out, as in PowerPoint's own show.
 - Slide titles appear under **Slides**, speaker notes under **Notes**.
 
@@ -179,7 +182,7 @@ Click **🎲 Name picker** (top bar). Choose a list and click **🎲 Roll**: the
 ## If something goes wrong
 
 - **A window is not in the list**: open the program first (it may be minimized). Presenter's own windows are not listed.
-- **A PPT does not open**: install PowerPoint, Keynote (Mac) or LibreOffice, or save the PPT as PDF.
+- **A PPT does not open**: save it as PDF and open the PDF. Please send the file (or a copy without private content) to the maintainer.
 - **A video on a slide shows "cannot play here"**: it is WMV, AVI or another old format. Save it as MP4 and insert it again.
 - **The console stays on "Starting…"**: leave it open and send the file `startup-log.txt` from the app data folder (`%APPDATA%\presenter` on Windows, `~/Library/Application Support/Presenter` on a Mac). It shows the step that did not happen.
 
@@ -189,6 +192,7 @@ Click **🎲 Name picker** (top bar). Choose a list and click **🎲 Roll**: the
 - `npm run build` (build), `npm test` (unit tests), `npm run e2e` (end-to-end, 17 steps). With one display it opens windows and plays sounds; with a second display connected (a class may be on the projector) it runs hidden and muted, without the projecting steps. It never takes pictures of the screen. `PRESENTER_E2E_HIDDEN=1 npm run e2e` runs it hidden and muted on one display too.
 - Checks that open no window: `npm run check:viewer` (PPT/PDF), `npm run check:ink` (marks: pen, box, eraser, arrow, Shift shapes), `npm run check:frameworks` (Reveal.js, remark, impress.js, Marp, plain slides, protocol example), `npm run check:console` (console layout in the dark and the light look, menus, start screen, floating toolbar and its timer, typing in the timer boxes, the 🔔 and ± pop-ups, holding A+), `npm run check:start` (starts hidden and muted, one by one and 8 at once).
 - Real conversions: `PRESENTER_CONVERT_IT=libreoffice npm test` (or `powerpoint`, or `keynote` on a Mac).
-- Zips: `npm run dist:win` (Windows) and `npm run dist:mac` (only on a Mac). Without a Mac, run the **Build app zips** workflow on GitHub (Actions tab, or `gh workflow run build.yml`; a push alone does not start it): it builds both and replaces the Releases page of this version (text: `.github/release-notes.md`). Raise `version` in `package.json` for a new version. Icon source: `build/icon.svg` (`npx electron tools/make-icon.cjs build`).
+- The LibreOffice inside the app: `node scripts/libreoffice.mjs prepare` downloads the official release (checked against its SHA-256), keeps only what turning slides into pages needs, and puts it in `vendor/` (`--from "C:/Program Files/LibreOffice"` uses an installed copy instead); `node scripts/libreoffice.mjs check` converts a test deck with click animations with it. LibreOffice is under the Mozilla Public License 2.0; its licence files go along.
+- Zips: `npm run dist:win` (Windows) and `npm run dist:mac` (only on a Mac); run `prepare` first. Without a Mac, run the **Build app zips** workflow on GitHub (Actions tab, or `gh workflow run build.yml`; a push alone does not start it): it builds the three zips and replaces the Releases page of this version (text: `.github/release-notes.md`); untick **publish** for a test build. Raise `version` in `package.json` for a new version. Icon source: `build/icon.svg` (`npx electron tools/make-icon.cjs build`).
 - `PRESENTER_EXE=<unzipped folder>/Presenter.exe node e2e/smoke.mjs` runs the end-to-end test on a packaged app.
 - On the maintainer's computer the desktop icon starts the source copy (`Start Presenter.bat`): after any source change run `npm run build`.

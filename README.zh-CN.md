@@ -6,7 +6,7 @@ Presenter 是一个桌面放映工具。它把课件（HTML、PDF、PPT、PPTX�
 
 ## 下载
 
-最新的压缩包在 **[Releases 页面](https://github.com/vizenxx/presenter/releases/latest)** 的 **Assets** 里：Windows 用 `…-win.zip`，Mac 用 `…-mac.zip`。任何人都能打开这个页面，把链接发给其他老师即可。
+最新的压缩包在 **[Releases 页面](https://github.com/vizenxx/presenter/releases/latest)** 的 **Assets** 里：Windows 用 `…-win.zip`；Mac 用 `…-mac-arm64.zip`（Apple 芯片：M1、M2……；苹果菜单 → **关于本机** 显示 **芯片：Apple M…**）或 `…-mac-x64.zip`（Intel：显示 **处理器：… Intel**）。任何人都能打开这个页面，把链接发给其他老师即可。
 
 ## 打开（不需要安装）
 
@@ -21,9 +21,9 @@ Presenter 是一个解压即用的文件夹。没有安装程序，也不需要�
 
 **Mac**（macOS 13 Ventura 或更新版本，Intel 或 Apple 芯片都可以）
 
-1. 双击下载的 `Presenter-…-mac.zip`，得到 **Presenter**。双击它打开（放进“应用程序”不是必须的）。
+1. 双击下载的 `Presenter-…-mac-arm64.zip`（或 `…-mac-x64.zip`），得到 **Presenter**。双击它打开（放进“应用程序”不是必须的）。
 2. 第一次打开时，macOS 可能提示无法检查这个 App。打开 **系统设置 → 隐私与安全性**，向下滚动，点 **仍要打开**。只需要一次。
-3. PPT 和 PPTX 通过 **Keynote**（每台 Mac 都有，免费）转换。第一次会提示“Presenter 想要控制 Keynote”，点 **好**。转换时 Keynote 会打开一个窗口，转换完自动关闭。没有 Keynote 时，也可以用 LibreOffice。
+3. PPT 和 PPTX 用 Presenter 自带的 LibreOffice 打开，不需要别的程序。（只有它失败时，Presenter 才改用 Keynote；这时 macOS 会提示“Presenter 想要控制 Keynote”，点 **好**。）
 4. Mac 快捷键：**⌘ Return** 或 **fn F5** 开始投影；**⌘ +**、**⌘ −**、**⌘ 0** 调字号；**⌘ Z** 撤销标注；**delete** 清空标注。
 5. 在 **系统设置 → 隐私与安全性** 里允许 Presenter：
    - **录屏与系统录音**：投影程序窗口（以及在列表里显示窗口标题）、控制台的实时投影画面都需要它。允许后重新打开 Presenter。
@@ -61,14 +61,17 @@ Presenter 是一个解压即用的文件夹。没有安装程序，也不需要�
 
 ### PPT、PPTX、Keynote 和 PDF
 
-- 程序先把 PPT 转成放映格式。第一次打开一份 PPT 需要十几秒，控制台顶部会显示进度。之后再打开同一份 PPT 会直接显示。
-- 转换用 PowerPoint（Windows）或 Keynote（Mac），都没有时用 LibreOffice。三者都没有时，请先把 PPT 另存为 PDF。
+- Presenter 自带精简版 LibreOffice（免费软件），所以 PPT、PPTX、ODP 和 Keynote 文件在任何电脑上都能打开，不需要另装程序。
+- 程序先把文件转成放映格式。第一次打开需要约 5–20 秒，控制台顶部会显示进度。之后再打开同一份文件会直接显示。
+- **点击动画会播放。** 每按一次翻页键，先显示这页的下一步；最后一步之后才翻页。按“上一页”时退回上一步；在第一步时回到上一页，并显示那一页的全部步骤（和 PowerPoint 一样）。“下一页”预览显示每页的全部步骤。控制台显示已显示的步数，例如 `Slide 3 / 18 · 1/3 clicks`。
+  - 常见效果（出现、淡入、擦除、缩放……）和很多切换效果都会播放。有些效果会简化：例如“飞入”的文字直接出现，不会移动。
+  - 幻灯片由 LibreOffice 绘制，字体、图表或 SmartArt 可能和 PowerPoint 略有不同。新课件请在上课前先检查一遍。
+  - 动画格式做不出来时，幻灯片按静态页显示（每页显示最终画面），由同一个 LibreOffice 或 PowerPoint、Keynote 生成。
 - PPTX 里的视频和声音在幻灯片上的原位播放。点控制台幻灯片标题旁的 **▶ Video**，或者点视频上的 ▶（投影上，或投影开始前的控制台画面上）。翻页时自动停止。不需要另装程序。
   - 能播放：MP4、M4V、MOV（H.264）、WebM、MP3、M4A、WAV、OGG。WMV 和 AVI 不能播放：视频上会显示提示；请另存为 MP4 后重新插入。
   - 链接（没有嵌入）的视频：文件还在 PPTX 指向的位置时才能播放。
   - 旧的 .ppt 文件：先另存为 .pptx，视频才能播放。
-  - 这次更新后，每份 PPTX 会重新转换一次（只一次），以取出视频。
-- “点一下出现一条”的动画暂时不播放：每页只显示最终画面。
+  - 程序更新改变了转换方式时，每份文件会重新转换一次（只一次）。
 - 隐藏的幻灯片不会显示，和 PowerPoint 放映时一样。
 - PPT 里的标题会出现在 **Slides** 里，讲者备注会出现在 **Notes** 里。
 
@@ -179,7 +182,7 @@ Presenter 是一个解压即用的文件夹。没有安装程序，也不需要�
 ## 常见问题
 
 - **列表里找不到某个窗口**：先打开那个程序（最小化也可以）。Presenter 自己的窗口不会出现在列表里。
-- **PPT 打不开**：安装 PowerPoint、Keynote（Mac）或 LibreOffice 其中之一，或者先把 PPT 另存为 PDF。
+- **PPT 打不开**：先另存为 PDF，再打开 PDF。请把文件（或去掉隐私内容的副本）发给维护者。
 - **幻灯片上的视频显示 “cannot play here”**：视频是 WMV、AVI 或其他旧格式。请另存为 MP4 后重新插入。
 - **控制台一直停在 “Starting…”**：先不要关掉程序，把程序数据文件夹里的 `startup-log.txt` 发给维护者（Windows：`%APPDATA%\presenter`；Mac：`~/Library/Application Support/Presenter`）。它会显示停在了哪一步。
 
@@ -189,5 +192,6 @@ Presenter 是一个解压即用的文件夹。没有安装程序，也不需要�
 - 常用命令：`npm run build`（构建）、`npm test`（单元测试）、`npm run e2e`（端到端测试，17 步）。只有一块屏幕时，它会弹出窗口、发出声音；接着第二块屏幕时，它隐藏、静音运行，并跳过投影步骤。它从不截取屏幕画面。`PRESENTER_E2E_HIDDEN=1 npm run e2e` 在只有一块屏幕时也隐藏、静音运行。
 - 不开窗口的检查：`npm run check:viewer`（PPT/PDF）、`npm run check:ink`（标注：画笔、框选、橡皮擦、箭头、Shift 形状）、`npm run check:frameworks`（Reveal.js、remark、impress.js、Marp、普通 slide 网页、协议示例）、`npm run check:console`（深色和浅色界面的控制台排版、菜单、开始画面、浮动工具条及其计时器、计时器输入格打字、🔔 和 ± 弹出框、按住 A+）、`npm run check:start`（隐藏静音启动，逐个启动和 8 个同时启动）。
 - 真实转换测试：`PRESENTER_CONVERT_IT=libreoffice npm test`（或 `powerpoint`；Mac 上用 `keynote`）。
-- 压缩包：`npm run dist:win`（Windows）、`npm run dist:mac`（只能在 Mac 上运行）。没有 Mac 时，在 GitHub 上运行 **Build app zips** 工作流（Actions 页面，或 `gh workflow run build.yml`；只推送不会自动运行），它同时生成两个压缩包，并替换这个版本的 Releases 页（说明文字：`.github/release-notes.md`）。发新版本时先改 `package.json` 里的 `version`。图标源文件：`build/icon.svg`。
+- App 自带的 LibreOffice：`node scripts/libreoffice.mjs prepare` 下载官方版本（核对 SHA-256），只保留转换幻灯片需要的部分，放进 `vendor/`（加 `--from "C:/Program Files/LibreOffice"` 则改用已安装的副本）；`node scripts/libreoffice.mjs check` 用它转换一份带点击动画的测试课件。LibreOffice 使用 Mozilla Public License 2.0，它的许可文件随 App 一起提供。
+- 压缩包：`npm run dist:win`（Windows）、`npm run dist:mac`（只能在 Mac 上运行）；先运行 `prepare`。没有 Mac 时，在 GitHub 上运行 **Build app zips** 工作流（Actions 页面，或 `gh workflow run build.yml`；只推送不会自动运行），它生成三个压缩包，并替换这个版本的 Releases 页（说明文字：`.github/release-notes.md`）；测试构建时取消勾选 **publish**。发新版本时先改 `package.json` 里的 `version`。图标源文件：`build/icon.svg`。
 - 在维护者的电脑上，桌面图标启动的是源码版（`Start Presenter.bat`）：修改源码后必须运行 `npm run build`。
