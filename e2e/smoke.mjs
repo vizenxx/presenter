@@ -433,6 +433,7 @@ try {
   const soffice = [path.join(root, 'vendor', `libreoffice-${process.platform}-${process.arch}`, 'program', 'soffice.com'), path.join(root, 'vendor', `libreoffice-${process.platform}-${process.arch}`, 'LibreOffice.app', 'Contents', 'MacOS', 'soffice')].find((f) => fs.existsSync(f))
   if (!soffice) console.log('skip 8f click animations: no bundled LibreOffice (node scripts/libreoffice.mjs prepare)')
   else {
+    const pageBefore = out(await state(), 'projector').shownIndex
     const stepsDir = path.join(OUT, 'smoke-steps')
     fs.rmSync(stepsDir, { recursive: true, force: true })
     fs.mkdirSync(stepsDir, { recursive: true })
@@ -453,11 +454,11 @@ try {
     await call(() => globalThis.__presenter.onKey('prev', null))
     s = await waitFor('a step back', (s) => out(s, 'projector').shownIndex === 0 && out(s, 'projector').steps?.done === 1)
     console.log('ok 8f click animations: steps first, then the page; back shows all steps')
-    // The next steps expect the UXD202 deck on slide 6.
+    // The next steps expect the UXD202 deck on the page it had.
     await call((_e, p) => globalThis.__presenter.openMainDeck(p), UXD_DECK)
     s = await waitFor('UXD202 deck again', (s) => out(s, 'projector').deckKind === 'html' && out(s, 'projector').total > 5, 20000)
-    await call(() => globalThis.__presenter.navigate({ type: 'goto', index: 5 }))
-    s = await waitFor('slide 6 again', (s) => out(s, 'projector').shownIndex === 5)
+    await call((_e, i) => globalThis.__presenter.navigate({ type: 'goto', index: i }), pageBefore)
+    s = await waitFor('the page it had', (s) => out(s, 'projector').shownIndex === pageBefore)
   }
 
   // Steps 9-15 show the projector window and capture the desktop.
