@@ -112,6 +112,21 @@ function keepOneIconTheme(configDir) {
   for (const n of themes) if (n !== keep) fs.rmSync(path.join(configDir, n), { force: true })
 }
 
+/** Links whose target was left out (Mac: Frameworks/intl/fbintl.conf points into Resources/firebird). */
+function removeDanglingLinks(dir) {
+  let n = 0
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, entry.name)
+    if (entry.isSymbolicLink()) {
+      if (!fs.existsSync(p)) {
+        fs.rmSync(p, { force: true })
+        n++
+      }
+    } else if (entry.isDirectory()) n += removeDanglingLinks(p)
+  }
+  return n
+}
+
 function folderSize(dir) {
   let total = 0
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -230,8 +245,14 @@ async function prepare() {
     const res = path.join(app, 'Contents', 'Resources')
     for (const f of LICENCE_FILES) if (fs.existsSync(path.join(res, f))) fs.copyFileSync(path.join(res, f), path.join(dest, f))
     trimMac(app)
+    const dangling = removeDanglingLinks(app)
+    if (dangling > 0) console.log(`removed ${dangling} link(s) to parts that were left out`)
     // Files were removed from the signed app: sign it again (ad hoc, like Presenter itself).
-    execFileSync('xattr', ['-cr', app])
+    try {
+      execFileSync('xattr', ['-cr', app], { stdio: 'pipe' })
+    } catch (error) {
+      console.log(`xattr: ${String(error.stderr ?? error.message).trim()}`)
+    }
     execFileSync('codesign', ['--force', '--deep', '--sign', '-', app], { stdio: 'inherit' })
   } else throw new Error(`no bundled LibreOffice for ${platform}`)
 
