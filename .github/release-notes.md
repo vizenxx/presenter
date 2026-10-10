@@ -1,3 +1,8 @@
+## What's new in 0.3.1
+
+- **Text tool** (**T**): click the slide and type; or drag a box and the text wraps inside it and gets smaller to fit. Click a text to change it, drag it to move it. Eraser and Undo remove a text like any mark. Not on program windows.
+- The mark bar shows the tool names only when the pane is wide enough; on a narrow window it shows the icons (the names are in the tooltips).
+
 ## What's new in 0.3.0
 
 - **PowerPoint files open on any computer, with their click animations.** Presenter now carries its own LibreOffice, so PPT, PPTX and ODP open without PowerPoint or Keynote. Each page key first shows the next click step of the slide, then turns the page. The slide line shows the steps (for example `1/3 clicks`). Some effects are simpler than in PowerPoint (text that flies in just appears), and fonts or charts can look a little different: check a new deck once before class.
