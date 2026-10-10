@@ -51,6 +51,19 @@ jobs:
       - name: Windows app
         if: runner.os == 'Windows'
         run: npm run dist:win -- --publish never
+      # The LibreOffice inside each built app: in place, for the right processor, and it converts.
+      - name: Check the built apps (Mac)
+        if: runner.os == 'macOS'
+        run: |
+          node scripts/libreoffice.mjs check --arch arm64 --root dist/mac-arm64/Presenter.app/Contents/Resources/libreoffice
+          node scripts/libreoffice.mjs check --arch x64 --root dist/mac/Presenter.app/Contents/Resources/libreoffice --no-run
+          ls -l dist/*.zip
+      - name: Check the built app (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          node scripts/libreoffice.mjs check --root dist/win-unpacked/resources/libreoffice
+          ls -l dist/*.zip
       - uses: actions/upload-artifact@v4
         with:
           name: presenter-${{ runner.os }}

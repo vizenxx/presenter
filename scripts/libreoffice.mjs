@@ -4,7 +4,7 @@
  * animations) on a computer with nothing else installed.
  *
  *   node scripts/libreoffice.mjs prepare [--from <installed LibreOffice folder>] [--arch x64|arm64]
- *   node scripts/libreoffice.mjs check [--arch x64|arm64]
+ *   node scripts/libreoffice.mjs check [--arch x64|arm64] [--root <folder with a copy>] [--no-run]
  *
  * prepare: takes the official LibreOffice release (downloaded and checked against its SHA-256,
  * or an installed copy with --from), keeps only what turning slides into pages needs, and puts
@@ -16,6 +16,8 @@
  *
  * check: converts a small test deck with click animations (scripts/fixtures/animated-deck.fodp)
  * to PPTX and that PPTX to the animated page set (SVG) and to PDF with the bundled copy.
+ * --root checks another copy (the one inside a built app: …/resources/libreoffice); --no-run only
+ * looks at the files (a copy for another kind of processor cannot run here).
  *
  * LibreOffice is free software under the Mozilla Public License 2.0; its licence files go along
  * (LICENSE.html, NOTICE, license.txt, CREDITS.fodt). Source: https://www.libreoffice.org/download/source-code/
@@ -271,16 +273,29 @@ async function prepare() {
 
 // ---------- check ----------
 
-export function bundledSoffice(key) {
-  const dest = path.join(ROOT, 'vendor', `libreoffice-${key}`)
+export function bundledSoffice(dest) {
   const soffice = process.platform === 'win32' ? path.join(dest, 'program', 'soffice.com') : path.join(dest, 'LibreOffice.app', 'Contents', 'MacOS', 'soffice')
   return fs.existsSync(soffice) ? soffice : null
 }
 
 function check() {
-  const key = `${process.platform}-${arg('arch', process.arch)}`
-  const soffice = bundledSoffice(key)
-  if (!soffice) throw new Error(`no bundled LibreOffice in vendor/libreoffice-${key}; run prepare first`)
+  const arch = arg('arch', process.arch)
+  const root = arg('root')
+  const dest = root ? path.resolve(root) : path.join(ROOT, 'vendor', `libreoffice-${process.platform}-${arch}`)
+  const key = root ? `${path.relative(ROOT, dest) || dest}, ${arch}` : `${process.platform}-${arch}`
+  const soffice = bundledSoffice(dest)
+  if (!soffice) throw new Error(`no LibreOffice in ${dest}${root ? '' : '; run prepare first'}`)
+  for (const f of ['LICENSE.html', 'ABOUT-PRESENTER.txt']) if (!fs.existsSync(path.join(dest, f))) throw new Error(`${f} is missing in ${dest}`)
+  if (process.platform === 'darwin') {
+    // The copy must be for the processor asked for (each Mac zip carries its own).
+    const kinds = execFileSync('lipo', ['-archs', path.join(path.dirname(soffice), 'soffice')], { encoding: 'utf8' }).trim()
+    const want = arch === 'x64' ? 'x86_64' : 'arm64'
+    if (!kinds.split(/\s+/).includes(want)) throw new Error(`${dest} is for ${kinds}, not ${want}`)
+  }
+  if (process.argv.includes('--no-run')) {
+    console.log(`ok LibreOffice files (${key}): in place, for the right processor (not run here)`)
+    return
+  }
   // A short folder: LibreOffice's first start fails when its profile path is very long.
   const work = fs.mkdtempSync(path.join(os.tmpdir(), 'lo-check-'))
   const profile = pathToFileURL(path.join(work, 'profile')).href
@@ -309,6 +324,6 @@ const command = process.argv[2]
 if (command === 'prepare') await prepare()
 else if (command === 'check') check()
 else if (command) {
-  console.error('usage: node scripts/libreoffice.mjs prepare [--from <folder>] [--arch x64|arm64] | check [--arch x64|arm64]')
+  console.error('usage: node scripts/libreoffice.mjs prepare [--from <folder>] [--arch x64|arm64] | check [--arch x64|arm64] [--root <folder>] [--no-run]')
   process.exit(1)
 }
