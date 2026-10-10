@@ -3,7 +3,7 @@
 # LibreOffice inside (scripts/libreoffice.mjs: the official release, checked against its SHA-256),
 # then publishes them on the Releases page ("Latest") with the download steps from
 # .github/release-notes.md. Run it from the Actions tab ("Run workflow"); untick "publish" for a
-# test build (the zips stay on the run page only).
+# test build (the zips stay on the run page only). Only a run on main can publish.
 # A Mac app can only be built on a Mac, which is why this runs on GitHub's Mac machines.
 name: Build app zips
 on:
@@ -61,7 +61,8 @@ jobs:
   # and its tag always match the newest build.
   release:
     needs: build
-    if: ${{ inputs.publish }}
+    # Only from main: a test build of another branch can never replace the download page.
+    if: ${{ inputs.publish && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
