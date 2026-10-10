@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  A small test deck with click animations, written by hand (flat OpenDocument).
+  scripts/libreoffice.mjs turns it into a PPTX with LibreOffice and checks that the bundled
+  LibreOffice can convert that PPTX for showing; the viewer check plays its steps.
+  Slide 1: a title and two boxes; box A appears on the first click, box B fades in on the second.
+  Slide 2: plain. Slide 3: hidden (left out of the show). Slide 4: one box that flies in.
+-->
+<office:document xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+  xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"
+  xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
+  xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0"
+  xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"
+  xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0"
+  xmlns:presentation="urn:oasis:names:tc:opendocument:xmlns:presentation:1.0"
+  xmlns:smil="urn:oasis:names:tc:opendocument:xmlns:smil-compatible:1.0"
+  xmlns:anim="urn:oasis:names:tc:opendocument:xmlns:animation:1.0"
+  xmlns:xlink="http://www.w3.org/1999/xlink"
+  office:version="1.3" office:mimetype="application/vnd.oasis.opendocument.presentation">
+  <office:styles>
+    <style:style style:name="standard" style:family="graphic">
+      <style:graphic-properties draw:stroke="none" draw:fill="solid" draw:fill-color="#3465a4"/>
+      <style:paragraph-properties fo:text-align="center"/>
+      <style:text-properties fo:font-size="28pt" fo:color="#ffffff" style:font-name="Liberation Sans" fo:font-family="'Liberation Sans'"/>
+    </style:style>
+  </office:styles>
+  <office:automatic-styles>
+    <style:page-layout style:name="PM1">
+      <style:page-layout-properties fo:margin-top="0cm" fo:margin-bottom="0cm" fo:margin-left="0cm" fo:margin-right="0cm" fo:page-width="28cm" fo:page-height="15.75cm" style:print-orientation="landscape"/>
+    </style:page-layout>
+    <style:style style:name="dp1" style:family="drawing-page">
+      <style:drawing-page-properties draw:fill="solid" draw:fill-color="#ffffff"/>
+    </style:style>
+    <style:style style:name="dpHidden" style:family="drawing-page">
+      <style:drawing-page-properties draw:fill="solid" draw:fill-color="#ffffff" presentation:visibility="hidden"/>
+    </style:style>
+    <style:style style:name="gTitle" style:family="graphic" style:parent-style-name="standard">
+      <style:graphic-properties draw:fill="none"/>
+      <style:text-properties fo:color="#1c1c1c" fo:font-size="36pt" fo:font-weight="bold"/>
+    </style:style>
+    <style:style style:name="gGreen" style:family="graphic" style:parent-style-name="standard">
+      <style:graphic-properties draw:fill-color="#4e9a06"/>
+    </style:style>
+  </office:automatic-styles>
+  <office:master-styles>
+    <style:master-page style:name="Default" style:page-layout-name="PM1" draw:style-name="dp1"/>
+  </office:master-styles>
+  <office:body>
+    <office:presentation>
+      <draw:page draw:name="Steps" draw:style-name="dp1" draw:master-page-name="Default">
+        <draw:rect draw:style-name="gTitle" svg:x="1cm" svg:y="0.8cm" svg:width="26cm" svg:height="2.6cm"><text:p>Two steps</text:p></draw:rect>
+        <draw:rect draw:style-name="standard" draw:id="boxA" xml:id="boxA" svg:x="2cm" svg:y="5cm" svg:width="10cm" svg:height="6cm"><text:p>A</text:p></draw:rect>
+        <draw:rect draw:style-name="gGreen" draw:id="boxB" xml:id="boxB" svg:x="16cm" svg:y="5cm" svg:width="10cm" svg:height="6cm"><text:p>B</text:p></draw:rect>
+        <anim:par presentation:node-type="timing-root">
+          <anim:seq presentation:node-type="main-sequence">
+            <anim:par smil:begin="next">
+              <anim:par smil:begin="0s">
+                <anim:par smil:begin="0s" smil:fill="hold" presentation:node-type="on-click" presentation:preset-class="entrance" presentation:preset-id="ooo-entrance-appear">
+                  <anim:set smil:begin="0s" smil:dur="0.001s" smil:fill="hold" smil:targetElement="boxA" smil:attributeName="visibility" smil:to="visible"/>
+                </anim:par>
+              </anim:par>
+            </anim:par>
+            <anim:par smil:begin="next">
+              <anim:par smil:begin="0s">
+                <anim:par smil:begin="0s" smil:fill="hold" presentation:node-type="on-click" presentation:preset-class="entrance" presentation:preset-id="ooo-entrance-fade-in">
+                  <anim:set smil:begin="0s" smil:dur="0.001s" smil:fill="hold" smil:targetElement="boxB" smil:attributeName="visibility" smil:to="visible"/>
+                  <anim:transitionFilter smil:dur="0.6s" smil:targetElement="boxB" smil:type="fade" smil:subtype="crossfade"/>
+                </anim:par>
+              </anim:par>
+            </anim:par>
+          </anim:seq>
+        </anim:par>
+      </draw:page>
+      <draw:page draw:name="Plain" draw:style-name="dp1" draw:master-page-name="Default">
+        <draw:rect draw:style-name="gTitle" svg:x="1cm" svg:y="0.8cm" svg:width="26cm" svg:height="2.6cm"><text:p>No steps</text:p></draw:rect>
+      </draw:page>
+      <draw:page draw:name="Hidden" draw:style-name="dpHidden" draw:master-page-name="Default">
+        <draw:rect draw:style-name="gTitle" svg:x="1cm" svg:y="0.8cm" svg:width="26cm" svg:height="2.6cm"><text:p>Hidden slide</text:p></draw:rect>
+      </draw:page>
+      <draw:page draw:name="Fly" draw:style-name="dp1" draw:master-page-name="Default">
+        <draw:rect draw:style-name="gTitle" svg:x="1cm" svg:y="0.8cm" svg:width="26cm" svg:height="2.6cm"><text:p>One step</text:p></draw:rect>
+        <draw:rect draw:style-name="standard" draw:id="boxC" xml:id="boxC" svg:x="9cm" svg:y="5cm" svg:width="10cm" svg:height="6cm"><text:p>C</text:p></draw:rect>
+        <anim:par presentation:node-type="timing-root">
+          <anim:seq presentation:node-type="main-sequence">
+            <anim:par smil:begin="next">
+              <anim:par smil:begin="0s">
+                <anim:par smil:begin="0s" smil:fill="hold" presentation:node-type="on-click" presentation:preset-class="entrance" presentation:preset-id="ooo-entrance-fly-in" presentation:preset-sub-type="from-bottom">
+                  <anim:set smil:begin="0s" smil:dur="0.001s" smil:fill="hold" smil:targetElement="boxC" smil:attributeName="visibility" smil:to="visible"/>
+                  <anim:animate smil:dur="0.5s" smil:fill="hold" smil:targetElement="boxC" smil:attributeName="x" smil:values="x;x" smil:keyTimes="0;1" presentation:additive="base"/>
+                  <anim:animate smil:dur="0.5s" smil:fill="hold" smil:targetElement="boxC" smil:attributeName="y" smil:values="1+height/2;y" smil:keyTimes="0;1" presentation:additive="base"/>
+                </anim:par>
+              </anim:par>
+            </anim:par>
+          </anim:seq>
+        </anim:par>
+      </draw:page>
+    </office:presentation>
+  </office:body>
+</office:document>

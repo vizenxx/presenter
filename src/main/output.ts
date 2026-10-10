@@ -3,7 +3,7 @@ import { inkKeyAction, type InkTool } from '../shared/ink'
 import { blankKey, commandKey, keyIntent, type BlankKind, type CommandKey } from '../shared/keys'
 import { clampIndex } from '../shared/nav'
 import { zoomKey, type ZoomDirection } from '../shared/zoom'
-import type { AdapterKind, DeckRef, KeyIntent, Milestone, OutputKind, OutputView, SlideMeta } from '../shared/types'
+import type { AdapterKind, DeckRef, KeyIntent, Milestone, OutputKind, OutputView, SlideMeta, SlideSteps } from '../shared/types'
 import { deckKind } from '../shared/deckKinds'
 import { FRAMEWORK_BRIDGE } from './bridges'
 import type { PreparedDeck } from './convert'
@@ -23,6 +23,8 @@ export interface DeckStateMsg {
   ownTimer?: boolean
   /** The shown slide's videos and sounds (built-in viewer), and the one playing. */
   media?: { kinds: Array<'video' | 'audio'>; playing: number | null }
+  /** The shown slide's click steps (built-in viewer of LibreOffice's animated page set). */
+  steps?: SlideSteps
 }
 
 export interface TimerSync {
@@ -84,6 +86,8 @@ export class Output {
   slides: SlideMeta[] = []
   /** The shown slide's videos and sounds (built-in viewer); null = none. */
   media: { kinds: Array<'video' | 'audio'>; playing: number | null } | null = null
+  /** The shown slide's click steps (PowerPoint animations); null = none. */
+  steps: SlideSteps | null = null
   milestones: Milestone[] = []
   editing = false
   fullscreen = false
@@ -216,12 +220,18 @@ export class Output {
     this.milestones = []
     this.keysAt = 0
     this.pendingTarget = null
-    void this.view.webContents.loadURL(url)
+    this.media = null
+    this.steps = null
+    // The next-slide preview shows each slide with all its click steps played.
+    void this.view.webContents.loadURL(this.kind === 'preview' ? `${url}&preview=1` : url)
     this.emit({ type: 'changed' })
   }
 
   /** Move to a logical index and drive the deck there. */
   moveTo(logical: number): void {
+    // Another slide: its click steps are unknown until the deck reports them (a quick key must not
+    // play a step of the slide left).
+    if (clampIndex(logical, this.total) !== this.shownIndex()) this.steps = null
     this.index = logical
     this.sync()
   }
@@ -235,6 +245,7 @@ export class Output {
   receiveState(msg: DeckStateMsg): void {
     if (typeof msg.totalSlides === 'number') this.total = msg.totalSlides
     this.media = msg.media && msg.media.kinds.length > 0 ? msg.media : null
+    this.steps = msg.steps && msg.steps.count > 0 ? { count: msg.steps.count, done: msg.steps.done } : null
     if (msg.metadata && msg.metadata.length > 0) this.slides = msg.metadata
     if (msg.milestones) this.milestones = msg.milestones
     this.ownTimer = msg.ownTimer !== false
@@ -272,6 +283,7 @@ export class Output {
       deckKind: this.deck ? deckKind(this.deck.path) : null,
       captureName: this.capture?.name ?? null,
       media: this.media,
+      steps: this.steps,
       shownOn: null
     }
   }
@@ -315,6 +327,11 @@ export class Output {
       this.keysAt = target
       void this.pressKeys(delta)
     }
+  }
+
+  /** Play the next click step of the shown slide (1), or take the last one back (-1). */
+  step(dir: 1 | -1): void {
+    this.send({ type: 'STEP', dir })
   }
 
   /** Play or pause a video or sound of the shown slide (built-in viewer). */

@@ -1,10 +1,22 @@
-import type { NavAction } from './types'
+import type { NavAction, SlideSteps } from './types'
 
 export interface NavOutput {
   id: string
   index: number
   total: number | null
   linked: boolean
+}
+
+/**
+ * A page key on a slide with click steps (PowerPoint animations) first plays the next step, or
+ * takes the last one back, and only then turns the page. Returns the step to play (1 or -1), or
+ * null to turn the page as usual.
+ */
+export function stepFirst(action: NavAction, steps: SlideSteps | null | undefined): 1 | -1 | null {
+  if (!steps || action.type !== 'step' || Math.abs(action.delta) !== 1) return null
+  if (action.delta > 0 && steps.done < steps.count) return 1
+  if (action.delta < 0 && steps.done > 0) return -1
+  return null
 }
 
 export function clampIndex(index: number, total: number | null): number {

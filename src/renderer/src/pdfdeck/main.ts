@@ -6,17 +6,9 @@
  */
 import * as pdfjs from 'pdfjs-dist'
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
+import { mediaLayer, type SlideMedia } from '../deckMedia'
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl
-
-interface SlideMedia {
-  kind: 'video' | 'audio'
-  x: number
-  y: number
-  w: number
-  h: number
-  file: string
-}
 
 interface SlideMeta {
   title: string
@@ -32,9 +24,8 @@ const metaName = params.get('meta')
 const channel = new BroadcastChannel('UXD202_SLIDES_SYNC')
 const canvas = document.getElementById('page') as HTMLCanvasElement
 const message = document.getElementById('message') as HTMLDivElement
-const mediaLayer = document.getElementById('media') as HTMLDivElement
-/** The current slide's videos and sounds (players), in slide order. */
-let players: HTMLMediaElement[] = []
+/** The current slide's videos and sounds, where they stand on it. */
+const media = mediaLayer(document.getElementById('media') as HTMLDivElement, () => report())
 
 let doc: pdfjs.PDFDocumentProxy | null = null
 let current = 0
@@ -50,7 +41,7 @@ function report(): void {
     totalSlides: doc.numPages,
     currentTitle: slides[current]?.title ?? '',
     metadata: slides.map(({ title, notes }) => ({ title, notes })),
-    media: { kinds: (slides[current]?.media ?? []).map((m) => m.kind), playing: playingIndex() },
+    media: { kinds: (slides[current]?.media ?? []).map((m) => m.kind), playing: media.playing() },
     milestones: [],
     ownTimer: false
   })
@@ -82,63 +73,15 @@ async function render(): Promise<void> {
 /** The media layer lies exactly on the drawn page. */
 function placeMediaLayer(): void {
   const r = canvas.getBoundingClientRect()
-  Object.assign(mediaLayer.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` })
+  media.place({ left: r.left, top: r.top, width: r.width, height: r.height })
 }
 // Also whenever the drawn page changes size (a render that another render replaced never places it).
 new ResizeObserver(() => placeMediaLayer()).observe(canvas)
 
-function playingIndex(): number | null {
-  const i = players.findIndex((p) => !p.paused && !p.ended)
-  return i < 0 ? null : i
-}
-
-/** The current slide's videos and sounds: a ▶ on each; a click (or the console) plays or pauses it in place. */
+let mediaShown = false
 function showMedia(): void {
-  for (const p of players) p.pause()
-  players = []
-  mediaLayer.replaceChildren()
-  for (const m of slides[current]?.media ?? []) {
-    const box = document.createElement('div')
-    box.className = `media ${m.kind}`
-    Object.assign(box.style, { left: `${m.x * 100}%`, top: `${m.y * 100}%`, width: `${m.w * 100}%`, height: `${m.h * 100}%` })
-    const player = document.createElement(m.kind === 'audio' ? 'audio' : 'video') as HTMLMediaElement
-    player.src = `/${m.file}`
-    player.preload = 'metadata'
-    if (player instanceof HTMLVideoElement) player.playsInline = true
-    const play = document.createElement('div')
-    play.className = 'play'
-    const sync = (): void => {
-      box.classList.toggle('playing', !player.paused && !player.ended)
-      if (!player.paused) box.classList.add('started')
-      report()
-    }
-    player.addEventListener('play', sync)
-    player.addEventListener('pause', sync)
-    player.addEventListener('ended', sync)
-    player.addEventListener('error', () => {
-      const note = document.createElement('div')
-      note.className = 'note'
-      note.textContent = `This ${m.kind === 'audio' ? 'sound' : 'video'} cannot play here (${m.file.split('.').pop()?.toUpperCase()}).`
-      box.append(note)
-    })
-    box.addEventListener('click', () => toggleMedia(players.indexOf(player)))
-    box.append(player, play)
-    mediaLayer.append(box)
-    players.push(player)
-  }
-}
-
-/** Play or pause one video or sound of the slide (the others pause). */
-function toggleMedia(index: number): void {
-  const player = players[index]
-  if (!player) return
-  if (!player.paused && !player.ended) {
-    player.pause()
-    return
-  }
-  for (const p of players) if (p !== player) p.pause()
-  if (player.ended) player.currentTime = 0
-  void player.play().catch(() => undefined)
+  mediaShown = true
+  media.show(slides[current]?.media)
 }
 
 function goto(index: number): void {
@@ -147,7 +90,7 @@ function goto(index: number): void {
   const changed = next !== current
   current = next
   void render()
-  if (changed || players.length === 0) showMedia()
+  if (changed || !mediaShown) showMedia()
   report()
 }
 
@@ -199,7 +142,7 @@ channel.addEventListener('message', (event: MessageEvent) => {
   if (!msg || (msg.targetTabId && msg.targetTabId !== tabId)) return
   if (msg.type === 'PING') report()
   else if (msg.type === 'GOTO' && typeof msg.slideIndex === 'number') goto(msg.slideIndex)
-  else if (msg.type === 'MEDIA' && typeof msg.index === 'number') toggleMedia(msg.index)
+  else if (msg.type === 'MEDIA' && typeof msg.index === 'number') media.toggle(msg.index)
 })
 
 let resizeTimer = 0

@@ -109,6 +109,12 @@ export function CurrentPane(props: {
       <div className="mt-2 flex min-w-0 items-center gap-3">
         <span className="shrink-0 text-sm text-muted">
           <PageText o={projector} />
+          {projector.steps && (
+            <span title={t.stepsTitle}>
+              {' · '}
+              {t.stepsOf(projector.steps.done, projector.steps.count)}
+            </span>
+          )}
         </span>
         <span className="min-w-0 truncate text-base font-semibold">{projector.title}</span>
         {projector.media && (

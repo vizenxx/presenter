@@ -56,6 +56,14 @@ export interface OutputView {
   shownOn: number | null
   /** The shown slide's videos and sounds (PPT decks), and the one playing; null = none. */
   media?: { kinds: Array<'video' | 'audio'>; playing: number | null } | null
+  /** The shown slide's click steps (PowerPoint animations) and how many have played; null = none. */
+  steps?: SlideSteps | null
+}
+
+/** Click steps of a slide: how many there are and how many have played. */
+export interface SlideSteps {
+  count: number
+  done: number
 }
 
 /** The speaker's own timer (never shown to the audience). Times are Date.now() values. */

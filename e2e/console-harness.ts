@@ -110,7 +110,8 @@ async function shot(projecting: boolean, open: Open = null, page = 'console', th
   // Three warning bells: the timer panel must still fit.
   if (open === 'bells') state.timer.warnings = [{ sec: 300, beeps: 1 }, { sec: 120, beeps: 2 }, { sec: 30, beeps: 5 }]
   // A PPT slide with a video (playing) and a sound: their buttons sit next to the slide title.
-  if (open === 'media') state.outputs[0] = { ...state.outputs[0], media: { kinds: ['video', 'audio'], playing: 0 } }
+  // …and click animations: one of three shown.
+  if (open === 'media') state.outputs[0] = { ...state.outputs[0], media: { kinds: ['video', 'audio'], playing: 0 }, steps: { count: 3, done: 1 } }
   writeStub(state)
   // The toolbar starts in a 520 x 56 window, as in the app (src/main/windowTools.ts).
   const win = new BrowserWindow({ show: false, width: page === 'console' ? 1536 : 520, height: page === 'console' ? 864 : 56, useContentSize: true, backgroundColor: '#475569', webPreferences: { preload: STUB, contextIsolation: true, sandbox: true, offscreen: true } })
@@ -141,6 +142,8 @@ async function shot(projecting: boolean, open: Open = null, page = 'console', th
     await win.webContents.executeJavaScript(`[...document.querySelectorAll('button')].find((b) => b.textContent.includes('Sound 2')).click()`)
     const calls = await win.webContents.executeJavaScript('window.presenter.__calls()')
     if (!calls.some((c: unknown[]) => c[0] === 'mediaToggle' && c[1] === 1)) throw new Error('▶ Sound 2 did not ask to play the sound')
+    const stepsText = await win.webContents.executeJavaScript(`document.body.innerText.includes('1/3 clicks')`)
+    if (!stepsText) throw new Error('the slide line does not show 1/3 clicks')
   }
   const image = await win.webContents.capturePage()
   const name = `${page}${projecting ? '-projecting' : ''}${open ? `-${open}` : ''}${theme === 'light' ? '-light' : ''}.png`

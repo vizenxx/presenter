@@ -24,7 +24,7 @@ describe.skipIf(!wanted)('real conversion', () => {
     expect(installedConverters()).toContain(wanted)
     const cacheRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'presenter-convert-'))
     const t0 = Date.now()
-    const folder = await convertSlides(path.resolve(SAMPLE), { cacheRoot, converters: [wanted as Converter] })
+    const { folder } = await convertSlides(path.resolve(SAMPLE), { cacheRoot, converters: [wanted as Converter], view: 'pdf' })
     const firstMs = Date.now() - t0
     const meta = JSON.parse(fs.readFileSync(path.join(folder, 'meta.json'), 'utf8')) as DeckMeta
     const pages = await pdfPages(path.join(folder, 'deck.pdf'))
@@ -33,7 +33,7 @@ describe.skipIf(!wanted)('real conversion', () => {
     expect(meta.slides.length).toBe(pages)
 
     const t1 = Date.now()
-    const prepared = await prepareDeck(SAMPLE, { cacheRoot, converters: [wanted as Converter] })
+    const prepared = await prepareDeck(SAMPLE, { cacheRoot, converters: [wanted as Converter], view: 'pdf' })
     expect(prepared.folder).toBe(folder)
     expect(Date.now() - t1).toBeLessThan(1000)
     expect(prepared.entry).toBe('__presenter__/pdfdeck.html?file=deck.pdf&meta=meta.json')

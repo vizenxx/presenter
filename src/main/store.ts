@@ -2,7 +2,7 @@ import { app, desktopCapturer, dialog, powerSaveBlocker, screen, session, system
 import fs from 'node:fs'
 import path from 'node:path'
 import { blankKey, commandKey, intentToAction, keyIntent, type BlankKind, type CommandKey } from '../shared/keys'
-import { planMove, type NavOutput } from '../shared/nav'
+import { planMove, type NavOutput, stepFirst } from '../shared/nav'
 import { DECK_EXTENSIONS, deckKind, deckTitle } from '../shared/deckKinds'
 import { INK_COLORS, INK_TOOLS, InkScene, type InkOp, type InkSettings, type InkStroke, type InkTool } from '../shared/ink'
 import { MAIN_STRINGS } from '../shared/lang'
@@ -762,6 +762,16 @@ export class Store {
     // The selected next preview turns alone: the teacher looks ahead; students see nothing change.
     if (selected?.kind === 'preview') {
       this.applyMoves(planMove([{ id: selected.id, index: selected.index, total: selected.total, linked: false }], selected.id, action))
+      return
+    }
+    // Click steps (PowerPoint animations) come before the page turn: the selected screen plays
+    // them, and so do screens linked with it that show the same slide of the same deck.
+    const dir = selected ? stepFirst(action, selected.steps) : null
+    if (selected && dir !== null) {
+      for (const o of this.outputs.values()) {
+        const partner = o === selected || (selected.linked && o.linked && o.kind !== 'preview' && o.deck?.path === selected.deck?.path && o.shownIndex() === selected.shownIndex())
+        if (partner) o.step(dir)
+      }
       return
     }
     this.applyMoves(planMove(this.navOutputs(), this.selectedId, action))

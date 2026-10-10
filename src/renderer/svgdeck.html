@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self'; frame-src 'self'" />
+    <title>Slides</title>
+    <style>
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
+      /* LibreOffice's page set with its slide show engine. Keys and clicks belong to Presenter, not to the engine. */
+      #deck { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; pointer-events: none; background: transparent; }
+      #message { position: fixed; inset: 0; display: grid; place-items: center; color: #9ca3af; font: 600 2vw "Segoe UI", "Microsoft YaHei UI", sans-serif; }
+      #message[hidden] { display: none; }
+    </style>
+  </head>
+  <body>
+    <iframe id="deck" title="Slides"></iframe>
+    <div id="media"></div>
+    <div id="message" hidden></div>
+    <script type="module" src="./src/svgdeck/main.ts"></script>
+  </body>
+</html>

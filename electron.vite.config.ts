@@ -27,6 +27,7 @@ export default defineConfig({
           overlay: resolve(__dirname, 'src/renderer/overlay.html'),
           roller: resolve(__dirname, 'src/renderer/roller.html'),
           pdfdeck: resolve(__dirname, 'src/renderer/pdfdeck.html'),
+          svgdeck: resolve(__dirname, 'src/renderer/svgdeck.html'),
           capture: resolve(__dirname, 'src/renderer/capture.html'),
           toolbar: resolve(__dirname, 'src/renderer/toolbar.html'),
           inkpad: resolve(__dirname, 'src/renderer/inkpad.html')

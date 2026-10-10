@@ -4,11 +4,12 @@
  * It renders off-screen: no window appears and nothing plays, so it is safe while a
  * class is on the projector. Build first (npm run build), then: npm run check:viewer
  */
-import { app, BrowserWindow, ipcMain, session } from 'electron'
+import { app, BrowserWindow, ipcMain, session, type NativeImage } from 'electron'
+import { execFileSync } from 'node:child_process'
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate'
 import fs from 'node:fs'
 import path from 'node:path'
-import { prepareDeck, type Converter } from '../src/main/convert'
+import { libreOfficePath, prepareDeck, type Converter } from '../src/main/convert'
 import { deckUrl } from '../src/main/deckPaths'
 import { installDeckProtocol, registerDeckFolder, registerDeckScheme, setViewerRoot } from '../src/main/deckProtocol'
 
@@ -17,6 +18,9 @@ const ROOT = path.resolve(__dirname, '..', '..', '..')
 const OUT = path.join(ROOT, 'e2e', 'out')
 const SAMPLE = process.env['PRESENTER_SAMPLE_PPTX'] ?? path.resolve(ROOT, '../2026-Autumn/UXD202/Original Slides/UXD202 Lecture n1.pptx')
 const converters = process.env['PRESENTER_CONVERTER'] ? [process.env['PRESENTER_CONVERTER'] as Converter] : ['libreoffice' as Converter]
+// The LibreOffice that ships inside Presenter (node scripts/libreoffice.mjs prepare), when it is there.
+const BUNDLED = path.join(ROOT, 'vendor', `libreoffice-${process.platform}-${process.arch}`)
+if (!process.env['PRESENTER_LIBREOFFICE'] && fs.existsSync(BUNDLED)) process.env['PRESENTER_LIBREOFFICE'] = BUNDLED
 
 registerDeckScheme()
 app.disableHardwareAcceleration()
@@ -27,6 +31,7 @@ interface State {
   metadata: Array<{ title: string; notes?: string }>
   ownTimer?: boolean
   media?: { kinds: string[]; playing: number | null }
+  steps?: { count: number; done: number }
 }
 
 /** One second of a quiet 440 Hz tone as a WAV file (a stand-in for a slide's video or sound). */
@@ -108,7 +113,7 @@ async function until(label: string, test: (s: State) => boolean, ms = 20000): Pr
 
 async function check(win: BrowserWindow, file: string, label: string, converted: boolean): Promise<void> {
   latest = null
-  const prepared = await prepareDeck(file, { cacheRoot: path.join(OUT, 'convert-cache'), converters })
+  const prepared = await prepareDeck(file, { cacheRoot: path.join(OUT, 'convert-cache'), converters, view: 'pdf' })
   const { host, url } = deckUrl(prepared.folder, prepared.entry, 'projector')
   registerDeckFolder(host, prepared.folder)
   await win.loadURL(url)
@@ -182,13 +187,114 @@ function pptxWithVideo(sample: string, video: { mp4: Buffer; png: Buffer }): str
   return out
 }
 
+/** The colour of the shown page at a point (fractions of the page). */
+function pixel(image: NativeImage, fx: number, fy: number): [number, number, number] {
+  const { width, height } = image.getSize()
+  const bitmap = image.toBitmap()
+  const i = (Math.floor(fy * height) * width + Math.floor(fx * width)) * 4
+  return [bitmap[i + 2], bitmap[i + 1], bitmap[i]]
+}
+
+const near = (c: number[], target: number[], tolerance = 40): boolean => c.every((v, i) => Math.abs(v - target[i]) <= tolerance)
+const WHITE = [255, 255, 255]
+const BLUE = [0x34, 0x65, 0xa4]
+const GREEN = [0x4e, 0x9a, 0x06]
+
+/**
+ * PowerPoint click animations: a test deck (scripts/fixtures/animated-deck.fodp, made into a PPTX)
+ * becomes LibreOffice's animated page set; steps play one by one (a fade really fades), go back,
+ * and the page turns follow PowerPoint (back = the slide with all its steps; the preview shows all steps).
+ */
+async function clickSteps(win: BrowserWindow): Promise<void> {
+  const soffice = libreOfficePath()
+  if (!soffice) throw new Error('no LibreOffice for the click-step check')
+  const work = path.join(OUT, 'steps')
+  fs.rmSync(work, { recursive: true, force: true })
+  fs.mkdirSync(work, { recursive: true })
+  const profile = `file:///${path.join(OUT, 'steps-profile').replace(/\\/g, '/').replace(/ /g, '%20')}`
+  execFileSync(soffice, ['--headless', '--norestore', '--nolockcheck', '--nodefault', `-env:UserInstallation=${profile}`, '--convert-to', 'pptx', '--outdir', work, path.join(ROOT, 'scripts', 'fixtures', 'animated-deck.fodp')], { stdio: 'pipe' })
+  const pptx = path.join(work, 'animated-deck.pptx')
+  const prepared = await prepareDeck(pptx, { cacheRoot: path.join(OUT, 'convert-cache'), converters })
+  if (!prepared.entry.startsWith('__presenter__/svgdeck.html')) throw new Error(`not the animated page set: ${prepared.entry}`)
+  latest = null
+  const { host, url } = deckUrl(prepared.folder, prepared.entry, 'projector')
+  registerDeckFolder(host, prepared.folder)
+  await win.loadURL(url)
+  let s = await until('animated deck', (x) => x.totalSlides === 3 && x.steps?.count === 2 && x.steps.done === 0)
+  const titles = s.metadata.map((m) => m.title).join(' | ')
+  if (titles !== 'Two steps | No steps | One step') throw new Error(`titles: ${titles}`)
+  if (s.ownTimer !== false) throw new Error('viewer must report ownTimer: false')
+  await wait(800)
+  const look = async (): Promise<{ a: number[]; b: number[]; c: number[] }> => {
+    const image = await win.webContents.capturePage()
+    return { a: pixel(image, 0.25, 0.5), b: pixel(image, 0.75, 0.5), c: pixel(image, 0.5, 0.5) }
+  }
+  let seen = await look()
+  if (!near(seen.a, WHITE) || !near(seen.b, WHITE)) throw new Error(`before any step both boxes must be hidden: ${JSON.stringify(seen)}`)
+  fs.writeFileSync(path.join(OUT, 'viewer-steps-0.png'), (await win.webContents.capturePage()).toPNG())
+
+  const step = async (dir: number, done: number): Promise<void> => {
+    win.webContents.send('deck:cmd', { type: 'STEP', dir })
+    await until(`step ${dir > 0 ? 'forward' : 'back'} to ${done}`, (x) => x.steps?.done === done)
+  }
+  await step(1, 1)
+  await wait(400)
+  seen = await look()
+  if (!near(seen.a, BLUE) || !near(seen.b, WHITE)) throw new Error(`step 1 shows box A only: ${JSON.stringify(seen)}`)
+  fs.writeFileSync(path.join(OUT, 'viewer-steps-1.png'), (await win.webContents.capturePage()).toPNG())
+
+  // Step 2 fades box B in over 0.6 s: some frame in between is neither white nor green.
+  win.webContents.send('deck:cmd', { type: 'STEP', dir: 1 })
+  const between: number[][] = []
+  for (let i = 0; i < 8; i++) {
+    await wait(70)
+    between.push((await look()).b)
+  }
+  await until('step forward to 2', (x) => x.steps?.done === 2)
+  await wait(600)
+  seen = await look()
+  if (!near(seen.a, BLUE) || !near(seen.b, GREEN)) throw new Error(`step 2 shows both boxes: ${JSON.stringify(seen)}`)
+  const faded = between.some((c) => !near(c, WHITE, 25) && !near(c, GREEN, 25))
+  if (!faded) throw new Error(`box B did not fade in (frames: ${JSON.stringify(between)})`)
+  fs.writeFileSync(path.join(OUT, 'viewer-steps-2.png'), (await win.webContents.capturePage()).toPNG())
+
+  await step(-1, 1)
+  await wait(300)
+  seen = await look()
+  if (!near(seen.b, WHITE)) throw new Error(`a step back hides box B again: ${JSON.stringify(seen)}`)
+
+  win.webContents.send('deck:cmd', { type: 'GOTO', slideIndex: 1 })
+  await until('next slide', (x) => x.currentSlide === 1 && !x.steps?.count)
+  win.webContents.send('deck:cmd', { type: 'GOTO', slideIndex: 0 })
+  s = await until('back to the slide before', (x) => x.currentSlide === 0 && x.steps?.done === 2)
+  await wait(400)
+  seen = await look()
+  if (!near(seen.a, BLUE) || !near(seen.b, GREEN)) throw new Error(`back shows the slide with all its steps: ${JSON.stringify(seen)}`)
+  win.webContents.send('deck:cmd', { type: 'GOTO', slideIndex: 2 })
+  await until('jump to slide 3', (x) => x.currentSlide === 2 && x.steps?.count === 1 && x.steps.done === 0)
+  await wait(400)
+  seen = await look()
+  if (!near(seen.c, WHITE)) throw new Error(`a jump shows the slide before its steps: ${JSON.stringify(seen)}`)
+
+  // The next-slide preview: every slide with all its steps.
+  latest = null
+  await win.loadURL(`${deckUrl(prepared.folder, prepared.entry, 'next').url}&preview=1`)
+  await until('preview first slide', (x) => x.currentSlide === 0 && x.steps?.done === 2)
+  win.webContents.send('deck:cmd', { type: 'GOTO', slideIndex: 2 })
+  await until('preview slide 3', (x) => x.currentSlide === 2 && x.steps?.done === 1)
+  await wait(400)
+  seen = await look()
+  if (!near(seen.c, BLUE)) throw new Error(`the preview shows box C: ${JSON.stringify(seen)}`)
+  console.log('ok click animations: 2 steps play one by one (the fade fades), a step back, back = all steps, jump = none, preview = all')
+}
+
 /** The first conversion on a computer: LibreOffice starts with a new, empty profile. */
 async function freshProfile(): Promise<void> {
   if (!converters.includes('libreoffice')) return
   const cacheRoot = fs.mkdtempSync(path.join(OUT, 'fresh-cache-'))
   try {
     const prepared = await prepareDeck(SAMPLE, { cacheRoot, converters: ['libreoffice'] })
-    if (!fs.existsSync(path.join(prepared.folder, 'deck.pdf'))) throw new Error('no deck.pdf on the first conversion')
+    if (!fs.existsSync(path.join(prepared.folder, 'deck.svg'))) throw new Error('no animated page set (deck.svg) on the first conversion')
     console.log('ok the first conversion with a new LibreOffice profile works')
   } finally {
     fs.rmSync(cacheRoot, { recursive: true, force: true })
@@ -245,11 +351,12 @@ app.whenReady().then(async () => {
     await check(win, SAMPLE, 'pptx', true)
     // The converted PDF doubles as a plain-PDF sample (no meta.json: titles come from page text).
     const pdf = path.join(OUT, 'sample.pdf')
-    const prepared = await prepareDeck(SAMPLE, { cacheRoot: path.join(OUT, 'convert-cache'), converters })
+    const prepared = await prepareDeck(SAMPLE, { cacheRoot: path.join(OUT, 'convert-cache'), converters, view: 'pdf' })
     fs.copyFileSync(path.join(prepared.folder, 'deck.pdf'), pdf)
     await check(win, pdf, 'pdf', false)
     await media(win, prepared.folder)
     await freshProfile()
+    await clickSteps(win)
     await realVideo(win)
     console.log('VIEWER OK')
   } catch (error) {

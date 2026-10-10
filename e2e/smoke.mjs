@@ -428,6 +428,38 @@ try {
   assert.ok(Math.max(...sizes) - Math.min(...sizes) <= 1, 'group sizes differ by at most one')
   console.log('ok 8e random groups')
 
+  // 8f. PowerPoint click animations (the LibreOffice inside Presenter, vendor/): a page key first
+  // shows the next click step, then turns the page; going back shows the slide with all its steps.
+  const soffice = [path.join(root, 'vendor', `libreoffice-${process.platform}-${process.arch}`, 'program', 'soffice.com'), path.join(root, 'vendor', `libreoffice-${process.platform}-${process.arch}`, 'LibreOffice.app', 'Contents', 'MacOS', 'soffice')].find((f) => fs.existsSync(f))
+  if (!soffice) console.log('skip 8f click animations: no bundled LibreOffice (node scripts/libreoffice.mjs prepare)')
+  else {
+    const stepsDir = path.join(OUT, 'smoke-steps')
+    fs.rmSync(stepsDir, { recursive: true, force: true })
+    fs.mkdirSync(stepsDir, { recursive: true })
+    const profile = new URL(`file:///${path.join(OUT, 'smoke-steps-profile').replace(/\\/g, '/')}`).href
+    execFileSync(soffice, ['--headless', '--norestore', '--nolockcheck', '--nodefault', `-env:UserInstallation=${profile}`, '--convert-to', 'pptx', '--outdir', stepsDir, path.join(root, 'scripts', 'fixtures', 'animated-deck.fodp')], { stdio: 'pipe' })
+    await call((_e, p) => globalThis.__presenter.openMainDeck(p), path.join(stepsDir, 'animated-deck.pptx'))
+    s = await waitFor('animated deck shown', (s) => out(s, 'projector').total === 3 && out(s, 'projector').steps?.count === 2 && out(s, 'next').shownIndex === 1, 90000)
+    assert.equal(out(s, 'projector').steps.done, 0, 'no step shown yet')
+    await call(() => globalThis.__presenter.onKey('next', null))
+    s = await waitFor('first click step', (s) => out(s, 'projector').steps?.done === 1)
+    assert.equal(out(s, 'projector').shownIndex, 0, 'a click step does not turn the page')
+    await call(() => globalThis.__presenter.onKey('next', null))
+    s = await waitFor('second click step', (s) => out(s, 'projector').steps?.done === 2)
+    await call(() => globalThis.__presenter.onKey('next', null))
+    s = await waitFor('page turn after the last step', (s) => out(s, 'projector').shownIndex === 1 && out(s, 'next').shownIndex === 2)
+    await call(() => globalThis.__presenter.onKey('prev', null))
+    s = await waitFor('back: all steps shown', (s) => out(s, 'projector').shownIndex === 0 && out(s, 'projector').steps?.done === 2)
+    await call(() => globalThis.__presenter.onKey('prev', null))
+    s = await waitFor('a step back', (s) => out(s, 'projector').shownIndex === 0 && out(s, 'projector').steps?.done === 1)
+    console.log('ok 8f click animations: steps first, then the page; back shows all steps')
+    // The next steps expect the UXD202 deck on slide 6.
+    await call((_e, p) => globalThis.__presenter.openMainDeck(p), UXD_DECK)
+    s = await waitFor('UXD202 deck again', (s) => out(s, 'projector').deckKind === 'html' && out(s, 'projector').total > 5, 20000)
+    await call(() => globalThis.__presenter.navigate({ type: 'goto', index: 5 }))
+    s = await waitFor('slide 6 again', (s) => out(s, 'projector').shownIndex === 5)
+  }
+
   // Steps 9-15 show the projector window and capture the desktop.
   if (!HEADLESS) {
     // 9. Screenshots before projecting: console DOM, and the real desktop with the live views.

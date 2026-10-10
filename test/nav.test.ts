@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { clampIndex, planMove, type NavOutput } from '../src/shared/nav'
+import { clampIndex, planMove, stepFirst, type NavOutput } from '../src/shared/nav'
 
 const outs = (...o: Array<Partial<NavOutput> & { id: string }>): NavOutput[] =>
   o.map((x) => ({ index: 0, total: 10, linked: true, ...x }))
@@ -57,5 +57,28 @@ describe('planMove', () => {
   })
   it('returns nothing for an unknown selected screen', () => {
     expect(planMove(outs({ id: 'projector' }), 'nope', { type: 'step', delta: 1 }).size).toBe(0)
+  })
+})
+
+describe('click steps before the page turn', () => {
+  const next = { type: 'step', delta: 1 } as const
+  const back = { type: 'step', delta: -1 } as const
+
+  it('plays the next step while steps are left, then turns the page', () => {
+    expect(stepFirst(next, { count: 3, done: 0 })).toBe(1)
+    expect(stepFirst(next, { count: 3, done: 2 })).toBe(1)
+    expect(stepFirst(next, { count: 3, done: 3 })).toBeNull()
+  })
+
+  it('takes the last step back while one has played, then turns back', () => {
+    expect(stepFirst(back, { count: 3, done: 2 })).toBe(-1)
+    expect(stepFirst(back, { count: 3, done: 0 })).toBeNull()
+  })
+
+  it('leaves jumps and slides without steps to the page turn', () => {
+    expect(stepFirst(next, null)).toBeNull()
+    expect(stepFirst({ type: 'goto', index: 4 }, { count: 3, done: 0 })).toBeNull()
+    expect(stepFirst({ type: 'first' }, { count: 3, done: 3 })).toBeNull()
+    expect(stepFirst({ type: 'step', delta: 5 }, { count: 3, done: 0 })).toBeNull()
   })
 })
