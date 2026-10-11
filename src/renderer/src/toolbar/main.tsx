@@ -13,6 +13,7 @@ import { screenLabel, useT } from '../console/i18n'
 import { useRollFace } from '../console/RollerPanel'
 import { useNow } from '../console/SpeakerTimer'
 import { PRESETS, SetTime } from '../console/TimerPanel'
+import { IconLabel } from '../console/ui'
 
 const ICON_BTN = 'grid h-8 w-8 place-items-center rounded-full hover:bg-line'
 const SMALL_BTN = 'rounded-full px-2.5 py-1 text-sm hover:bg-line'
@@ -125,7 +126,9 @@ function Toolbar() {
         </span>
         {!open || !state || !speaker || !timer ? (
           <button type="button" onClick={() => setOpen(true)} title={target ? t.toolbarFor(screenLabel(t, target)) : undefined} className={`${SMALL_BTN} font-semibold`}>
-            ✎ {t.toolbarTitle} ▸
+            <IconLabel icon="pen" size={15}>
+              {t.toolbarTitle} ▸
+            </IconLabel>
           </button>
         ) : (
           <>
@@ -152,7 +155,9 @@ function Toolbar() {
                 onClick={() => setTimerOpen((o) => !o)}
                 className={`${SMALL_BTN} tabular-nums ${timer.alarming ? 'bg-alarm text-white' : timerOpen ? 'bg-line' : ''} ${timer.status === 'running' ? 'text-ink' : timerOn ? 'text-gold' : ''}`}
               >
-                ⏱ {timerOn ? mmss(timer.remainingSec) : t.timerShort}
+                <IconLabel icon="timer" size={15}>
+                  {timerOn ? mmss(timer.remainingSec) : t.timerShort}
+                </IconLabel>
               </button>
             </Group>
             {mineSet && (
@@ -170,7 +175,9 @@ function Toolbar() {
                 </button>
               ) : (
                 <button type="button" title={t.rollerButtonTitle} disabled={state.roller.people.length === 0} onClick={() => window.presenter.rollerRoll()} className={`${SMALL_BTN} disabled:opacity-40`}>
-                  🎲 {t.pickShort}
+                  <IconLabel icon="dice" size={15}>
+                    {t.pickShort}
+                  </IconLabel>
                 </button>
               )}
               {face.person && (

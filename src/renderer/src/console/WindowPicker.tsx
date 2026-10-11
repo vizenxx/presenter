@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type { WindowSource } from '../../../shared/types'
 import { useT } from './i18n'
 import { IS_MAC } from './platform'
-import { Btn } from './ui'
+import { Btn, UiIcon } from './ui'
 
 /** Choose a program window to become a window screen. */
 export function WindowPicker({ show, onClose }: { show: boolean; onClose: () => void }) {
@@ -56,7 +56,7 @@ export function WindowPicker({ show, onClose }: { show: boolean; onClose: () => 
                 ) : (
                   // A minimized window has no picture: its program icon stands in (as in Zoom).
                   <span className="flex aspect-[16/10] w-full flex-col items-center justify-center gap-2 rounded-xl bg-page">
-                    {w.icon ? <img src={w.icon} alt="" className="h-12 w-12" /> : <span className="text-4xl">🪟</span>}
+                    {w.icon ? <img src={w.icon} alt="" className="h-12 w-12" /> : <span className="text-muted"><UiIcon name="window" size={44} /></span>}
                     {w.minimized && <span className="text-sm text-muted">{t.minimizedWindow}</span>}
                   </span>
                 )}

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { parseNameList } from '../../../shared/roller'
 import type { AppState, RollerView } from '../../../shared/types'
 import { useT } from './i18n'
-import { Btn, NumberField } from './ui'
+import { Btn, IconLabel, NumberField } from './ui'
 
 interface Draft {
   id: string | null
@@ -153,7 +153,9 @@ export function RollerPanel({ state }: { state: AppState }) {
         onClick={() => window.presenter.rollerRoll()}
         className="rounded-full bg-accent py-3 text-base font-semibold text-white hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-40"
       >
-        {t.pickOne}
+        <IconLabel icon="dice" size={18}>
+          {t.pickOne}
+        </IconLabel>
       </button>
       {r.showing ? <Btn onClick={() => window.presenter.rollerHide()}>{t.hideRoller}</Btn> : !audience && <p className="text-sm text-muted">{t.noAudience}</p>}
 

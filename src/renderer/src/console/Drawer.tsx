@@ -2,7 +2,7 @@ import { Fragment, useEffect, useRef } from 'react'
 import type { AppState } from '../../../shared/types'
 import { screenLabel, useT } from './i18n'
 import { RollerPanel } from './RollerPanel'
-import { Btn, goToSlide } from './ui'
+import { Btn, goToSlide, IconLabel } from './ui'
 
 export type DrawerTab = 'list' | 'notes' | 'roller'
 
@@ -63,7 +63,7 @@ export function Drawer({ state, tab, onTab }: { state: AppState; tab: DrawerTab;
           {t.notes}
         </Btn>
         <Btn tone={tab === 'roller' ? 'primary' : 'default'} title={t.pick} onClick={() => onTab('roller')}>
-          {t.pickTab}
+          <IconLabel icon="dice">{t.pickTab}</IconLabel>
         </Btn>
         <span className="ml-auto">
           <Btn tone="quiet" title={t.hide} onClick={() => onTab(null)}>

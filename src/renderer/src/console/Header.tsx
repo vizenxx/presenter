@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import type { AppState, UiTheme } from '../../../shared/types'
 import { useDarkLook } from './hooks'
 import { useT } from './i18n'
-import { Btn, Menu, MenuItem, type ConsoleMenu } from './ui'
+import { Btn, IconLabel, Menu, MenuItem, type ConsoleMenu } from './ui'
 
 function ProjectStatus({ state }: { state: AppState }) {
   const t = useT()
@@ -96,16 +96,18 @@ export function Header(props: {
         )}
       </span>
       <Btn tone={rollerOpen ? 'primary' : 'default'} title={t.rollerButtonTitle} onClick={onRoller}>
-        {t.rollerButton}
+        <IconLabel icon="dice">{t.rollerButton}</IconLabel>
       </Btn>
       <Btn title={t.guideButtonTitle} onClick={onGuide}>
-        {t.guideButton}
+        <IconLabel icon="book">{t.guideButton}</IconLabel>
       </Btn>
       <ThemeSwitch theme={state.theme} />
       <ProjectStatus state={state} />
       {(state.projecting || state.projectors.length > 0) && (
         <Btn tone={state.blank ? 'primary' : 'default'} title={t.blankTitle} onClick={() => window.presenter.setBlank(state.blank ? null : 'black')}>
-          {state.blank ? t.blankOff : t.blankOn}
+          <IconLabel icon={state.blank ? 'play' : 'blank'} size={15}>
+            {state.blank ? t.blankOff : t.blankOn}
+          </IconLabel>
         </Btn>
       )}
       {state.projecting ? (

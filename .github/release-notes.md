@@ -1,3 +1,8 @@
+## What's new in 0.3.2
+
+- **One look for all icons**: the buttons that used coloured emoji (Name picker, Guide, Black screen, window, Whiteboard, warning bells, class periods, save picture, video and sound, the floating toolbar) now have line icons in the text colour, so they follow the light and the dark look.
+- The camera button (save the slide as a picture) is centred in its button.
+
 ## What's new in 0.3.1
 
 - **Text tool** (**T**): click the slide and type; or drag a box and the text wraps inside it and gets smaller to fit. Click a text to change it, drag it to move it. Eraser and Undo remove a text like any mark. Not on program windows.

@@ -3,7 +3,7 @@ import type { AppState, OutputView, PreviewRect } from '../../../shared/types'
 import type { DrawerTab } from './Drawer'
 import { screenLabel, useT } from './i18n'
 import { InkToolbar, MirrorView } from './Ink'
-import { Btn, goToSlide, Milestones, PageText, UiIcon, ZoomControl } from './ui'
+import { Btn, goToSlide, IconLabel, Milestones, PageText, UiIcon, ZoomControl } from './ui'
 import { ViewSlot } from './ViewSlot'
 
 const layoutCurrent = (rect: PreviewRect | null): void => window.presenter.layoutCurrent(rect)
@@ -19,10 +19,10 @@ function EmptyState({ state, onGuide, onPickWindow }: { state: AppState; onGuide
           {t.openDeck}
         </Btn>
         <Btn title={t.firstWindowTitle} onClick={onPickWindow}>
-          🪟 {t.firstWindow}
+          <IconLabel icon="window">{t.firstWindow}</IconLabel>
         </Btn>
         <Btn title={t.firstWhiteboardTitle} onClick={() => window.presenter.addWhiteboard(true)}>
-          ✏️ {t.firstWhiteboard}
+          <IconLabel icon="board">{t.firstWhiteboard}</IconLabel>
         </Btn>
       </div>
       <button type="button" onClick={onGuide} className="text-sm text-tint hover:underline">
@@ -125,7 +125,9 @@ export function CurrentPane(props: {
               const name = `${kind === 'audio' ? t.mediaSound : t.mediaVideo}${(projector.media?.kinds.length ?? 0) > 1 ? ` ${i + 1}` : ''}`
               return (
                 <Btn key={i} tone={playing ? 'primary' : 'default'} title={t.mediaTitle} onClick={() => window.presenter.mediaToggle(i)}>
-                  {playing ? '⏸' : '▶'} {name}
+                  <IconLabel icon={playing ? 'pause' : 'play'} size={14}>
+                    {name}
+                  </IconLabel>
                 </Btn>
               )
             })}

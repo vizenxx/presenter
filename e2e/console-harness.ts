@@ -87,12 +87,12 @@ contextBridge.exposeInMainWorld('presenter', api)
 type Open = 'guide' | 'guide-prepare' | 'window-picker' | 'start' | 'screen-menu' | 'add-menu' | 'crowd' | 'roller' | 'bells' | 'adjust' | 'clock' | 'media' | null
 /** Clicks the button that opens each pop-up. */
 const OPENERS: Record<string, string> = {
-  guide: `[...document.querySelectorAll('header button')].find((x) => x.textContent.includes('📘'))`,
-  'guide-prepare': `(() => { [...document.querySelectorAll('header button')].find((x) => x.textContent.includes('📘')).click(); return new Promise((r) => setTimeout(() => r([...document.querySelectorAll('[role=dialog] button')].find((x) => x.textContent.startsWith('2'))), 300)) })()`,
+  guide: `[...document.querySelectorAll('header button')].find((x) => x.title.startsWith('How to use Presenter'))`,
+  'guide-prepare': `(() => { [...document.querySelectorAll('header button')].find((x) => x.title.startsWith('How to use Presenter')).click(); return new Promise((r) => setTimeout(() => r([...document.querySelectorAll('[role=dialog] button')].find((x) => x.textContent.startsWith('2'))), 300)) })()`,
   'screen-menu': `[...document.querySelectorAll('footer button')].find((x) => x.textContent.trim() === '⋯')`,
   'window-picker': `(() => { [...document.querySelectorAll('footer button')].find((x) => x.textContent.includes('＋')).click(); return new Promise((r) => setTimeout(() => r([...document.querySelectorAll('button')].find((x) => x.textContent.startsWith('A window'))), 300)) })()`,
   'add-menu': `[...document.querySelectorAll('footer button')].find((x) => x.textContent.includes('＋'))`,
-  roller: `[...document.querySelectorAll('header button')].find((x) => x.textContent.includes('🎲'))`,
+  roller: `[...document.querySelectorAll('header button')].find((x) => x.title.startsWith('Pick a name at random'))`,
   bells: `[...document.querySelectorAll('button')].find((x) => x.title.startsWith('Warning bells of the class timer'))`,
   adjust: `[...document.querySelectorAll('button')].find((x) => x.textContent.trim() === '±')`,
   clock: `[...document.querySelectorAll('button')].find((x) => x.title.startsWith('Class periods:'))`
@@ -138,7 +138,7 @@ async function shot(projecting: boolean, open: Open = null, page = 'console', th
   }
   if (open === 'media') {
     const labels = await win.webContents.executeJavaScript(`[...document.querySelectorAll('button')].map((b) => b.textContent.trim()).filter((t) => /Video|Sound/.test(t))`)
-    if (labels.join('|') !== '⏸ Video 1|▶ Sound 2') throw new Error(`media buttons: ${JSON.stringify(labels)}`)
+    if (labels.join('|') !== 'Video 1|Sound 2') throw new Error(`media buttons: ${JSON.stringify(labels)}`)
     await win.webContents.executeJavaScript(`[...document.querySelectorAll('button')].find((b) => b.textContent.includes('Sound 2')).click()`)
     const calls = await win.webContents.executeJavaScript('window.presenter.__calls()')
     if (!calls.some((c: unknown[]) => c[0] === 'mediaToggle' && c[1] === 1)) throw new Error('▶ Sound 2 did not ask to play the sound')
@@ -430,7 +430,7 @@ contextBridge.exposeInMainWorld('roller', {
   await wait(300)
 }
 
-/** The floating toolbar's ⏱ settings: the same Set as the console, and one Start. */
+/** The floating toolbar's timer settings: the same Set as the console, and one Start. */
 async function toolbarTimer(): Promise<void> {
   const state = sampleState(false, true)
   state.timer = { status: 'idle', remainingSec: 300, durationSec: 300, alarming: false, warnings: [{ sec: 60, beeps: 3 }] }
@@ -439,8 +439,8 @@ async function toolbarTimer(): Promise<void> {
   await win.loadFile(path.join(ROOT, 'out', 'renderer', 'toolbar.html'))
   await wait(1200)
   const js = <T>(code: string): Promise<T> => win.webContents.executeJavaScript(code) as Promise<T>
-  const opened = await js<boolean>(`(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.includes('⏱')); if (b) b.click(); return !!b })()`)
-  if (!opened) throw new Error('the toolbar has no ⏱ button')
+  const opened = await js<boolean>(`(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === 'Timer'); if (b) b.click(); return !!b })()`)
+  if (!opened) throw new Error('the toolbar has no timer button')
   await wait(300)
   const starts = await js<number>(`[...document.querySelectorAll('button')].filter((b) => b.textContent.trim() === 'Start').length`)
   if (starts !== 1) throw new Error(`the toolbar timer has ${starts} Start buttons`)

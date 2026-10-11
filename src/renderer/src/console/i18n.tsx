@@ -24,7 +24,7 @@ const en = {
   noWindows: 'No program windows found. Open the program first, then try again.',
   minimizedWindow: 'Minimized · restored when shown',
   loadingWindows: 'Looking for windows…',
-  rollerButton: '🎲 Name picker',
+  rollerButton: 'Name picker',
   groupsTitle: 'Random groups',
   groupsCount: 'How many groups',
   groupsMake: 'Make groups',
@@ -49,7 +49,7 @@ const en = {
   slides: 'Slides',
   notes: 'Notes',
   pick: 'Name picker',
-  pickTab: '🎲 Picker',
+  pickTab: 'Picker',
   hide: 'Hide',
   selectProjector: 'Click to select the projector',
   waitingPicture: 'Waiting for the picture…',
@@ -146,7 +146,7 @@ const en = {
   pressToPick: 'Press “Roll” to start',
   picked: 'Picked',
   pickedTimes: (n: number) => `Picked ${n} times`,
-  pickOne: '🎲 Roll',
+  pickOne: 'Roll',
   hideRoller: 'Hide the picker on the projector',
   noAudience: 'Not projecting: nobody else can see the picker yet.',
   superLucky: 'People already picked can be picked again (small chance)',
@@ -190,9 +190,9 @@ const en = {
   inkColor: 'Colour',
   inkHint: 'Marks show on the projector at once and stay with their slide. Hold Shift for straight lines and squares; Esc returns to the pointer.',
 
-  guideButton: '📘 Guide',
+  guideButton: 'Guide',
   themeLight: 'Light',
-  blankOn: '⬛ Black screen (B)',
+  blankOn: 'Black screen (B)',
   resumed: (n: number) => `Continued at slide ${n}`,
   jumpTo: (n: string) => `Go to slide ${n} · Enter`,
   mediaVideo: 'Video',
@@ -203,7 +203,7 @@ const en = {
   pictureSavedTo: (p: string) => `Saved to ${p}`,
   resumedFirst: 'Go to slide 1',
   resumedTitle: 'This deck was open less than 3 hours ago, so it opened where it stopped (for example after a restart in class). Later it opens on slide 1.',
-  blankOff: '▶ Show slides again',
+  blankOff: 'Show slides again',
   blankTitle: 'Black out the projectors (B), or make them white (W). The same key, any other key or a click shows the slides again.',
   holdToRepeat: 'Hold to repeat',
   adjustTitle: 'Change the time',
@@ -323,6 +323,6 @@ export function useT(): Strings {
 export function screenLabel(t: Strings, o: OutputView): string {
   if (o.kind === 'projector') return t.projector
   if (o.kind === 'preview') return t.nextSlide
-  if (o.kind === 'capture') return `🪟 ${o.captureName ?? t.screenN(o.screenNumber)}`
+  if (o.kind === 'capture') return o.captureName ?? t.screenN(o.screenNumber)
   return t.screenN(o.screenNumber)
 }

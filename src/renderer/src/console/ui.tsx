@@ -15,6 +15,16 @@ export function UiIcon({ name, size = 16 }: { name: InkIconName; size?: number }
   return <span className="inline-grid shrink-0 place-items-center align-middle" style={{ width: size, height: size }} dangerouslySetInnerHTML={{ __html: inkSvg(name, size) }} />
 }
 
+/** An icon with its words, side by side. */
+export function IconLabel({ icon, size = 16, children }: { icon: InkIconName; size?: number; children: ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <UiIcon name={icon} size={size} />
+      {children}
+    </span>
+  )
+}
+
 export function Btn(props: { children: ReactNode; onClick?: () => void; tone?: Tone; title?: string; disabled?: boolean }) {
   const { children, onClick, tone = 'default', title, disabled } = props
   return (

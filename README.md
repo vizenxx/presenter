@@ -33,22 +33,22 @@ Presenter is a folder you unzip; there is no installer and no administrator pass
 
 | Area | What it does |
 |---|---|
-| Top bar | **Open deck**, **Recent**, **🎲 Name picker**, **📘 Guide**, **☀ / ☾** (light or dark look), **▶ Start projecting** |
+| Top bar | **Open deck**, **Recent**, **Name picker**, **Guide**, **☀ / ☾** (light or dark look), **▶ Start projecting** |
 | Current slide (left) | What Projector 1 shows. Before projecting it is the deck itself; while projecting it is a live copy of what the audience sees. The mark tools are above it. |
 | Next slide (right) | The slide after the selected card's slide. Click it to look further ahead. |
-| Class timer | The countdown the audience sees on the projector. **🔔** next to its name: its warning bells. **±**: give it more or less time. |
+| Class timer | The countdown the audience sees on the projector. The **bell** next to its name: its warning bells. **±**: give it more or less time. |
 | My timer | Your own timer. Only you see it. |
 | Slides / Notes | The slide list and speaker notes of the selected card (buttons above the current slide). |
 | Bottom bar | One card per content (deck or program window), each with its **Projector ▾** button. **＋ Add screen** at the end. |
 
-The **📘 Guide** in the app has the same help in two parts: **1 · Use Presenter** ("I want to … → do this") and **2 · Prepare decks**.
+The **Guide** in the app has the same help in two parts: **1 · Use Presenter** ("I want to … → do this") and **2 · Prepare decks**.
 
 ## Start
 
 1. Drop a deck file on the console, or click **Open deck** (it starts in the folder of the deck you opened last). No deck? Click **Show a program window…** on the start screen: a browser, a video or any open program window goes on Projector 1 instead.
 2. Click **▶ Start projecting** (top right) or press **F5**. Projector 1 goes full screen on the projector.
 3. Click **■ Stop projecting** or press **Esc**. The projector closes; the console keeps everything.
-4. **B** makes the projectors black, **W** white (also **⬛ Black screen** in the top bar, and the "blank" button of many clickers). The same key, any other key or a click shows the slides again; that key does not turn the page.
+4. **B** makes the projectors black, **W** white (also **Black screen** in the top bar, and the "blank" button of many clickers). The same key, any other key or a click shows the slides again; that key does not turn the page.
 5. While you project, while a projector is open or while a timer runs, Presenter keeps the laptop and the projector from going to sleep.
 6. Set the projector to **Extend** mode. Without a projector, projecting opens a normal window (good for practice at home).
 
@@ -116,7 +116,7 @@ While a program window shown on a projector is in front, a small toolbar floats 
 - The mark tools. With a drawing tool you draw right on the window; the marks show on the projector over the window's picture. With the pointer, you use the window as usual.
 - While you draw on a window, the toolbar takes the keyboard: **Ctrl+Z** (⌘Z) undoes a mark, **Esc** returns to the pointer and gives the keyboard back to the window.
 - **⏱**: the class timer. It shows the time left while it runs; click it for the timer's settings.
-- **🎲 Roll**: picks a name; the name shows next to the button.
+- **Roll**: picks a name; the name shows next to the button.
 - **Mine**: My timer's time, once you started it in the console.
 - **◂** folds the toolbar; drag **⠿** to move it.
 
@@ -133,7 +133,7 @@ The bar above the current slide: **Pointer, Pen, Highlighter, Box, Arrow, Text, 
 - **Text** (T): click the slide and type: one line. Or drag a box: the text wraps inside it and gets smaller when there is a lot of it, so it always stays in the box; at the smallest size typing stops. Click a text to change it; drag a text to move it. **Esc** (or a click elsewhere) ends the typing. The text has the colour you picked; the **Eraser** and **Undo** remove it like any mark. Letters that are shortcuts (T, B, digits …) are typed into the text while you type. Text works on slides, not on program windows.
 - **Zoom** (Z): drag a box over small text; on the projector that box fills the screen (up to 8 times larger), marks included. A click with Zoom, **Esc** or the next page shows the whole slide again. It works on PDF and PPT slides and on program windows too.
 - Hold **Shift** while you draw: the pen and the highlighter draw one straight line (any angle), the box becomes a square, the arrow turns in 45° steps.
-- **📷** (above the slide) saves the slide with its marks as a picture (PNG); the save dialog starts in the deck's folder.
+- The **camera** button (above the slide) saves the slide with its marks as a picture (PNG); the save dialog starts in the deck's folder.
 - Keys in the console and on the floating toolbar: **P** pen, **H** highlighter, **R** box, **A** arrow, **T** text, **L** laser, **E** eraser, **Z** zoom, **Ctrl+Z** (⌘Z) undo, **Delete** clear.
 - **Ctrl+Z** and **Esc** also work after you click on a slide (in the console or on the projector).
 - **Esc** leaves any drawing tool (back to the pointer); in the console a second **Esc** stops projecting.
@@ -144,14 +144,14 @@ The bar above the current slide: **Pointer, Pen, Highlighter, Box, Arrow, Text, 
 
 - Click a preset (**1 min**, **5 min** …) to start at once. Or type the time in **Set** (minutes **:** seconds): the big time shows it, and the one **Start** button starts it (Enter in a box starts too). **−** and **+** change the minutes; hold them to go fast. A box can be emptied while you type. While the timer runs, **Set** rests: use **±**, or **Reset** to set a new time.
 - When a deck plans a time for a slide, the timer shows it.
-- **🔔 Warning bells**: the 🔔 button next to the class timer's name (it shows how many bells are set) opens them in a pop-up: each bell beeps its own number of times (1–9) when its time is left (minutes : seconds). The bells are listed in the order they ring. **＋ Add a bell** adds one (up to 5); **✕** removes one. At first there is one bell: 1:00 left, 3 beeps. Presenter remembers the bells. In the last 5 seconds it always beeps once a second.
+- **Warning bells**: the bell button next to the class timer's name (it shows how many bells are set) opens them in a pop-up: each bell beeps its own number of times (1–9) when its time is left (minutes : seconds). The bells are listed in the order they ring. **＋ Add a bell** adds one (up to 5); **✕** removes one. At first there is one bell: 1:00 left, 3 beeps. Presenter remembers the bells. In the last 5 seconds it always beeps once a second.
 - At zero the alarm rings until you press any key or click. That key does not turn the page.
 - UXD202 decks show the countdown in their own bar; everything else shows it at the bottom right of the projector.
 
 **My timer** (only you see it)
 
 - **Count up**, **Count down**, or **From–to**, to pace your talk. It makes no sound.
-- **From–to**: click **🕘** and set your class periods: for each period, its weekdays (Mon … Sun) and its start and end on the 12-hour clock (hour : minute, **AM** or **PM**); up to 6 periods, two on one day are fine; they are listed by weekday, then by start time. During today's period My timer counts down to its end by itself; for 30 minutes after the end it shows **Over time**; before the next period it shows "Starts at 2:00 PM"; with none left today, "No class period now". There is no Start button in this mode. **±** changes only today's end. Presenter remembers the periods.
+- **From–to**: click the **clock** button and set your class periods: for each period, its weekdays (Mon … Sun) and its start and end on the 12-hour clock (hour : minute, **AM** or **PM**); up to 6 periods, two on one day are fine; they are listed by weekday, then by start time. During today's period My timer counts down to its end by itself; for 30 minutes after the end it shows **Over time**; before the next period it shows "Starts at 2:00 PM"; with none left today, "No class period now". There is no Start button in this mode. **±** changes only today's end. Presenter remembers the periods.
 - A countdown keeps going past zero as **Over time**, in red.
 - The floating toolbar shows its time while it runs.
 
@@ -164,7 +164,7 @@ The bar above the current slide: **Pointer, Pen, Highlighter, Box, Arrow, Text, 
 
 ## Name picker
 
-Click **🎲 Name picker** (top bar). Choose a list and click **🎲 Roll**: the list rolls on the projectors, slows down and stops on one person. After it stops, any key or click hides it; that key does not turn the page.
+Click **Name picker** (top bar). Choose a list and click **Roll**: the list rolls on the projectors, slows down and stops on one person. After it stops, any key or click hides it; that key does not turn the page.
 
 - Everyone not yet picked has the same chance. With "People already picked can be picked again (small chance)" on, picked people may come up again, rarely.
 - **Picked so far: X of Y** counts the picks; **↺ Reset** (after a confirmation) makes everyone unpicked again. Picks last while the app is open.

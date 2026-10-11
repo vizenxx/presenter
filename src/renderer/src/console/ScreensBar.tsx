@@ -1,6 +1,6 @@
 import type { AppState, OutputView } from '../../../shared/types'
 import { screenLabel, useT } from './i18n'
-import { Menu, MenuItem, ZoomControl, type ConsoleMenu } from './ui'
+import { Menu, MenuItem, UiIcon, ZoomControl, type ConsoleMenu } from './ui'
 
 const SMALL_BTN = 'grid h-7 min-w-7 place-items-center rounded-full px-1.5 text-sm hover:bg-line'
 
@@ -104,6 +104,7 @@ function ScreenChip(props: { o: OutputView; state: AppState; menu: ConsoleMenu; 
       title={tip}
       className={`relative flex h-10 shrink-0 cursor-pointer items-center gap-1 rounded-full pr-1.5 pl-3.5 ${selected ? 'bg-accent/15 ring-2 ring-accent' : 'bg-panel-2'}`}
     >
+      {capture && <UiIcon name="window" size={15} />}
       <span className="max-w-44 truncate text-sm font-semibold whitespace-nowrap">{screenLabel(t, o)}</span>
       {!capture && (
         <span className="min-w-12 px-1 text-center text-sm text-muted tabular-nums">
