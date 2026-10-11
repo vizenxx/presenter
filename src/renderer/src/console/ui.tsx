@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { inkSvg, type InkIconName } from '../../../shared/inkIcons'
 import type { AppState, DeckStatus, OutputView } from '../../../shared/types'
 import { useT } from './i18n'
 
@@ -7,6 +8,11 @@ const TONES: Record<Tone, string> = {
   default: 'bg-panel-2 text-ink hover:bg-line',
   primary: 'bg-accent font-semibold text-white hover:bg-accent-strong',
   quiet: 'text-tint hover:bg-panel-2'
+}
+
+/** A line icon in the text colour (so it follows the light and the dark look), as tall as the text. */
+export function UiIcon({ name, size = 16 }: { name: InkIconName; size?: number }) {
+  return <span className="inline-grid shrink-0 place-items-center align-middle" style={{ width: size, height: size }} dangerouslySetInnerHTML={{ __html: inkSvg(name, size) }} />
 }
 
 export function Btn(props: { children: ReactNode; onClick?: () => void; tone?: Tone; title?: string; disabled?: boolean }) {

@@ -4,7 +4,7 @@ import { clockNow, from12, MAX_PERIODS, range12, speakerSeconds, speakerStarted,
 import type { AppState, ClockPeriod, SpeakerMode, SpeakerTimerView } from '../../../shared/types'
 import { useT, type Strings } from './i18n'
 import { AdjustButton } from './TimerPanel'
-import { Btn, Menu, NumberField, type ConsoleMenu } from './ui'
+import { Btn, Menu, NumberField, UiIcon, type ConsoleMenu } from './ui'
 
 export { speakerSeconds }
 
@@ -69,7 +69,10 @@ function ClassPeriods({ periods }: { periods: ClockPeriod[] }) {
   return (
     <div className="flex flex-col gap-2 p-2 text-sm text-muted">
       <div className="flex items-center gap-2">
-        <h3 className="font-semibold text-ink">🕘 {t.timesTitle}</h3>
+        <h3 className="flex items-center gap-1.5 font-semibold text-ink">
+          <UiIcon name="clock" size={16} />
+          {t.timesTitle}
+        </h3>
         {periods.length < MAX_PERIODS && (
           <button type="button" onClick={add} className="ml-auto rounded-full px-2 py-0.5 text-tint hover:bg-panel-2">
             ＋ {t.addPeriod}
@@ -142,7 +145,10 @@ export function SpeakerTimer({ state, menu, onMenu }: { state: AppState; menu: C
         {c && (
           <span className="relative">
             <button type="button" title={t.timesButtonTitle} onClick={() => onMenu(menu === 'times' ? null : 'times')} className={`rounded-full px-2.5 py-0.5 text-sm tabular-nums hover:bg-line ${menu === 'times' ? 'bg-line text-ink' : 'bg-panel-2 text-ink'}`}>
-              🕘 {c.period ? range12(c.period.fromSec, c.endSec) : t.periodsButton}
+              <span className="inline-flex items-center gap-1">
+                <UiIcon name="clock" size={15} />
+                {c.period ? range12(c.period.fromSec, c.endSec) : t.periodsButton}
+              </span>
             </button>
             {menu === 'times' && (
               <Menu up align="right" width="w-[30rem]" onClose={() => onMenu(null)}>

@@ -93,9 +93,9 @@ const OPENERS: Record<string, string> = {
   'window-picker': `(() => { [...document.querySelectorAll('footer button')].find((x) => x.textContent.includes('＋')).click(); return new Promise((r) => setTimeout(() => r([...document.querySelectorAll('button')].find((x) => x.textContent.startsWith('A window'))), 300)) })()`,
   'add-menu': `[...document.querySelectorAll('footer button')].find((x) => x.textContent.includes('＋'))`,
   roller: `[...document.querySelectorAll('header button')].find((x) => x.textContent.includes('🎲'))`,
-  bells: `[...document.querySelectorAll('button')].find((x) => x.textContent.trim().startsWith('🔔'))`,
+  bells: `[...document.querySelectorAll('button')].find((x) => x.title.startsWith('Warning bells of the class timer'))`,
   adjust: `[...document.querySelectorAll('button')].find((x) => x.textContent.trim() === '±')`,
-  clock: `[...document.querySelectorAll('button')].find((x) => x.textContent.trim().startsWith('🕘'))`
+  clock: `[...document.querySelectorAll('button')].find((x) => x.title.startsWith('Class periods:'))`
 }
 
 async function shot(projecting: boolean, open: Open = null, page = 'console', theme: UiTheme = 'dark'): Promise<void> {
@@ -209,9 +209,9 @@ async function inputs(): Promise<void> {
   if (started.length !== 1 || started[0][1] !== 30) throw new Error(`Enter should start 30 s: ${JSON.stringify(started)}`)
   console.log('ok class timer: one Start; Set empties fully, sets 0:30, Enter starts it')
 
-  // 🔔 next to the class timer's name opens its warning bells in a pop-up; Esc closes it.
-  if ((await js<string>(`[...document.querySelectorAll('button')].find((x) => x.textContent.trim().startsWith('🔔')).textContent.trim()`)) !== '🔔 1') throw new Error('the bell button does not show 1 bell')
-  await js(`[...document.querySelectorAll('button')].find((x) => x.textContent.trim().startsWith('🔔')).click()`)
+  // The bell button next to the class timer's name opens its warning bells in a pop-up; Esc closes it.
+  if ((await js<string>(`[...document.querySelectorAll('button')].find((x) => x.title.startsWith('Warning bells of the class timer')).textContent.trim()`)) !== '1') throw new Error('the bell button does not show 1 bell')
+  await js(`[...document.querySelectorAll('button')].find((x) => x.title.startsWith('Warning bells of the class timer')).click()`)
   await wait(150)
   if (!(await js<boolean>(`document.body.textContent.includes('Warning bells · Class timer')`))) throw new Error('the bells pop-up does not say it is for the class timer')
   // Warning bells: add one, change the minutes and the beeps of the first, remove it (the stub state stays at one bell 1:00 / 3 beeps).
@@ -241,7 +241,7 @@ async function inputs(): Promise<void> {
   await wait(150)
   if (await js<boolean>(`document.body.textContent.includes('Warning bells · Class timer')`)) throw new Error('Esc does not close the bells pop-up')
   if ((await calls()).some((c) => c[0] === 'stopProjecting' || c[0] === 'setInkTool')) throw new Error('Esc in a pop-up did more than close it')
-  console.log('ok warning bells: a pop-up from 🔔 at the class timer; add, change, remove; Esc closes only it')
+  console.log('ok warning bells: a pop-up from the bell at the class timer; add, change, remove; Esc closes only it')
 
   // ± on My timer opens Change the time for My timer; the class timer (stopped) cannot be changed.
   const plusMinus = await js<number>(`[...document.querySelectorAll('button')].filter((x) => x.textContent.trim() === '±').length`)
@@ -301,7 +301,7 @@ async function inputs(): Promise<void> {
   await wait(300)
 }
 
-/** My timer From–to: no Start or Reset (it starts by itself); the 🕘 pop-up edits class periods (weekdays, AM/PM). */
+/** My timer From–to: no Start or Reset (it starts by itself); the clock pop-up edits class periods (weekdays, AM/PM). */
 async function clockTimes(): Promise<void> {
   const state = sampleState(false)
   state.speaker = { ...state.speaker, mode: 'clock', heldMs: 0 }
@@ -320,8 +320,8 @@ async function clockTimes(): Promise<void> {
   const mine = `[...document.querySelectorAll('section')].find((x) => x.textContent.includes('My timer · only you see it'))`
   const buttons = await js<string[]>(`[...${mine}.querySelectorAll('button')].map((b) => b.textContent.trim())`)
   if (buttons.includes('Start') || buttons.includes('Resume') || buttons.includes('Reset')) throw new Error(`From–to should have no Start or Reset: ${JSON.stringify(buttons)}`)
-  if (!buttons.some((b) => b.startsWith('🕘'))) throw new Error(`no 🕘 button: ${JSON.stringify(buttons)}`)
-  await js(`[...document.querySelectorAll('button')].find((x) => x.textContent.trim().startsWith('🕘')).click()`)
+  if (!(await js<boolean>(`!![...document.querySelectorAll('button')].find((x) => x.title.startsWith('Class periods:'))`))) throw new Error(`no class periods (clock) button: ${JSON.stringify(buttons)}`)
+  await js(`[...document.querySelectorAll('button')].find((x) => x.title.startsWith('Class periods:')).click()`)
   await wait(150)
   const field = (title: string): string => `document.querySelector('input[title="${title}"]')`
   const leave = (title: string): Promise<unknown> => js(`${field(title)}.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))`)
@@ -350,7 +350,7 @@ async function clockTimes(): Promise<void> {
     [p0, { days: [1, 2, 3, 4, 5], fromSec: 11 * 3600 + 5 * 60, untilSec: 12 * 3600 + 5 * 60 }]
   ].map((x) => JSON.stringify(x))
   if (JSON.stringify(sent) !== JSON.stringify(want)) throw new Error(`class periods sent ${JSON.stringify(sent)}, expected ${JSON.stringify(want)}`)
-  console.log('ok My timer From–to: no Start or Reset; the 🕘 pop-up edits hour, AM/PM, weekdays, remove and add')
+  console.log('ok My timer From–to: no Start or Reset; the clock pop-up edits hour, AM/PM, weekdays, remove and add')
   win.destroy()
   await wait(300)
 }

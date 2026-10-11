@@ -3,7 +3,7 @@ import type { AppState, OutputView, PreviewRect } from '../../../shared/types'
 import type { DrawerTab } from './Drawer'
 import { screenLabel, useT } from './i18n'
 import { InkToolbar, MirrorView } from './Ink'
-import { Btn, goToSlide, Milestones, PageText, ZoomControl } from './ui'
+import { Btn, goToSlide, Milestones, PageText, UiIcon, ZoomControl } from './ui'
 import { ViewSlot } from './ViewSlot'
 
 const layoutCurrent = (rect: PreviewRect | null): void => window.presenter.layoutCurrent(rect)
@@ -42,7 +42,7 @@ function EmptyState({ state, onGuide, onPickWindow }: { state: AppState; onGuide
   )
 }
 
-/** 📷: saves what Projector 1 shows, with its marks, as a picture; says "Saved" for a moment. */
+/** The camera button: saves what Projector 1 shows, with its marks, as a picture; says "Saved" for a moment. */
 function SavePicture() {
   const t = useT()
   const [saved, setSaved] = useState<string | null>(null)
@@ -55,7 +55,8 @@ function SavePicture() {
   }
   return (
     <Btn title={saved ? t.pictureSavedTo(saved) : t.savePictureTitle} onClick={save}>
-      {saved ? t.pictureSaved : '📷'}
+      {/* A fixed icon box, so the button keeps its size and the icon sits in the middle of it. */}
+      <span className="flex h-5 min-w-5 items-center justify-center">{saved ? t.pictureSaved : <UiIcon name="camera" size={18} />}</span>
     </Btn>
   )
 }

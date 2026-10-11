@@ -4,7 +4,7 @@ import { MAX_BEEPS, MAX_WARNINGS, type TimerWarning } from '../../../shared/time
 import type { AppState, TimerView } from '../../../shared/types'
 import { AdjustTime } from './AdjustTime'
 import { useT } from './i18n'
-import { Btn, HoldBtn, Menu, NumberField, type ConsoleMenu } from './ui'
+import { Btn, HoldBtn, Menu, NumberField, UiIcon, type ConsoleMenu } from './ui'
 
 export const PRESETS = [1, 3, 5, 10, 15, 20]
 const MAX_MINUTES = 180
@@ -71,7 +71,10 @@ export function WarningBells({ warnings }: { warnings: TimerWarning[] }) {
   return (
     <div className="p-2 text-sm text-muted">
       <div className="flex items-center gap-2">
-        <h3 className="font-semibold text-ink">🔔 {t.bellsTitle}</h3>
+        <h3 className="flex items-center gap-1.5 font-semibold text-ink">
+          <UiIcon name="bell" size={16} />
+          {t.bellsTitle}
+        </h3>
         {warnings.length < MAX_WARNINGS && (
           <button type="button" onClick={add} className="ml-auto rounded-full px-2 py-0.5 text-tint hover:bg-panel-2">
             ＋ {t.warnAdd}
@@ -120,7 +123,10 @@ export function TimerPanel({ state, menu, onMenu }: { state: AppState; menu: Con
         </div>
         <span className="relative shrink-0">
           <button type="button" title={t.bellsButtonTitle} onClick={() => onMenu(menu === 'bells' ? null : 'bells')} className={`rounded-full px-2.5 py-0.5 text-sm tabular-nums hover:bg-line ${menu === 'bells' ? 'bg-line text-ink' : bells === 0 ? 'text-muted' : 'bg-panel-2 text-ink'}`}>
-            {t.bellsButton(bells)}
+            <span className="inline-flex items-center gap-1">
+              <UiIcon name="bell" size={15} />
+              {t.bellsButton(bells)}
+            </span>
           </button>
           {menu === 'bells' && (
             <Menu up width="w-[23rem]" onClose={close}>
