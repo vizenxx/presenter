@@ -3,6 +3,7 @@ import { clockNow, from12, MAX_PERIODS, range12, speakerSeconds, speakerStarted,
 import type { AppState, ClockPeriod, SpeakerMode, SpeakerTimerView } from '../../../shared/types'
 import { useT, type Strings } from './i18n'
 import { EditableTime } from './TimeEdit'
+import { TimerCard } from './TimerCard'
 import { AdjustButton } from './TimerPanel'
 import { Btn, Menu, NumberField, UiIcon, type ConsoleMenu } from './ui'
 
@@ -109,11 +110,12 @@ function ClassPeriods({ periods }: { periods: ClockPeriod[] }) {
 }
 
 /**
- * The speaker's own timer, for pacing the talk, as an upright card beside the shared timer. The
- * participants never see it and it makes no sound. The time is its own entry (double-click the
- * minutes or the seconds; it keeps running meanwhile). From–to: today's sessions: during one it
- * counts down to its end by itself, then shows Over time for 30 minutes; before the next one it
- * says when that starts. The sessions are set with the clock button.
+ * The speaker's own timer, for pacing the talk, as an upright card beside the shared timer (both
+ * are built on TimerCard). The participants never see it and it makes no sound. The time is its
+ * own entry (double-click the minutes or the seconds; it keeps running meanwhile). Footer: the
+ * three modes, and under them one line about the mode (or, for From–to, the sessions button).
+ * From–to: today's sessions: during one it counts down to its end by itself, then shows Over time
+ * for 30 minutes; before the next one it says when that starts.
  */
 export function SpeakerTimer({ state, menu, onMenu }: { state: AppState; menu: ConsoleMenu; onMenu: (m: ConsoleMenu) => void }) {
   const t = useT()
@@ -126,7 +128,6 @@ export function SpeakerTimer({ state, menu, onMenu }: { state: AppState; menu: C
   const shownSec = speakerSeconds(speaker, now)
   const over = (speaker.mode === 'down' && shownSec < 0) || c?.phase === 'after'
   const live = running || c?.phase === 'during'
-  const SMALL = 'rounded-full px-2.5 py-0.5 text-sm'
   // Count down before it starts: the minutes it will count (whole minutes). Started: the time left (or counted) is moved by the difference.
   // Clock times set themselves, and a count up that has not started has nothing to change.
   const editable: Array<'h' | 'm' | 's'> | false = clockMode ? false : speaker.mode === 'down' && !started ? ['m'] : started ? ['h', 'm', 's'] : false
@@ -134,48 +135,28 @@ export function SpeakerTimer({ state, menu, onMenu }: { state: AppState; menu: C
     if (speaker.mode === 'down' && !started) window.presenter.speakerMinutes(Math.max(1, Math.round(next / 60)))
     else window.presenter.speakerAdjust(next - current)
   }
+  // The line under the modes: what the mode does, or where From–to stands.
+  const modeLine =
+    c?.phase === 'before' && c.period
+      ? t.startsAt(time12(c.period.fromSec))
+      : c?.phase === 'none'
+        ? t.noPeriodNow
+        : over
+          ? t.overTime
+          : speaker.mode === 'up'
+            ? t.modeHintUp
+            : speaker.mode === 'down'
+              ? t.modeHintDown(speaker.minutes)
+              : ''
   return (
-    <section className={`@container flex min-w-0 flex-col gap-2 rounded-card p-3 ${over ? 'bg-alarm/10 ring-2 ring-alarm/60' : 'bg-panel ring-1 ring-line/60'}`} title={t.myTimerTitle}>
-      <h2 className="text-sm leading-tight font-semibold text-muted">{t.myTimer}</h2>
-      <span className="flex self-start rounded-full bg-panel-2 p-0.5">
-        {MODES.map(({ mode, label, short }) => (
-          <button key={mode} type="button" title={label(t)} onClick={() => window.presenter.speakerMode(mode)} className={`${SMALL} whitespace-nowrap ${speaker.mode === mode ? 'bg-raised text-ink shadow-sm' : 'text-muted hover:text-ink'}`}>
-            <span className="@max-[18rem]:hidden">{label(t)}</span>
-            <span className="hidden @max-[18rem]:inline">{short}</span>
-          </button>
-        ))}
-      </span>
-      <div className="flex min-h-14 flex-col items-center justify-center">
-        {c?.phase === 'none' ? (
-          <span className="text-[40px] leading-none font-semibold text-muted">—</span>
-        ) : (
-          <EditableTime
-            sec={shownSec}
-            hours
-            maxMinutes={speaker.mode === 'down' && !started ? 240 : 599}
-            editable={editable}
-            onCommit={commit}
-            className={`text-[40px] leading-none font-semibold tracking-tight ${over ? 'text-alarm' : live ? 'text-ink' : 'text-muted'}`}
-            title={editable ? t.editTimeTitle : undefined}
-          />
-        )}
-        {c?.phase === 'before' && c.period && <span className="mt-1 text-sm text-muted">{t.startsAt(time12(c.period.fromSec))}</span>}
-        {c?.phase === 'none' && <span className="mt-1 text-sm text-muted">{t.noPeriodNow}</span>}
-        {over && <span className="mt-1 text-sm font-semibold text-alarm">{t.overTime}</span>}
-      </div>
-      <div className="flex flex-wrap items-center justify-center gap-1.5">
-        {!clockMode && (
-          <>
-            <Btn tone="primary" onClick={() => window.presenter.speakerToggle()}>
-              {running ? t.pause : started ? t.resume : t.start}
-            </Btn>
-            <Btn disabled={!started} onClick={() => window.presenter.speakerReset()}>
-              {t.reset}
-            </Btn>
-          </>
-        )}
-        {c && (
-          <span className="relative">
+    <TimerCard
+      title={t.myTimerName}
+      caption={t.myTimerCaption}
+      hint={t.myTimerTitle}
+      tone={over ? 'over' : 'plain'}
+      corner={
+        c ? (
+          <span className="relative shrink-0">
             <button type="button" title={t.timesButtonTitle} onClick={() => onMenu(menu === 'times' ? null : 'times')} className={`rounded-full px-2.5 py-1 text-sm tabular-nums hover:bg-line ${menu === 'times' ? 'bg-line text-ink' : 'bg-panel-2 text-ink'}`}>
               <span className="inline-flex items-center gap-1">
                 <UiIcon name="clock" size={15} />
@@ -188,9 +169,51 @@ export function SpeakerTimer({ state, menu, onMenu }: { state: AppState; menu: C
               </Menu>
             )}
           </span>
-        )}
-        <AdjustButton state={state} target="mine" menu={menu} onMenu={onMenu} />
-      </div>
-    </section>
+        ) : undefined
+      }
+      time={
+        c?.phase === 'none' ? (
+          <span className="text-[40px] leading-none font-semibold text-muted">—</span>
+        ) : (
+          <EditableTime
+            sec={shownSec}
+            hours
+            maxMinutes={speaker.mode === 'down' && !started ? 240 : 599}
+            editable={editable}
+            onCommit={commit}
+            className={`text-[40px] leading-none font-semibold tracking-tight ${over ? 'text-alarm' : live ? 'text-ink' : 'text-muted'}`}
+            title={editable ? t.editTimeTitle : undefined}
+          />
+        )
+      }
+      controls={
+        <>
+          {!clockMode && (
+            <>
+              <Btn tone="primary" onClick={() => window.presenter.speakerToggle()}>
+                {running ? t.pause : started ? t.resume : t.start}
+              </Btn>
+              <Btn disabled={!started} onClick={() => window.presenter.speakerReset()}>
+                {t.reset}
+              </Btn>
+            </>
+          )}
+          <AdjustButton state={state} target="mine" menu={menu} onMenu={onMenu} />
+        </>
+      }
+      footer={
+        <>
+          <span className="grid grid-cols-3 gap-1 rounded-full bg-panel-2 p-0.5">
+            {MODES.map(({ mode, label, short }) => (
+              <button key={mode} type="button" title={label(t)} onClick={() => window.presenter.speakerMode(mode)} className={`h-7 rounded-full px-1 text-sm whitespace-nowrap ${speaker.mode === mode ? 'bg-raised text-ink shadow-sm' : 'text-muted hover:text-ink'}`}>
+                <span className="@max-[18rem]:hidden">{label(t)}</span>
+                <span className="hidden @max-[18rem]:inline">{short}</span>
+              </button>
+            ))}
+          </span>
+          <p className={`flex h-8 items-center justify-center truncate text-sm ${over ? 'font-semibold text-alarm' : 'text-muted'}`}>{modeLine}</p>
+        </>
+      }
+    />
   )
 }

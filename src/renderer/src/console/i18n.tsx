@@ -75,6 +75,12 @@ const en = {
 
   timer: 'Shared timer · participants see it',
   myTimer: 'My timer · only you see it',
+  timerName: 'Shared timer',
+  timerCaption: 'Participants see it',
+  myTimerName: 'My timer',
+  myTimerCaption: 'Only you see it',
+  modeHintUp: 'Counts the time so far',
+  modeHintDown: (m: number) => `Counts down from ${m} min`,
   myTimerTitle: 'For pacing your talk. Participants never see it, and it makes no sound. It does not affect the shared timer.',
   countUp: 'Count up',
   countDown: 'Count down',

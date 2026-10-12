@@ -218,10 +218,10 @@ async function inputs(): Promise<void> {
   const clickText = (text: string): Promise<boolean> => js(`(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === ${JSON.stringify(text)}); if (b) b.click(); return !!b })()`)
 
   // One Start in the shared timer: Set only sets the time; the Start button starts it.
-  const starts = await js<number>(`[...document.querySelectorAll('section')].filter((x) => x.textContent.includes('Shared timer · participants see it')).flatMap((x) => [...x.querySelectorAll('button')]).filter((b) => b.textContent.trim() === 'Start').length`)
+  const starts = await js<number>(`[...document.querySelectorAll('section')].filter((x) => x.textContent.includes('Participants see it')).flatMap((x) => [...x.querySelectorAll('button')]).filter((b) => b.textContent.trim() === 'Start').length`)
   if (starts !== 1) throw new Error(`the shared timer has ${starts} Start buttons`)
   // The time is its own entry: double-click the minutes, type, Enter. Stopped, it sets the time Start will use.
-  const sharedTime = `[...document.querySelectorAll('section')].find((x) => x.textContent.includes('Shared timer · participants see it'))`
+  const sharedTime = `[...document.querySelectorAll('section')].find((x) => x.textContent.includes('Participants see it'))`
   await js(`${sharedTime}.querySelector('[role=button]').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))`)
   await wait(100)
   if (!(await js<boolean>(`!!${field('Minutes')}`))) throw new Error('a double-click on the minutes does not open the minutes box')
@@ -361,16 +361,16 @@ async function timeEditing(): Promise<void> {
   const parts = (name: string): Promise<string[]> => js(`(() => { const c = ${card(name)}; return [...c.querySelectorAll('[role=button], input[aria-label]')].map((e) => (e.tagName === 'INPUT' ? 'input:' + e.value : e.textContent)) })()`)
 
   // Shared timer, 12:34 and running. Edit the minutes: type 5.
-  const before = await parts('Shared timer · participants see it')
+  const before = await parts('Participants see it')
   if (before.length !== 2 || before[0] !== '12') throw new Error(`the running timer should show 12:xx: ${JSON.stringify(before)}`)
-  await js(`${card('Shared timer · participants see it')}.querySelector('[role=button]').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))`)
+  await js(`${card('Participants see it')}.querySelector('[role=button]').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))`)
   await wait(100)
   await key('Backspace')
   await key('Backspace')
   await key('5')
-  const seconds0 = (await parts('Shared timer · participants see it'))[1]
+  const seconds0 = (await parts('Participants see it'))[1]
   await wait(1700)
-  const during = await parts('Shared timer · participants see it')
+  const during = await parts('Participants see it')
   if (during[0] !== 'input:5') throw new Error(`the minutes box should hold 5 while editing: ${JSON.stringify(during)}`)
   if (during[1] === seconds0) throw new Error(`the seconds stood still while the minutes were typed (${seconds0} → ${during[1]})`)
   if ((await calls()).some((c) => c[0] === 'timerAdjust')) throw new Error('the timer was changed before Enter')
@@ -382,7 +382,7 @@ async function timeEditing(): Promise<void> {
   console.log('ok running timer: the seconds keep running while the minutes are typed; Enter moves only the minutes')
 
   // Esc: nothing changes.
-  await js(`${card('Shared timer · participants see it')}.querySelectorAll('[role=button]')[0].dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))`)
+  await js(`${card('Participants see it')}.querySelectorAll('[role=button]')[0].dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))`)
   await wait(100)
   await key('Backspace')
   await key('Backspace')
@@ -390,12 +390,12 @@ async function timeEditing(): Promise<void> {
   await key('Escape')
   await wait(100)
   if ((await calls()).filter((c) => c[0] === 'timerAdjust').length !== 1) throw new Error('Esc changed the running timer')
-  if ((await parts('Shared timer · participants see it')).some((x) => x.startsWith('input'))) throw new Error('the box stays after Esc')
+  if ((await parts('Participants see it')).some((x) => x.startsWith('input'))) throw new Error('the box stays after Esc')
 
   // My timer (paused, 32:26 left): the minutes to 20 → 12:00 less; the seconds stay.
-  const mine = await parts('My timer')
+  const mine = await parts('Only you see it')
   if (mine.length < 2) throw new Error(`My timer should have editable time parts: ${JSON.stringify(mine)}`)
-  await js(`${card('My timer')}.querySelector('[role=button]').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))`)
+  await js(`${card('Only you see it')}.querySelector('[role=button]').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))`)
   await wait(100)
   await key('Backspace')
   await key('Backspace')
@@ -426,7 +426,7 @@ async function clockTimes(): Promise<void> {
     wc.sendInputEvent({ type: 'keyUp', keyCode })
     await wait(60)
   }
-  const mine = `[...document.querySelectorAll('section')].find((x) => x.textContent.includes('My timer · only you see it'))`
+  const mine = `[...document.querySelectorAll('section')].find((x) => x.textContent.includes('Only you see it'))`
   const buttons = await js<string[]>(`[...${mine}.querySelectorAll('button')].map((b) => b.textContent.trim())`)
   if (buttons.includes('Start') || buttons.includes('Resume') || buttons.includes('Reset')) throw new Error(`From–to should have no Start or Reset: ${JSON.stringify(buttons)}`)
   if (!(await js<boolean>(`!![...document.querySelectorAll('button')].find((x) => x.title.startsWith('Sessions:'))`))) throw new Error(`no sessions (clock) button: ${JSON.stringify(buttons)}`)
