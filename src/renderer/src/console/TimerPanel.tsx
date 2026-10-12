@@ -4,6 +4,7 @@ import { MAX_BEEPS, MAX_WARNINGS, type TimerWarning } from '../../../shared/time
 import type { AppState, TimerView } from '../../../shared/types'
 import { AdjustTime } from './AdjustTime'
 import { useT } from './i18n'
+import { EditableTime } from './TimeEdit'
 import { Btn, HoldBtn, Menu, NumberField, UiIcon, type ConsoleMenu } from './ui'
 
 export const PRESETS = [1, 3, 5, 10, 15, 20]
@@ -103,9 +104,11 @@ export function WarningBells({ warnings }: { warnings: TimerWarning[] }) {
 }
 
 /**
- * The shared timer (participants see it on the projector), in two rows. Row 1: name, 🔔 (its warning
- * bells, in a pop-up), the time, the one Start / Pause button, Reset, ± (change the time, in a
- * pop-up). Row 2: presets (start at once) and Set (the time Start will use).
+ * The shared timer (participants see it on the projector) as an upright card, beside My timer.
+ * Top: its name and 🔔 (its warning bells, in a pop-up). Middle: the time, which is its own entry:
+ * double-click the minutes or the seconds to change them (the timer keeps running meanwhile).
+ * Below: the one Start / Pause button, Reset, ± (more or less time, in a pop-up), and the presets
+ * (start at once).
  */
 export function TimerPanel({ state, menu, onMenu }: { state: AppState; menu: ConsoleMenu; onMenu: (m: ConsoleMenu) => void }) {
   const t = useT()
@@ -114,11 +117,18 @@ export function TimerPanel({ state, menu, onMenu }: { state: AppState; menu: Con
   const label = timer.alarming ? t.stopAlarm : timer.status === 'running' ? t.pause : timer.status === 'paused' ? t.resume : t.start
   const color = timer.alarming ? 'text-alarm' : timer.status === 'running' ? 'text-ink' : timer.status === 'paused' ? 'text-gold' : 'text-muted'
   const bells = timer.warnings.length
+  const stopped = timer.status === 'idle' || timer.status === 'done'
+  // A stopped timer takes the typed time as its new time; a running or paused one is moved by the difference.
+  const commit = (next: number, current: number): void => {
+    if (stopped) {
+      if (next >= 1) window.presenter.timerSet(next)
+    } else window.presenter.timerAdjust(next - current)
+  }
   return (
-    <section className={`rounded-card px-4 py-2.5 ${timer.alarming ? 'animate-pulse bg-alarm/15 ring-2 ring-alarm' : 'bg-panel ring-1 ring-line/60'}`}>
-      <div className="flex items-center gap-2">
-        <div className="min-w-0">
-          <h2 className="truncate text-sm font-semibold text-muted">{t.timer}</h2>
+    <section className={`flex min-w-0 flex-col gap-2 rounded-card p-3 ${timer.alarming ? 'animate-pulse bg-alarm/15 ring-2 ring-alarm' : 'bg-panel ring-1 ring-line/60'}`}>
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-sm leading-tight font-semibold text-muted">{t.timer}</h2>
           {state.plannedMinutes ? <p className="truncate text-sm text-muted">{t.planned(state.plannedMinutes)}</p> : null}
         </div>
         <span className="relative shrink-0">
@@ -134,23 +144,24 @@ export function TimerPanel({ state, menu, onMenu }: { state: AppState; menu: Con
             </Menu>
           )}
         </span>
-        <span className={`ml-auto text-[32px] leading-none font-semibold tracking-tight tabular-nums ${color}`}>{mmss(timer.remainingSec)}</span>
+      </div>
+      <div className="flex min-h-14 items-center justify-center">
+        <EditableTime sec={timer.remainingSec} maxMinutes={180} editable={['m', 's']} onCommit={commit} className={`text-[40px] leading-none font-semibold tracking-tight ${color}`} title={t.editTimeTitle} />
+      </div>
+      {timer.alarming && <p className="text-center text-sm text-alarm">{t.alarmHint}</p>}
+      <div className="flex flex-wrap items-center justify-center gap-1.5">
         <Btn tone="primary" onClick={() => window.presenter.timerToggle()}>
           {label}
         </Btn>
         <Btn onClick={() => window.presenter.timerReset()}>{t.reset}</Btn>
         <AdjustButton state={state} target="class" menu={menu} onMenu={onMenu} />
       </div>
-      {timer.alarming && <p className="mt-1 text-sm text-alarm">{t.alarmHint}</p>}
-      <div className="mt-1.5 flex flex-wrap items-center gap-1">
+      <div className="flex flex-wrap justify-center gap-1">
         {PRESETS.map((m) => (
           <button key={m} type="button" title={t.presetTitle} className={SMALL} onClick={() => window.presenter.timerStart(m * 60)}>
             {t.presetMinutes(m)}
           </button>
         ))}
-        <span className="ml-auto">
-          <SetTime timer={timer} />
-        </span>
       </div>
     </section>
   )

@@ -33,12 +33,12 @@ Presenter is a folder you unzip; there is no installer and no administrator pass
 
 | Area | What it does |
 |---|---|
-| Top bar | **Open deck**, **Recent**, **Guide**, **☀ / ☾** (light or dark look), **Black screen**, **▶ Start projecting** |
-| Current slide (left) | What Projector 1 shows. Before projecting it is the deck itself; while projecting it is a live copy of what the audience sees. The mark tools are above it. Under it: **Slides** (the slide list, to jump), the slide number and the title. |
-| Next slide (right) | The slide after the selected card's slide. Click it to look further ahead. Under it, always: the **notes** of the slide in view. |
-| Shared timer | The countdown the audience sees on the projector. The **bell** next to its name: its warning bells. **±**: give it more or less time. |
-| My timer | Your own timer. Only you see it. |
-| Participants | Pick one person at random, or make teams (a pop-up from the **Participants** button, bottom right). |
+| Top bar | **Open deck**, **Recent**, **Participants**, **Guide**, **☀ / ☾** (light or dark look), **Black screen**, **▶ Start projecting** |
+| Current slide (left) | What Projector 1 shows. Before projecting it is the deck itself; while projecting it is a live copy of what the audience sees. The mark tools are above it; the slide number and the title are under it. |
+| Slide bar (far left) | Two buttons: **Slides** (the slide list: click a slide to go there) and **Notes** (the speaker notes of the slide in view). A button opens its panel from the left; the same button closes it. |
+| Next slide (right) | The slide after the selected card's slide. Click it to look further ahead. |
+| Shared timer | An upright card under the next slide: the countdown the audience sees on the projector. Double-click its minutes or seconds to change them. The **bell**: its warning bells. **±**: give it more or less time. |
+| My timer | The card beside it: your own timer. Only you see it. |
 | Bottom bar | One card per content (deck or program window), each with its **Projector ▾** button. **＋ Add screen** at the end. |
 
 The **Guide** in the app has the same help in two parts: **1 · Use Presenter** ("I want to … → do this") and **2 · Prepare decks**.
@@ -73,7 +73,7 @@ The **Guide** in the app has the same help in two parts: **1 · Use Presenter** 
   - Old .ppt files: save them as .pptx first to play their videos.
   - After an update that changes the conversion, each file is converted once more (once only).
 - Hidden slides are left out, as in PowerPoint's own show.
-- Slide titles appear in the **Slides** list, speaker notes under the next slide.
+- Slide titles appear in the **Slides** list of the slide bar, speaker notes under **Notes** there.
 
 ## Turn pages
 
@@ -142,7 +142,8 @@ The bar above the current slide: **Pointer, Pen, Highlighter, Box, Arrow, Text, 
 
 **Shared timer** (the audience sees it)
 
-- Click a preset (**1 min**, **5 min** …) to start at once. Or type the time in **Set** (minutes **:** seconds): the big time shows it, and the one **Start** button starts it (Enter in a box starts too). **−** and **+** change the minutes; hold them to go fast. A box can be emptied while you type. While the timer runs, **Set** rests: use **±**, or **Reset** to set a new time.
+- Click a preset (**1 min**, **5 min** …) to start at once.
+- **The big time is its own entry**: double-click the minutes or the seconds, type a number and press **Enter** (or **✓**). **Esc** (or **✕**) leaves it as it was. While the timer is stopped, the number is the time **Start** will use. While it runs, the timer **keeps running** while you type: the part you typed is set when you press Enter, and the other parts are what they are at that moment (type 5 in the minutes at 12:34 and it goes on from 5:34, a few seconds later 5:31). **±** is still there for adding or taking away an amount.
 - When a deck plans a time for a slide, the timer shows it.
 - **Warning bells**: the bell button next to the shared timer's name (it shows how many bells are set) opens them in a pop-up: each bell beeps its own number of times (1–9) when its time is left (minutes : seconds). The bells are listed in the order they ring. **＋ Add a bell** adds one (up to 5); **✕** removes one. At first there is one bell: 1:00 left, 3 beeps. Presenter remembers the bells. In the last 5 seconds it always beeps once a second.
 - At zero the alarm rings until you press any key or click. That key does not turn the page.
@@ -151,7 +152,7 @@ The bar above the current slide: **Pointer, Pen, Highlighter, Box, Arrow, Text, 
 **My timer** (only you see it)
 
 - **Count up**, **Count down**, or **From–to**, to pace your talk. It makes no sound.
-- **From–to**: click the **clock** button and set your sessions: for each session, its weekdays (Mon … Sun) and its start and end on the 12-hour clock (hour : minute, **AM** or **PM**); up to 6 sessions, two on one day are fine; they are listed by weekday, then by start time. During today's session My timer counts down to its end by itself; for 30 minutes after the end it shows **Over time**; before the next session it shows "Starts at 2:00 PM"; with none left today, "No session now". There is no Start button in this mode. **±** changes only today's end. Presenter remembers the sessions.
+- **From–to**: click the **clock** button and set your sessions: for each session, its weekdays (Mon … Sun) and its start and end on the 12-hour clock (hour : minute, **AM** or **PM**); up to 6 sessions, two on one day are fine; they are listed by weekday, then by start time. During today's session My timer counts down to its end by itself; for 30 minutes after the end it shows **Over time**; before the next session it shows "Starts at 2:00 PM"; with none left today, "No session now". There is no Start button in this mode. **±** changes only today's end. Presenter remembers the sessions. Its time works as in the shared timer: double-click the minutes or the seconds (a count down that has not started has only minutes). Clock times (From–to) set themselves, so only **±** changes them.
 - A countdown keeps going past zero as **Over time**, in red.
 - The floating toolbar shows its time while it runs.
 
@@ -164,7 +165,7 @@ The bar above the current slide: **Pointer, Pen, Highlighter, Box, Arrow, Text, 
 
 ## Participants
 
-Click **Participants** (bottom right of the console). Choose a list and, under **Pick one**, click **Roll**: the list rolls on the projectors, slows down and stops on one person. After it stops, any key or click hides it; that key does not turn the page.
+Click **Participants** (top bar). Choose a list and, under **Pick one**, click **Roll**: the list rolls on the projectors, slows down and stops on one person. After it stops, any key or click hides it; that key does not turn the page.
 
 - Everyone not yet picked has the same chance. With "People already picked can be picked again (small chance)" on, picked people may come up again, rarely.
 - **Picked so far: X of Y** counts the picks; **↺ Reset** (after a confirmation) makes everyone unpicked again. Picks last while the app is open.

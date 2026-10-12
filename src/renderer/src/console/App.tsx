@@ -5,18 +5,20 @@ import { Header } from './Header'
 import { useAppState, useConsoleKeys, useFileDrop, useMirror } from './hooks'
 import { NextPane } from './NextPane'
 import { ScreensBar } from './ScreensBar'
-import { NotesPane, ParticipantsPopup } from './SidePanels'
+import { SlideBar, type BarKind } from './SlideBar'
 import { SpeakerTimer } from './SpeakerTimer'
 import { TimerPanel } from './TimerPanel'
 import { WindowPicker } from './WindowPicker'
 import { useT } from './i18n'
-import { Btn, DeckStatusBar, IconLabel, Menu, type ConsoleMenu } from './ui'
+import { DeckStatusBar, type ConsoleMenu } from './ui'
 
 export function App() {
   const t = useT()
   const state = useAppState()
   const mirror = useMirror()
   const [menu, setMenu] = useState<ConsoleMenu>(null)
+  // The slide bar (from the left): the slide list or the notes.
+  const [bar, setBar] = useState<BarKind | null>(null)
   const [guide, setGuide] = useState(false)
   const closeGuide = useCallback(() => setGuide(false), [])
   // 'wait' = the window becomes a waiting content (＋ Add screen); 'show' = the start screen's first content, on Projector 1.
@@ -33,7 +35,6 @@ export function App() {
   const nothingOnProjector = !onAir && state.mainDeck !== null
   // Native deck views draw above the page, so they step aside while a menu or the guide is open.
   const suspended = menu !== null || guide || picker !== null
-  const activeList = state.roller.lists.find((l) => l.id === state.roller.activeListId)
   return (
     <div
       className="flex h-full flex-col"
@@ -43,34 +44,20 @@ export function App() {
     >
       <Header state={state} jump={jump} menu={menu} onMenu={setMenu} onGuide={() => setGuide(true)} />
       <DeckStatusBar status={state.deckStatus} />
-      <main className="grid min-h-0 flex-1 grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] gap-3 p-3">
+      <main className="grid min-h-0 flex-1 grid-cols-[auto_minmax(0,1.35fr)_minmax(0,1fr)] gap-3 p-3">
+        {state.mainDeck ? <SlideBar state={state} open={bar} onOpen={setBar} /> : <div />}
         {nothingOnProjector ? (
           <section className="grid min-h-0 place-items-center rounded-card border-2 border-dashed border-line bg-panel p-6 text-center text-base text-muted">{t.projector1Empty}</section>
         ) : (
-          <CurrentPane state={state} projector={projector} mirror={mirror} suspended={suspended} menu={menu} onMenu={setMenu} onGuide={() => setGuide(true)} onPickWindow={() => setPicker('show')} />
+          <CurrentPane state={state} projector={projector} mirror={mirror} suspended={suspended} onGuide={() => setGuide(true)} onPickWindow={() => setPicker('show')} />
         )}
         <div className="flex min-h-0 flex-col gap-3">
-          {/* What goes with the slide: the next slide and its notes. */}
-          <div className="flex min-h-0 flex-1 flex-col gap-3">
-            {state.mainDeck ? <NextPane state={state} next={next} suspended={suspended} /> : <div className="flex-1" />}
-            {state.mainDeck && <NotesPane state={state} />}
+          {state.mainDeck ? <NextPane state={state} next={next} suspended={suspended} /> : <div className="flex-1" />}
+          {/* Not about one slide: the two timers, side by side. */}
+          <div className="grid shrink-0 grid-cols-2 gap-3">
+            <TimerPanel state={state} menu={menu} onMenu={setMenu} />
+            <SpeakerTimer state={state} menu={menu} onMenu={setMenu} />
           </div>
-          {/* Tools that are not about one slide. */}
-          <TimerPanel state={state} menu={menu} onMenu={setMenu} />
-          <SpeakerTimer state={state} menu={menu} onMenu={setMenu} />
-          <section className="flex items-center gap-2 rounded-card bg-panel px-3 py-2 ring-1 ring-line/60">
-            <span className="relative">
-              <Btn tone={menu === 'participants' ? 'primary' : 'default'} title={t.rollerButtonTitle} onClick={() => setMenu(menu === 'participants' ? null : 'participants')}>
-                <IconLabel icon="users">{t.participants}</IconLabel>
-              </Btn>
-              {menu === 'participants' && (
-                <Menu up width="w-[26rem]" onClose={() => setMenu(null)}>
-                  <ParticipantsPopup state={state} />
-                </Menu>
-              )}
-            </span>
-            <span className="min-w-0 truncate text-sm text-muted">{activeList ? t.listOption(activeList.name, activeList.count) : ''}</span>
-          </section>
         </div>
       </main>
       <ScreensBar state={state} menu={menu} onMenu={setMenu} onPickWindow={() => setPicker('wait')} />

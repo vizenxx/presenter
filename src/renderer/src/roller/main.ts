@@ -96,11 +96,24 @@ window.roller.onPlay((play: RollerPlay) => {
   })
 })
 
-/** Random groups: one card per group with its names; sized so every group fits on one screen. */
+/**
+ * Makes every name whole and every team visible: the size goes down step by step until no team
+ * is taller than the screen and no name is wider than its team's card. Names wrap, never cut.
+ */
+function fitGroups(): void {
+  let size = Number.parseFloat(groupsBox.style.getPropertyValue('--gname-size')) || 1.4
+  const tooBig = (): boolean => groupsBox.scrollHeight > groupsBox.clientHeight + 1 || [...groupsBox.querySelectorAll<HTMLLIElement>('li')].some((li) => li.scrollWidth > li.clientWidth + 1)
+  for (let i = 0; i < 40 && tooBig() && size > 0.5; i++) {
+    size *= 0.94
+    groupsBox.style.setProperty('--gname-size', `${size}vw`)
+  }
+}
+
+/** Teams: one card per team with its names; sized so every team and every full name fits on one screen. */
 window.roller.onGroups((groups: string[][], sound: boolean) => {
   clearTimers()
-  eyebrow.textContent = 'Random groups'
-  title.textContent = `${groups.length} groups`
+  eyebrow.textContent = 'Teams'
+  title.textContent = `${groups.length} teams`
   const people = groups.reduce((n, g) => n + g.length, 0)
   count.textContent = `${people} people`
   const cols = groups.length <= 4 ? groups.length : groups.length <= 6 ? 3 : groups.length <= 8 ? 4 : 5
@@ -114,7 +127,7 @@ window.roller.onGroups((groups: string[][], sound: boolean) => {
       box.className = 'group'
       box.style.animationDelay = `${i * 0.08}s`
       const h = document.createElement('h2')
-      h.textContent = `Group ${i + 1}`
+      h.textContent = `Team ${i + 1}`
       const list = document.createElement('ul')
       list.append(...names.map((name) => Object.assign(document.createElement('li'), { textContent: name })))
       box.append(h, list)
@@ -123,6 +136,7 @@ window.roller.onGroups((groups: string[][], sound: boolean) => {
   )
   stage.dataset['phase'] = 'groups'
   stage.hidden = false
+  fitGroups()
   if (sound) ding()
 })
 

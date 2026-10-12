@@ -61,7 +61,7 @@ function sampleState(projecting: boolean, crowd = false, theme: UiTheme = 'dark'
 
 const SAMPLE_WINDOWS = ['Browser – Class website', 'Video player – lesson clip.mp4', 'Spreadsheet – marks.xlsx'].map((name, i) => ({ id: `window:${100 + i}:0`, name, app: ['Microsoft Edge', 'VLC media player', 'Microsoft Excel'][i], icon: '', minimized: i === 2, thumbnail: i === 2 ? '' : "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='200'><rect width='320' height='200' fill='%23334155'/><rect x='20' y='20' width='280' height='30' fill='%2394a3b8'/></svg>" }))
 
-function writeStub(state: AppState): void {
+function writeStub(state: AppState, ticks = false): void {
   fs.mkdirSync(path.dirname(STUB), { recursive: true })
   fs.writeFileSync(
     STUB,
@@ -72,7 +72,11 @@ const calls = []
 const api = {}
 for (const key of ${JSON.stringify(API_METHODS)}) api[key] = (...args) => { calls.push([key, ...args]) }
 api.__calls = () => JSON.parse(JSON.stringify(calls))
-api.onState = (cb) => setTimeout(() => cb(state), 50)
+api.onState = (cb) => {
+  setTimeout(() => cb(state), 50)
+  // A running timer: the shared timer's time and My timer's held time move on every 0.4 s, like a fast clock.
+  if (${ticks}) { let n = 0; setInterval(() => { n++; cb({ ...state, timer: { ...state.timer, remainingSec: state.timer.remainingSec - n } }) }, 400) }
+}
 api.onInkOp = () => noop
 api.inkSnapshot = () => Promise.resolve([])
 api.pathForFile = () => ''
@@ -84,7 +88,7 @@ contextBridge.exposeInMainWorld('presenter', api)
   )
 }
 
-type Open = 'guide' | 'guide-prepare' | 'window-picker' | 'start' | 'screen-menu' | 'add-menu' | 'crowd' | 'roller' | 'bells' | 'adjust' | 'clock' | 'media' | 'slides' | null
+type Open = 'guide' | 'guide-prepare' | 'window-picker' | 'start' | 'screen-menu' | 'add-menu' | 'crowd' | 'roller' | 'bells' | 'adjust' | 'clock' | 'media' | 'slides' | 'notes' | null
 /** Clicks the button that opens each pop-up. */
 const OPENERS: Record<string, string> = {
   guide: `[...document.querySelectorAll('header button')].find((x) => x.title.startsWith('How to use Presenter'))`,
@@ -93,7 +97,8 @@ const OPENERS: Record<string, string> = {
   'window-picker': `(() => { [...document.querySelectorAll('footer button')].find((x) => x.textContent.includes('＋')).click(); return new Promise((r) => setTimeout(() => r([...document.querySelectorAll('button')].find((x) => x.textContent.startsWith('A window'))), 300)) })()`,
   'add-menu': `[...document.querySelectorAll('footer button')].find((x) => x.textContent.includes('＋'))`,
   roller: `[...document.querySelectorAll('button')].find((x) => x.textContent.trim() === 'Participants')`,
-  slides: `[...document.querySelectorAll('button')].find((x) => x.textContent.trim() === 'Slides')`,
+  slides: `[...document.querySelectorAll('nav button')].find((x) => x.textContent.trim() === 'Slides')`,
+  notes: `[...document.querySelectorAll('nav button')].find((x) => x.textContent.trim() === 'Notes')`,
   bells: `[...document.querySelectorAll('button')].find((x) => x.title.startsWith('Warning bells of the shared timer'))`,
   adjust: `[...document.querySelectorAll('button')].find((x) => x.textContent.trim() === '±')`,
   clock: `[...document.querySelectorAll('button')].find((x) => x.title.startsWith('Sessions:'))`
@@ -150,8 +155,12 @@ async function shot(projecting: boolean, open: Open = null, page = 'console', th
   }
   if (page === 'console' && open === null && !projecting) {
     const text = await win.webContents.executeJavaScript('document.body.innerText')
-    if (!text.includes('Notes · slide 3') || !text.includes('Ask the class first.')) throw new Error('the notes of the slide in view are not shown under the next slide')
-    if (text.includes('Slide title 18')) throw new Error('the slide list is open by itself')
+    if (text.includes('Slide title 18') || text.includes('Ask the class first.')) throw new Error('the slide bar is open by itself')
+    if (!(await win.webContents.executeJavaScript(`!!document.querySelector('nav[aria-label="Slides and notes"]')`))) throw new Error('the slide bar (rail) is missing')
+  }
+  if (open === 'notes') {
+    const text = await win.webContents.executeJavaScript('document.body.innerText')
+    if (!text.includes('Notes · slide 3') || !text.includes('Ask the class first.')) throw new Error('the notes of the slide in view are not in the bar')
   }
   if (open === 'slides') {
     const text = await win.webContents.executeJavaScript('document.body.innerText')
@@ -209,28 +218,29 @@ async function inputs(): Promise<void> {
   // One Start in the shared timer: Set only sets the time; the Start button starts it.
   const starts = await js<number>(`[...document.querySelectorAll('section')].filter((x) => x.textContent.includes('Shared timer · participants see it')).flatMap((x) => [...x.querySelectorAll('button')]).filter((b) => b.textContent.trim() === 'Start').length`)
   if (starts !== 1) throw new Error(`the shared timer has ${starts} Start buttons`)
-  // Minutes: empty the box completely, then type 0.
-  await js(`${field('Minutes')}.focus()`)
-  await js(`${field('Minutes')}.setSelectionRange(9, 9)`)
-  await key('Backspace')
-  const emptied = await js<string>(`${field('Minutes')}.value`)
-  if (emptied !== '') throw new Error(`the minutes box keeps "${emptied}" after Backspace`)
-  await key('0')
-  // Seconds: empty both digits, type 30: the time is set to 0:30 (0:00 on the way is not sent); Enter starts it.
-  await js(`${field('Seconds')}.focus()`)
-  await js(`${field('Seconds')}.setSelectionRange(9, 9)`)
+  // The time is its own entry: double-click the minutes, type, Enter. Stopped, it sets the time Start will use.
+  const sharedTime = `[...document.querySelectorAll('section')].find((x) => x.textContent.includes('Shared timer · participants see it'))`
+  await js(`${sharedTime}.querySelector('[role=button]').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))`)
+  await wait(100)
+  if (!(await js<boolean>(`!!${field('Minutes')}`))) throw new Error('a double-click on the minutes does not open the minutes box')
   await key('Backspace')
   await key('Backspace')
-  if ((await js<string>(`${field('Seconds')}.value`)) !== '') throw new Error('the seconds box does not empty')
-  await key('3')
-  await key('0')
-  const set = (await calls()).filter((c) => c[0] === 'timerSet').map((c) => c[1])
-  if (set[set.length - 1] !== 30 || set.includes(0)) throw new Error(`Set should end at 30 s and never send 0: ${JSON.stringify(set)}`)
-  if ((await calls()).some((c) => c[0] === 'timerStart')) throw new Error('typing in Set started the timer')
+  await key('7')
   await key('Enter')
-  const started = (await calls()).filter((c) => c[0] === 'timerStart')
-  if (started.length !== 1 || started[0][1] !== 30) throw new Error(`Enter should start 30 s: ${JSON.stringify(started)}`)
-  console.log('ok shared timer: one Start; Set empties fully, sets 0:30, Enter starts it')
+  await wait(100)
+  const setTo = (await calls()).filter((c) => c[0] === 'timerSet').map((c) => c[1])
+  if (setTo.join(',') !== '420') throw new Error(`typing 7 in the minutes of a stopped timer sets 7:00 (420 s): ${JSON.stringify(setTo)}`)
+  if ((await calls()).some((c) => c[0] === 'timerStart' || c[0] === 'timerAdjust')) throw new Error('editing the time of a stopped timer started or adjusted it')
+  if (await js<boolean>(`!!${field('Minutes')}`)) throw new Error('the minutes box stays after Enter')
+  // Esc leaves it as it was.
+  await js(`${sharedTime}.querySelectorAll('[role=button]')[1].dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))`)
+  await wait(100)
+  await key('Backspace')
+  await key('9')
+  await key('Escape')
+  await wait(100)
+  if ((await calls()).filter((c) => c[0] === 'timerSet').length !== 1) throw new Error('Esc did not leave the time as it was')
+  console.log('ok shared timer: one Start; the time is its own entry (double-click, type, Enter sets it; Esc leaves it)')
 
   // The bell button next to the shared timer's name opens its warning bells in a pop-up; Esc closes it.
   if ((await js<string>(`[...document.querySelectorAll('button')].find((x) => x.title.startsWith('Warning bells of the shared timer')).textContent.trim()`)) !== '1') throw new Error('the bell button does not show 1 bell')
@@ -320,6 +330,80 @@ async function inputs(): Promise<void> {
   const after = (await calls()).filter((c) => c[0] === 'zoom' && c[2] === 'in').length
   if (after !== steps + 1) throw new Error(`a click on A+ gave ${after - steps} steps`)
   console.log(`ok A+ repeats while held (${steps} steps in 1 s), a click is one step`)
+  win.destroy()
+  await wait(300)
+}
+
+/**
+ * A running timer, edited through its time: the other parts keep running while a part is typed;
+ * Enter sets the typed part and leaves the others as they are at that moment (so the timer is moved
+ * by the difference); Esc leaves everything running. The stub ticks the time down every 0.4 s.
+ */
+async function timeEditing(): Promise<void> {
+  const state = sampleState(false)
+  state.timer = { status: 'running', remainingSec: 754, durationSec: 900, alarming: false, warnings: [] }
+  writeStub(state, true)
+  const win = new BrowserWindow({ show: false, width: 1536, height: 864, useContentSize: true, webPreferences: { preload: STUB, contextIsolation: true, sandbox: true, offscreen: true } })
+  await win.loadFile(path.join(ROOT, 'out', 'renderer', 'console.html'))
+  await wait(1200)
+  const wc = win.webContents
+  const js = <T>(code: string): Promise<T> => wc.executeJavaScript(code) as Promise<T>
+  const key = async (keyCode: string): Promise<void> => {
+    wc.sendInputEvent({ type: 'keyDown', keyCode })
+    if (keyCode.length === 1) wc.sendInputEvent({ type: 'char', keyCode })
+    wc.sendInputEvent({ type: 'keyUp', keyCode })
+    await wait(60)
+  }
+  const calls = (): Promise<unknown[][]> => js('window.presenter.__calls()')
+  const card = (name: string): string => `[...document.querySelectorAll('section')].find((x) => x.textContent.includes(${JSON.stringify(name)}))`
+  const parts = (name: string): Promise<string[]> => js(`(() => { const c = ${card(name)}; return [...c.querySelectorAll('[role=button], input[aria-label]')].map((e) => (e.tagName === 'INPUT' ? 'input:' + e.value : e.textContent)) })()`)
+
+  // Shared timer, 12:34 and running. Edit the minutes: type 5.
+  const before = await parts('Shared timer · participants see it')
+  if (before.length !== 2 || before[0] !== '12') throw new Error(`the running timer should show 12:xx: ${JSON.stringify(before)}`)
+  await js(`${card('Shared timer · participants see it')}.querySelector('[role=button]').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))`)
+  await wait(100)
+  await key('Backspace')
+  await key('Backspace')
+  await key('5')
+  const seconds0 = (await parts('Shared timer · participants see it'))[1]
+  await wait(1700)
+  const during = await parts('Shared timer · participants see it')
+  if (during[0] !== 'input:5') throw new Error(`the minutes box should hold 5 while editing: ${JSON.stringify(during)}`)
+  if (during[1] === seconds0) throw new Error(`the seconds stood still while the minutes were typed (${seconds0} → ${during[1]})`)
+  if ((await calls()).some((c) => c[0] === 'timerAdjust')) throw new Error('the timer was changed before Enter')
+  await key('Enter')
+  await wait(100)
+  const adjusts = (await calls()).filter((c) => c[0] === 'timerAdjust').map((c) => c[1] as number)
+  // 12 minutes (and some seconds) → 5 minutes (and the same seconds): 7 minutes less, whatever the seconds.
+  if (adjusts.length !== 1 || adjusts[0] !== -420) throw new Error(`Enter should take 7 minutes away (the seconds untouched): ${JSON.stringify(adjusts)}`)
+  console.log('ok running timer: the seconds keep running while the minutes are typed; Enter moves only the minutes')
+
+  // Esc: nothing changes.
+  await js(`${card('Shared timer · participants see it')}.querySelectorAll('[role=button]')[0].dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))`)
+  await wait(100)
+  await key('Backspace')
+  await key('Backspace')
+  await key('1')
+  await key('Escape')
+  await wait(100)
+  if ((await calls()).filter((c) => c[0] === 'timerAdjust').length !== 1) throw new Error('Esc changed the running timer')
+  if ((await parts('Shared timer · participants see it')).some((x) => x.startsWith('input'))) throw new Error('the box stays after Esc')
+
+  // My timer (paused, 32:26 left): the minutes to 20 → 12:00 less; the seconds stay.
+  const mine = await parts('My timer')
+  if (mine.length < 2) throw new Error(`My timer should have editable time parts: ${JSON.stringify(mine)}`)
+  await js(`${card('My timer')}.querySelector('[role=button]').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))`)
+  await wait(100)
+  await key('Backspace')
+  await key('Backspace')
+  await key('2')
+  await key('0')
+  await key('Enter')
+  await wait(100)
+  const speaker = (await calls()).filter((c) => c[0] === 'speakerAdjust').map((c) => c[1])
+  if (speaker.join(',') !== '-720') throw new Error(`My timer: 32 → 20 minutes should send -720: ${JSON.stringify(speaker)}`)
+  console.log('ok My timer: the time is its own entry, the same way')
   win.destroy()
   await wait(300)
 }
@@ -427,12 +511,24 @@ async function consoleText(): Promise<void> {
   await wait(300)
 }
 
-/** The participants' screen with random groups (23 people in 5 groups), at 1280 x 720. */
+/**
+ * The participants' screen with teams, at 1280 x 720: 23 people in 5 teams, and 30 people with
+ * long names in 6 teams. Every team shows, no team runs off the screen, and every name is whole
+ * (wrapped if it must be, never cut).
+ */
 async function groupsShot(): Promise<void> {
   const stub = path.join(OUT, 'harness', 'roller-stub-preload.cjs')
-  const names = Array.from({ length: 23 }, (_, i) => `Person ${String.fromCharCode(65 + (i % 26))}${i + 1} Wangmo`)
-  const groups = [0, 1, 2, 3, 4].map((g) => names.filter((_, i) => i % 5 === g))
-  fs.writeFileSync(stub, `const { contextBridge } = require('electron')
+  const cases: Array<{ label: string; names: string[]; teams: number }> = [
+    { label: 'short names', names: Array.from({ length: 23 }, (_, i) => `Person ${String.fromCharCode(65 + (i % 26))}${i + 1} Wangmo`), teams: 5 },
+    {
+      label: 'long names',
+      names: Array.from({ length: 30 }, (_, i) => `${['Ngawang', 'Tshering', 'Dechen', 'Karma', 'Sonam'][i % 5]} ${['Phuntsho', 'Choden', 'Lhamo', 'Wangchuk'][i % 4]} ${['Dorji', 'Tenzin', 'Zangmo', 'Gyeltshen', 'Namgay'][i % 5]} ${i + 1}`),
+      teams: 6
+    }
+  ]
+  for (const c of cases) {
+    const groups = Array.from({ length: c.teams }, (_, g) => c.names.filter((_, i) => i % c.teams === g))
+    fs.writeFileSync(stub, `const { contextBridge } = require('electron')
 contextBridge.exposeInMainWorld('roller', {
   onPlay: () => {},
   onGroups: (cb) => setTimeout(() => cb(${JSON.stringify(groups)}, false), 100),
@@ -440,17 +536,23 @@ contextBridge.exposeInMainWorld('roller', {
   pointer: () => {}
 })
 `)
-  const win = new BrowserWindow({ show: false, width: 1280, height: 720, useContentSize: true, backgroundColor: '#ffffff', webPreferences: { preload: stub, contextIsolation: true, sandbox: true, offscreen: true } })
-  await win.loadFile(path.join(ROOT, 'out', 'renderer', 'roller.html'))
-  await wait(1500)
-  const shown = await win.webContents.executeJavaScript(`document.querySelectorAll('.group').length`)
-  if (shown !== 5) throw new Error(`the participants' screen shows ${shown} groups`)
-  const cut = await win.webContents.executeJavaScript(`[...document.querySelectorAll('.group')].some((g) => g.getBoundingClientRect().bottom > innerHeight)`)
-  if (cut) throw new Error('a group runs off the participants screen')
-  fs.writeFileSync(path.join(OUT, 'roller-groups.png'), (await win.webContents.capturePage()).toPNG())
-  console.log('ok random groups on the participants screen: 5 groups fit')
-  win.destroy()
-  await wait(300)
+    const win = new BrowserWindow({ show: false, width: 1280, height: 720, useContentSize: true, backgroundColor: '#ffffff', webPreferences: { preload: stub, contextIsolation: true, sandbox: true, offscreen: true } })
+    await win.loadFile(path.join(ROOT, 'out', 'renderer', 'roller.html'))
+    await wait(1500)
+    const js = <T>(code: string): Promise<T> => win.webContents.executeJavaScript(code) as Promise<T>
+    const shown = await js<number>(`document.querySelectorAll('.group').length`)
+    if (shown !== c.teams) throw new Error(`${c.label}: the participants' screen shows ${shown} teams, not ${c.teams}`)
+    if (await js<boolean>(`[...document.querySelectorAll('.group')].some((g) => g.getBoundingClientRect().bottom > innerHeight + 1)`)) throw new Error(`${c.label}: a team runs off the participants' screen`)
+    const clipped = await js<string[]>(`[...document.querySelectorAll('.group li')].filter((li) => li.scrollWidth > li.clientWidth + 1 || getComputedStyle(li).textOverflow === 'ellipsis').map((li) => li.textContent)`)
+    if (clipped.length > 0) throw new Error(`${c.label}: names cut off: ${clipped.slice(0, 3).join(' | ')}`)
+    const texts = await js<string[]>(`[...document.querySelectorAll('.group li')].map((li) => li.textContent)`)
+    if (texts.join('|') !== groups.flat().join('|')) throw new Error(`${c.label}: the names shown are not the names given`)
+    if (!(await js<string>('document.querySelector(".group h2").textContent')).startsWith('Team ')) throw new Error('teams are not called Team 1, Team 2 …')
+    fs.writeFileSync(path.join(OUT, c.label === 'short names' ? 'roller-groups.png' : 'roller-groups-long.png'), (await win.webContents.capturePage()).toPNG())
+    console.log(`ok teams on the participants' screen (${c.label}): ${c.teams} teams fit, every name whole`)
+    win.destroy()
+    await wait(300)
+  }
 }
 
 /** The floating toolbar's timer settings: the same Set as the console, and one Start. */
@@ -482,6 +584,7 @@ app.whenReady().then(async () => {
     await toolbarTimer()
     await groupsShot()
     await consoleText()
+    await timeEditing()
     await shot(false)
     await shot(true)
     await shot(false, 'guide')
@@ -491,6 +594,7 @@ app.whenReady().then(async () => {
     await shot(false, 'window-picker')
     await shot(false, 'roller')
     await shot(false, 'slides')
+    await shot(false, 'notes')
     await shot(false, 'crowd', 'toolbar')
     await shot(false, 'start')
     // The light look: the same views that carry the most colours.

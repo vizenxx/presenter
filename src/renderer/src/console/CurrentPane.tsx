@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import type { AppState, OutputView, PreviewRect } from '../../../shared/types'
-import { SlidesPopup } from './SidePanels'
 import { screenLabel, useT } from './i18n'
 import { InkToolbar, MirrorView } from './Ink'
 import { Btn, goToSlide, IconLabel, Milestones, PageText, UiIcon, ZoomControl, Menu, type ConsoleMenu } from './ui'
@@ -70,12 +69,10 @@ export function CurrentPane(props: {
   projector: OutputView
   mirror: string | null
   suspended: boolean
-  menu: ConsoleMenu
-  onMenu: (menu: ConsoleMenu) => void
   onGuide: () => void
   onPickWindow: () => void
 }) {
-  const { state, projector, mirror, suspended, menu, onMenu, onGuide, onPickWindow } = props
+  const { state, projector, mirror, suspended, onGuide, onPickWindow } = props
   const t = useT()
   if (!state.mainDeck && projector.kind !== 'capture') return <EmptyState state={state} onGuide={onGuide} onPickWindow={onPickWindow} />
   const selected = state.selectedId === projector.id
@@ -102,16 +99,6 @@ export function CurrentPane(props: {
         </ViewSlot>
       )}
       <div className="mt-2 flex min-w-0 items-center gap-3">
-        <span className="relative shrink-0">
-          <Btn tone={menu === 'slides' ? 'primary' : 'default'} title={t.slidesTitle} onClick={() => onMenu(menu === 'slides' ? null : 'slides')}>
-            <IconLabel icon="list">{t.slides}</IconLabel>
-          </Btn>
-          {menu === 'slides' && (
-            <Menu up width="w-[28rem]" onClose={() => onMenu(null)}>
-              <SlidesPopup state={state} />
-            </Menu>
-          )}
-        </span>
         <span className="shrink-0 text-sm text-muted">
           <PageText o={projector} />
           {projector.steps && (

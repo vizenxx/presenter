@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import type { AppState, UiTheme } from '../../../shared/types'
 import { useDarkLook } from './hooks'
 import { useT } from './i18n'
+import { RollerPanel } from './RollerPanel'
 import { Btn, IconLabel, Menu, MenuItem, type ConsoleMenu } from './ui'
 
 function ProjectStatus({ state }: { state: AppState }) {
@@ -90,6 +91,18 @@ export function Header(props: {
                 {d.name}
               </MenuItem>
             ))}
+          </Menu>
+        )}
+      </span>
+      <span className="relative">
+        <Btn tone={menu === 'participants' ? 'primary' : 'default'} title={t.rollerButtonTitle} onClick={() => onMenu(menu === 'participants' ? null : 'participants')}>
+          <IconLabel icon="users">{t.participants}</IconLabel>
+        </Btn>
+        {menu === 'participants' && (
+          <Menu width="w-[26rem]" onClose={close}>
+            <div className="max-h-[70vh] overflow-y-auto p-1.5">
+              <RollerPanel state={state} />
+            </div>
           </Menu>
         )}
       </span>
