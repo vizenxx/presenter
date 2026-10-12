@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useRef } from 'react'
 import type { AppState } from '../../../shared/types'
 import { screenLabel, useT } from './i18n'
-import { Btn, goToSlide, UiIcon } from './ui'
+import { Btn, goToSlide, IconLabel } from './ui'
 
 /** What the slide bar shows: the slide list (jump), or the speaker notes of the slide in view. Both go with the slides. */
 export type BarKind = 'slides' | 'notes'
@@ -49,53 +49,48 @@ function SlideList({ state, current }: { state: AppState; current: number }) {
 }
 
 /**
- * The slide bar, as in a slide editor: a narrow rail with one button per thing that goes with the
- * slides (Slides, Notes); a button opens its panel beside the rail, from the left, and the same
- * button closes it. The panel has no tabs of its own.
+ * The two buttons of the slide bar (Slides, Notes). They sit in the current slide's own row, at
+ * its left edge, where the panel they open comes in from. A button opens its panel; the same
+ * button closes it.
  */
-export function SlideBar({ state, open, onOpen }: { state: AppState; open: BarKind | null; onOpen: (kind: BarKind | null) => void }) {
+export function BarButtons({ open, onOpen }: { open: BarKind | null; onOpen: (kind: BarKind | null) => void }) {
+  const t = useT()
+  const entry = (kind: BarKind, icon: 'list' | 'note', name: string) => (
+    <Btn key={kind} tone={open === kind ? 'primary' : 'default'} title={kind === 'slides' ? t.slidesTitle : t.notesTitle} onClick={() => onOpen(open === kind ? null : kind)}>
+      <IconLabel icon={icon}>{name}</IconLabel>
+    </Btn>
+  )
+  return (
+    <span className="flex shrink-0 items-center gap-1.5" role="group" aria-label={t.slideBarLabel}>
+      {entry('slides', 'list', t.slides)}
+      {entry('notes', 'note', t.notes)}
+    </span>
+  )
+}
+
+/** The slide bar's panel, at the left of the console: the slide list or the notes of the slide in view. */
+export function SlidePanel({ state, open, onClose }: { state: AppState; open: BarKind; onClose: () => void }) {
   const t = useT()
   const { label, deck, current } = useFocus(state)
-  const entry = (kind: BarKind, icon: 'list' | 'note', name: string) => (
-    <button
-      key={kind}
-      type="button"
-      aria-pressed={open === kind}
-      title={kind === 'slides' ? t.slidesTitle : t.notesTitle}
-      onClick={() => onOpen(open === kind ? null : kind)}
-      className={`flex w-full flex-col items-center gap-0.5 rounded-xl px-1 py-2 text-[11px] leading-none ${open === kind ? 'bg-accent text-white' : 'text-muted hover:bg-panel-2 hover:text-ink'}`}
-    >
-      <UiIcon name={icon} size={18} />
-      {name}
-    </button>
-  )
   const note = state.slides[current]?.notes
   return (
-    <div className="flex min-h-0 gap-2">
-      <nav className="flex w-14 shrink-0 flex-col items-center gap-1 self-start rounded-card bg-panel p-1.5 ring-1 ring-line/60" aria-label={t.slideBarLabel}>
-        {entry('slides', 'list', t.slides)}
-        {entry('notes', 'note', t.notes)}
-      </nav>
-      {open && (
-        <aside className="flex min-h-0 w-72 shrink-0 animate-[slideInLeft_0.18s_ease-out] flex-col overflow-hidden rounded-card bg-panel ring-1 ring-line/60">
-          <div className="flex items-center gap-2 border-b border-line/70 px-3 py-2">
-            <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">
-              {open === 'slides' ? t.slides : t.notesOf(current + 1)}
-              <span className="font-normal text-muted">
-                {' · '}
-                {label}
-                {deck ? ` · ${deck}` : ''}
-              </span>
-            </h2>
-            <Btn tone="quiet" title={t.hide} onClick={() => onOpen(null)}>
-              ✕
-            </Btn>
-          </div>
-          <div className="min-h-0 flex-1 overflow-y-auto p-2">
-            {open === 'slides' ? <SlideList state={state} current={current} /> : note ? <p className="p-1 text-base leading-relaxed whitespace-pre-wrap select-text">{note}</p> : <p className="p-1 text-sm text-muted">{t.noNotes}</p>}
-          </div>
-        </aside>
-      )}
-    </div>
+    <aside className="flex min-h-0 w-72 shrink-0 animate-[slideInLeft_0.18s_ease-out] flex-col overflow-hidden rounded-card bg-panel ring-1 ring-line/60">
+      <div className="flex items-center gap-2 border-b border-line/70 px-3 py-2">
+        <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">
+          {open === 'slides' ? t.slides : t.notesOf(current + 1)}
+          <span className="font-normal text-muted">
+            {' · '}
+            {label}
+            {deck ? ` · ${deck}` : ''}
+          </span>
+        </h2>
+        <Btn tone="quiet" title={t.hide} onClick={onClose}>
+          ✕
+        </Btn>
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto p-2">
+        {open === 'slides' ? <SlideList state={state} current={current} /> : note ? <p className="p-1 text-base leading-relaxed whitespace-pre-wrap select-text">{note}</p> : <p className="p-1 text-sm text-muted">{t.noNotes}</p>}
+      </div>
+    </aside>
   )
 }

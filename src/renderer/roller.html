@@ -39,10 +39,14 @@
       [data-phase="groups"] #groups { display: grid; }
       [data-phase="groups"] #hint { visibility: visible; }
       .group { padding: 1.6vh 1.2vw; border-radius: 1vw; background: rgba(255, 255, 255, 0.06); border: 0.18vw solid rgba(255, 255, 255, 0.1); animation: pop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+      /* While the size is being fitted the cards are measured at their real size (the pop animation scales them). */
+      #groups.measuring .group { animation: none !important; }
       .group h2 { margin: 0 0 1vh; font-size: 1.5vw; font-weight: 800; color: var(--amber); }
       /* A name is shown in full: a long one wraps onto a second line; the size is reduced (fitGroups) until every team fits. */
-      .group li { font-size: var(--gname-size, 1.4vw); font-weight: 700; line-height: 1.3; white-space: normal; overflow-wrap: anywhere; }
-      .group li + li { margin-top: 0.35vh; }
+      /* Each name is its own row: a dot in front, a line between the rows, and room around it; a name that wraps keeps its second line under its first (not under the dot), so two names never read as one. */
+      .group li { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 0.7vw; align-items: baseline; padding: 0.7vh 0; font-size: var(--gname-size, 1.4vw); font-weight: 700; line-height: 1.25; white-space: normal; overflow-wrap: anywhere; }
+      .group li + li { border-top: 0.12vw solid rgba(255, 255, 255, 0.16); }
+      .group li .dot { width: 0.5em; height: 0.5em; border-radius: 50%; background: var(--amber); align-self: center; }
       .group ul { margin: 0; padding: 0; list-style: none; }
       @keyframes pop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
       @keyframes fade { from { opacity: 0; } to { opacity: 1; } }

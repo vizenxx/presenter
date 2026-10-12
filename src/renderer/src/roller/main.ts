@@ -102,11 +102,22 @@ window.roller.onPlay((play: RollerPlay) => {
  */
 function fitGroups(): void {
   let size = Number.parseFloat(groupsBox.style.getPropertyValue('--gname-size')) || 1.4
-  const tooBig = (): boolean => groupsBox.scrollHeight > groupsBox.clientHeight + 1 || [...groupsBox.querySelectorAll<HTMLLIElement>('li')].some((li) => li.scrollWidth > li.clientWidth + 1)
+  // The teams are centred in their area, so too much runs over its top as well as its bottom: measure the cards themselves.
+  const tooBig = (): boolean => {
+    const area = groupsBox.getBoundingClientRect()
+    // Clear of the title above and of the hint line below (it lies over the bottom of the area).
+    const top = Math.max(area.top, title.getBoundingClientRect().bottom)
+    const hint = document.getElementById('hint')
+    const bottom = Math.min(area.bottom, hint ? hint.getBoundingClientRect().top : area.bottom)
+    const cards = [...groupsBox.querySelectorAll<HTMLElement>('.group')].map((g) => g.getBoundingClientRect())
+    return cards.some((r) => r.top < top - 1 || r.bottom > bottom + 1) || [...groupsBox.querySelectorAll<HTMLLIElement>('li')].some((li) => li.scrollWidth > li.clientWidth + 1)
+  }
+  groupsBox.classList.add('measuring')
   for (let i = 0; i < 40 && tooBig() && size > 0.5; i++) {
     size *= 0.94
     groupsBox.style.setProperty('--gname-size', `${size}vw`)
   }
+  groupsBox.classList.remove('measuring')
 }
 
 /** Teams: one card per team with its names; sized so every team and every full name fits on one screen. */
@@ -129,7 +140,15 @@ window.roller.onGroups((groups: string[][], sound: boolean) => {
       const h = document.createElement('h2')
       h.textContent = `Team ${i + 1}`
       const list = document.createElement('ul')
-      list.append(...names.map((name) => Object.assign(document.createElement('li'), { textContent: name })))
+      list.append(
+        ...names.map((name) => {
+          const li = document.createElement('li')
+          const dot = Object.assign(document.createElement('span'), { className: 'dot' })
+          const text = Object.assign(document.createElement('span'), { textContent: name })
+          li.append(dot, text)
+          return li
+        })
+      )
       box.append(h, list)
       return box
     })

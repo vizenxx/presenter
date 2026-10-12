@@ -97,8 +97,8 @@ const OPENERS: Record<string, string> = {
   'window-picker': `(() => { [...document.querySelectorAll('footer button')].find((x) => x.textContent.includes('＋')).click(); return new Promise((r) => setTimeout(() => r([...document.querySelectorAll('button')].find((x) => x.textContent.startsWith('A window'))), 300)) })()`,
   'add-menu': `[...document.querySelectorAll('footer button')].find((x) => x.textContent.includes('＋'))`,
   roller: `[...document.querySelectorAll('button')].find((x) => x.textContent.trim() === 'Participants')`,
-  slides: `[...document.querySelectorAll('nav button')].find((x) => x.textContent.trim() === 'Slides')`,
-  notes: `[...document.querySelectorAll('nav button')].find((x) => x.textContent.trim() === 'Notes')`,
+  slides: `[...document.querySelectorAll('[aria-label="Slides and notes"] button')].find((x) => x.textContent.trim() === 'Slides')`,
+  notes: `[...document.querySelectorAll('[aria-label="Slides and notes"] button')].find((x) => x.textContent.trim() === 'Notes')`,
   bells: `[...document.querySelectorAll('button')].find((x) => x.title.startsWith('Warning bells of the shared timer'))`,
   adjust: `[...document.querySelectorAll('button')].find((x) => x.textContent.trim() === '±')`,
   clock: `[...document.querySelectorAll('button')].find((x) => x.title.startsWith('Sessions:'))`
@@ -156,7 +156,9 @@ async function shot(projecting: boolean, open: Open = null, page = 'console', th
   if (page === 'console' && open === null && !projecting) {
     const text = await win.webContents.executeJavaScript('document.body.innerText')
     if (text.includes('Slide title 18') || text.includes('Ask the class first.')) throw new Error('the slide bar is open by itself')
-    if (!(await win.webContents.executeJavaScript(`!!document.querySelector('nav[aria-label="Slides and notes"]')`))) throw new Error('the slide bar (rail) is missing')
+    // The two buttons are in the current slide's row, at its left edge; no column of their own.
+    const where = await win.webContents.executeJavaScript(`(() => { const g = document.querySelector('[aria-label="Slides and notes"]'); const pane = g && g.closest('section'); if (!pane) return null; const r = g.getBoundingClientRect(); const p = pane.getBoundingClientRect(); const nav = document.querySelector('nav'); return { left: r.left - p.left, inPane: pane.textContent.includes('Slide 3 / 18'), nav: !!nav } })()`)
+    if (!where || !where.inPane || where.left > 40 || where.nav) throw new Error(`the Slides and Notes buttons are not at the left of the current slide's row: ${JSON.stringify(where)}`)
   }
   if (open === 'notes') {
     const text = await win.webContents.executeJavaScript('document.body.innerText')
@@ -543,8 +545,14 @@ contextBridge.exposeInMainWorld('roller', {
     const shown = await js<number>(`document.querySelectorAll('.group').length`)
     if (shown !== c.teams) throw new Error(`${c.label}: the participants' screen shows ${shown} teams, not ${c.teams}`)
     if (await js<boolean>(`[...document.querySelectorAll('.group')].some((g) => g.getBoundingClientRect().bottom > innerHeight + 1)`)) throw new Error(`${c.label}: a team runs off the participants' screen`)
+    // Nothing runs into the title above or the hint below.
+    const room = await js<{ titleBottom: number; hintTop: number; top: number; bottom: number; size: string }>(`(() => { const t = document.getElementById('title').getBoundingClientRect(); const h = document.getElementById('hint').getBoundingClientRect(); const r = [...document.querySelectorAll('.group')].map((g) => g.getBoundingClientRect()); return { titleBottom: t.bottom, hintTop: h.top, top: Math.min(...r.map((x) => x.top)), bottom: Math.max(...r.map((x) => x.bottom)), size: document.getElementById('groups').style.getPropertyValue('--gname-size') } })()`)
+    if (room.top < room.titleBottom - 1 || room.bottom > room.hintTop + 1) throw new Error(`${c.label}: a team runs into the title or the hint: ${JSON.stringify(room)}`)
     const clipped = await js<string[]>(`[...document.querySelectorAll('.group li')].filter((li) => li.scrollWidth > li.clientWidth + 1 || getComputedStyle(li).textOverflow === 'ellipsis').map((li) => li.textContent)`)
     if (clipped.length > 0) throw new Error(`${c.label}: names cut off: ${clipped.slice(0, 3).join(' | ')}`)
+    // Names are told apart: a dot before each name, a line between the rows, room above and below.
+    const apart = await js<{ dots: number; names: number; lines: number; padded: boolean }>(`(() => { const lis = [...document.querySelectorAll('.group li')]; const second = lis.filter((li) => li.previousElementSibling); return { names: lis.length, dots: lis.filter((li) => li.querySelector('.dot')).length, lines: second.filter((li) => parseFloat(getComputedStyle(li).borderTopWidth) > 0).length, padded: lis.every((li) => parseFloat(getComputedStyle(li).paddingTop) >= 3) } })()`)
+    if (apart.dots !== apart.names || !apart.padded || apart.lines === 0) throw new Error(`${c.label}: names are not told apart: ${JSON.stringify(apart)}`)
     const texts = await js<string[]>(`[...document.querySelectorAll('.group li')].map((li) => li.textContent)`)
     if (texts.join('|') !== groups.flat().join('|')) throw new Error(`${c.label}: the names shown are not the names given`)
     if (!(await js<string>('document.querySelector(".group h2").textContent')).startsWith('Team ')) throw new Error('teams are not called Team 1, Team 2 …')

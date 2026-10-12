@@ -5,7 +5,7 @@ import { Header } from './Header'
 import { useAppState, useConsoleKeys, useFileDrop, useMirror } from './hooks'
 import { NextPane } from './NextPane'
 import { ScreensBar } from './ScreensBar'
-import { SlideBar, type BarKind } from './SlideBar'
+import { SlidePanel, type BarKind } from './SlideBar'
 import { SpeakerTimer } from './SpeakerTimer'
 import { TimerPanel } from './TimerPanel'
 import { WindowPicker } from './WindowPicker'
@@ -44,12 +44,12 @@ export function App() {
     >
       <Header state={state} jump={jump} menu={menu} onMenu={setMenu} onGuide={() => setGuide(true)} />
       <DeckStatusBar status={state.deckStatus} />
-      <main className="grid min-h-0 flex-1 grid-cols-[auto_minmax(0,1.35fr)_minmax(0,1fr)] gap-3 p-3">
-        {state.mainDeck ? <SlideBar state={state} open={bar} onOpen={setBar} /> : <div />}
+      <main className={`grid min-h-0 flex-1 gap-3 p-3 ${bar && state.mainDeck ? 'grid-cols-[18rem_minmax(0,1.35fr)_minmax(0,1fr)]' : 'grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]'}`}>
+        {bar && state.mainDeck && <SlidePanel state={state} open={bar} onClose={() => setBar(null)} />}
         {nothingOnProjector ? (
           <section className="grid min-h-0 place-items-center rounded-card border-2 border-dashed border-line bg-panel p-6 text-center text-base text-muted">{t.projector1Empty}</section>
         ) : (
-          <CurrentPane state={state} projector={projector} mirror={mirror} suspended={suspended} onGuide={() => setGuide(true)} onPickWindow={() => setPicker('show')} />
+          <CurrentPane state={state} projector={projector} mirror={mirror} suspended={suspended} bar={bar} onBar={setBar} onGuide={() => setGuide(true)} onPickWindow={() => setPicker('show')} />
         )}
         <div className="flex min-h-0 flex-col gap-3">
           {state.mainDeck ? <NextPane state={state} next={next} suspended={suspended} /> : <div className="flex-1" />}

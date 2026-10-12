@@ -35,7 +35,7 @@ Presenter is a folder you unzip; there is no installer and no administrator pass
 |---|---|
 | Top bar | **Open deck**, **Recent**, **Participants**, **Guide**, **☀ / ☾** (light or dark look), **Black screen**, **▶ Start projecting** |
 | Current slide (left) | What Projector 1 shows. Before projecting it is the deck itself; while projecting it is a live copy of what the audience sees. The mark tools are above it; the slide number and the title are under it. |
-| Slide bar (far left) | Two buttons: **Slides** (the slide list: click a slide to go there) and **Notes** (the speaker notes of the slide in view). A button opens its panel from the left; the same button closes it. |
+| Slides and Notes | Two buttons at the left of the current slide's row (under the slide): **Slides** (the slide list: click a slide to go there) and **Notes** (the speaker notes of the slide in view). A button opens its panel at the far left of the console; the same button closes it. |
 | Next slide (right) | The slide after the selected card's slide. Click it to look further ahead. |
 | Shared timer | An upright card under the next slide: the countdown the audience sees on the projector. Double-click its minutes or seconds to change them. The **bell**: its warning bells. **±**: give it more or less time. |
 | My timer | The card beside it: your own timer. Only you see it. |
@@ -73,7 +73,7 @@ The **Guide** in the app has the same help in two parts: **1 · Use Presenter** 
   - Old .ppt files: save them as .pptx first to play their videos.
   - After an update that changes the conversion, each file is converted once more (once only).
 - Hidden slides are left out, as in PowerPoint's own show.
-- Slide titles appear in the **Slides** list of the slide bar, speaker notes under **Notes** there.
+- Slide titles appear in the **Slides** list, speaker notes under **Notes**.
 
 ## Turn pages
 

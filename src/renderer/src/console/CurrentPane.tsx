@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { AppState, OutputView, PreviewRect } from '../../../shared/types'
 import { screenLabel, useT } from './i18n'
+import { BarButtons, type BarKind } from './SlideBar'
 import { InkToolbar, MirrorView } from './Ink'
 import { Btn, goToSlide, IconLabel, Milestones, PageText, UiIcon, ZoomControl, Menu, type ConsoleMenu } from './ui'
 import { ViewSlot } from './ViewSlot'
@@ -69,10 +70,12 @@ export function CurrentPane(props: {
   projector: OutputView
   mirror: string | null
   suspended: boolean
+  bar: BarKind | null
+  onBar: (kind: BarKind | null) => void
   onGuide: () => void
   onPickWindow: () => void
 }) {
-  const { state, projector, mirror, suspended, onGuide, onPickWindow } = props
+  const { state, projector, mirror, suspended, bar, onBar, onGuide, onPickWindow } = props
   const t = useT()
   if (!state.mainDeck && projector.kind !== 'capture') return <EmptyState state={state} onGuide={onGuide} onPickWindow={onPickWindow} />
   const selected = state.selectedId === projector.id
@@ -99,6 +102,7 @@ export function CurrentPane(props: {
         </ViewSlot>
       )}
       <div className="mt-2 flex min-w-0 items-center gap-3">
+        <BarButtons open={bar} onOpen={onBar} />
         <span className="shrink-0 text-sm text-muted">
           <PageText o={projector} />
           {projector.steps && (
