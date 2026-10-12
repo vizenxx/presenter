@@ -79,7 +79,7 @@ export interface SpeakerTimerView {
   clockExtra: { key: string; sec: number } | null
 }
 
-/** A class period: on these weekdays (0 = Sunday … 6 = Saturday), from a clock time to a clock time (seconds after midnight). */
+/** A session: on these weekdays (0 = Sunday … 6 = Saturday), from a clock time to a clock time (seconds after midnight). */
 export interface ClockPeriod {
   days: number[]
   fromSec: number
@@ -156,13 +156,13 @@ export interface RollerView {
   people: RollerPersonView[]
   superLucky: boolean
   roll: RollerRoll | null
-  /** The roll (or the groups) is on the students' screens right now. */
+  /** The roll (or the groups) is on the participants' screens right now. */
   showing: boolean
   /** The last random groups (names), until another roll, list or reset. */
   groups: string[][] | null
 }
 
-/** What a students' screen needs to play one roll. */
+/** What a participants' screen needs to play one roll. */
 export interface RollerPlay {
   people: RollerPersonView[]
   path: RollStep[]
@@ -240,16 +240,16 @@ export interface ConsoleApi {
   showOn(id: OutputId, target: number | 'new' | null): void
   projectorFullscreen(n: number): void
   speakerMode(mode: SpeakerMode): void
-  /** My timer's class periods (From–to). Remembered. */
+  /** My timer's sessions (From–to). Remembered. */
   speakerPeriods(periods: ClockPeriod[]): void
   speakerMinutes(minutes: number): void
   speakerToggle(): void
   speakerReset(): void
   /** Adds seconds to My timer (negative: takes them away). */
   speakerAdjust(deltaSec: number): void
-  /** Sets the class timer's time while it is stopped. */
+  /** Sets the shared timer's time while it is stopped. */
   timerSet(sec: number): void
-  /** Adds seconds to the class timer (negative: takes them away). */
+  /** Adds seconds to the shared timer (negative: takes them away). */
   timerAdjust(deltaSec: number): void
   setTheme(theme: UiTheme): void
   /** Black or white projectors (null = show the slides again). The same kind again also shows them again. */
@@ -279,7 +279,7 @@ export interface ConsoleApi {
   timerToggle(): void
   timerReset(): void
   timerDismiss(): void
-  /** The class timer's warning bells (time left and number of beeps each). Remembered. */
+  /** The shared timer's warning bells (time left and number of beeps each). Remembered. */
   timerWarnings(list: TimerWarning[]): void
   layoutPreview(rect: PreviewRect | null): void
   layoutCurrent(rect: PreviewRect | null): void
@@ -290,7 +290,7 @@ export interface ConsoleApi {
   rollerRoll(): void
   rollerHide(): void
   rollerReset(): void
-  /** Random groups of the active list, shown on the students' screens. */
+  /** Random groups of the active list, shown on the participants' screens. */
   rollerGroups(count: number): void
   rollerSetSuperLucky(on: boolean): void
   rollerSelectList(id: string): void

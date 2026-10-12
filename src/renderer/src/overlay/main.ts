@@ -10,7 +10,7 @@ let last: TimerView | null = null
 window.overlay.onTimer((t) => {
   pill.textContent = mmss(t.remainingSec)
   pill.dataset['state'] = t.alarming ? 'alarm' : t.status
-  // The overlay plays the class timer's sounds even when a deck shows the countdown itself.
+  // The overlay plays the shared timer's sounds even when a deck shows the countdown itself.
   const cue = timerCue(last, t, t.warnings)
   last = t
   if (cue?.kind === 'warning') beep(cue.beeps)

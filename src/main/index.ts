@@ -13,7 +13,7 @@ import { startupLog } from './startupLog'
 import { Store } from './store'
 
 registerDeckScheme()
-// Tests run with their own data folder so they never touch the teacher's recent files or zoom memory.
+// Tests run with their own data folder so they never touch the presenter's recent files or zoom memory.
 if (process.env['PRESENTER_USER_DATA']) app.setPath('userData', process.env['PRESENTER_USER_DATA'])
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required')
 

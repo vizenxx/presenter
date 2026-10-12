@@ -1,5 +1,5 @@
 // A window screen: another program's window, shown live (like screen sharing). The main
-// process answers getDisplayMedia with the window the teacher picked.
+// process answers getDisplayMedia with the window the presenter picked.
 const video = document.querySelector('video') as HTMLVideoElement
 const note = document.getElementById('note') as HTMLDivElement
 

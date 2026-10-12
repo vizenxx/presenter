@@ -1,12 +1,12 @@
 # Presenter
 
-Presenter shows decks (HTML, PDF, PPT, PPTX, Keynote) and program windows (a browser, a video …) on one or more projectors, and gives the teacher a console on the laptop. It runs on Windows and Mac, is free, and needs no installation.
+Presenter shows decks (HTML, PDF, PPT, PPTX, Keynote) and program windows (a browser, a video …) on one or more projectors, and gives the presenter a console on the laptop. It runs on Windows and Mac, is free, and needs no installation.
 
 中文说明：[README.zh-CN.md](README.zh-CN.md). The interface is English only.
 
 ## Download
 
-The newest zips are on the **[Releases page](https://github.com/vizenxx/presenter/releases/latest)**, under **Assets**: `…-win.zip` for Windows; for a Mac, `…-mac-arm64.zip` (Apple silicon: M1, M2 … — Apple menu → **About This Mac** shows **Chip: Apple M…**) or `…-mac-x64.zip` (Intel: it shows **Processor: … Intel**). Anyone can open that page: send other teachers the link.
+The newest zips are on the **[Releases page](https://github.com/vizenxx/presenter/releases/latest)**, under **Assets**: `…-win.zip` for Windows; for a Mac, `…-mac-arm64.zip` (Apple silicon: M1, M2 … — Apple menu → **About This Mac** shows **Chip: Apple M…**) or `…-mac-x64.zip` (Intel: it shows **Processor: … Intel**). Anyone can open that page: send the link to others.
 
 ## Open (nothing to install)
 
@@ -36,7 +36,7 @@ Presenter is a folder you unzip; there is no installer and no administrator pass
 | Top bar | **Open deck**, **Recent**, **Name picker**, **Guide**, **☀ / ☾** (light or dark look), **▶ Start projecting** |
 | Current slide (left) | What Projector 1 shows. Before projecting it is the deck itself; while projecting it is a live copy of what the audience sees. The mark tools are above it. |
 | Next slide (right) | The slide after the selected card's slide. Click it to look further ahead. |
-| Class timer | The countdown the audience sees on the projector. The **bell** next to its name: its warning bells. **±**: give it more or less time. |
+| Shared timer | The countdown the audience sees on the projector. The **bell** next to its name: its warning bells. **±**: give it more or less time. |
 | My timer | Your own timer. Only you see it. |
 | Slides / Notes | The slide list and speaker notes of the selected card (buttons above the current slide). |
 | Bottom bar | One card per content (deck or program window), each with its **Projector ▾** button. **＋ Add screen** at the end. |
@@ -65,7 +65,7 @@ The **Guide** in the app has the same help in two parts: **1 · Use Presenter** 
 - A file is converted for showing first. The first time takes about 5–20 seconds; the console shows the progress. After that the same file opens at once.
 - **Click animations play.** Each page key first shows the next click step of the slide; after the last step it turns the page. Back shows the step before; on the first step it goes to the slide before, with all its steps shown (as in PowerPoint). The next-slide preview shows each slide with all its steps. The console shows how many steps are shown, for example `Slide 3 / 18 · 1/3 clicks`.
   - Common effects (appear, fade, wipe, zoom …) and many slide transitions play. Some effects show in a simpler way: for example, text that flies in appears without moving.
-  - LibreOffice draws the slides, so a font, a chart or a SmartArt can look a little different from PowerPoint. Check a new deck once before class.
+  - LibreOffice draws the slides, so a font, a chart or a SmartArt can look a little different from PowerPoint. Check a new deck once before you present.
   - If the animated pages cannot be made, the slides show as still pages (each slide in its final state), made by the same LibreOffice or by PowerPoint or Keynote.
 - Videos and sounds in a PPTX play where they stand on the slide. Click **▶ Video** next to the slide title in the console, or click the ▶ on the video (on the projector, or in the console before projecting). A page turn stops it. No extra program is needed.
   - MP4, M4V, MOV (H.264), WebM, MP3, M4A, WAV and OGG play. WMV and AVI cannot play: the video shows a note; save it as MP4 and insert it again.
@@ -77,7 +77,7 @@ The **Guide** in the app has the same help in two parts: **1 · Use Presenter** 
 
 ## Turn pages
 
-- A deck you open again within 3 hours (for example after a restart in class) opens on the slide it showed last; a note says so, with **Go to slide 1**. Later it opens on slide 1.
+- A deck you open again within 3 hours (for example after a restart while presenting) opens on the slide it showed last; a note says so, with **Go to slide 1**. Later it opens on slide 1.
 
 - A clicker, the arrow keys, PageUp / PageDown and Space turn pages. Home and End go to the first and last page.
 - **The selected card turns.** If it is **Linked**, every linked card turns with it; if not, it turns alone.
@@ -115,7 +115,7 @@ While a program window shown on a projector is in front, a small toolbar floats 
 
 - The mark tools. With a drawing tool you draw right on the window; the marks show on the projector over the window's picture. With the pointer, you use the window as usual.
 - While you draw on a window, the toolbar takes the keyboard: **Ctrl+Z** (⌘Z) undoes a mark, **Esc** returns to the pointer and gives the keyboard back to the window.
-- **⏱**: the class timer. It shows the time left while it runs; click it for the timer's settings.
+- **Timer**: the shared timer. It shows the time left while it runs; click it for the timer's settings.
 - **Roll**: picks a name; the name shows next to the button.
 - **Mine**: My timer's time, once you started it in the console.
 - **◂** folds the toolbar; drag **⠿** to move it.
@@ -140,18 +140,18 @@ The bar above the current slide: **Pointer, Pen, Highlighter, Box, Arrow, Text, 
 
 ## Timers
 
-**Class timer** (the audience sees it)
+**Shared timer** (the audience sees it)
 
 - Click a preset (**1 min**, **5 min** …) to start at once. Or type the time in **Set** (minutes **:** seconds): the big time shows it, and the one **Start** button starts it (Enter in a box starts too). **−** and **+** change the minutes; hold them to go fast. A box can be emptied while you type. While the timer runs, **Set** rests: use **±**, or **Reset** to set a new time.
 - When a deck plans a time for a slide, the timer shows it.
-- **Warning bells**: the bell button next to the class timer's name (it shows how many bells are set) opens them in a pop-up: each bell beeps its own number of times (1–9) when its time is left (minutes : seconds). The bells are listed in the order they ring. **＋ Add a bell** adds one (up to 5); **✕** removes one. At first there is one bell: 1:00 left, 3 beeps. Presenter remembers the bells. In the last 5 seconds it always beeps once a second.
+- **Warning bells**: the bell button next to the shared timer's name (it shows how many bells are set) opens them in a pop-up: each bell beeps its own number of times (1–9) when its time is left (minutes : seconds). The bells are listed in the order they ring. **＋ Add a bell** adds one (up to 5); **✕** removes one. At first there is one bell: 1:00 left, 3 beeps. Presenter remembers the bells. In the last 5 seconds it always beeps once a second.
 - At zero the alarm rings until you press any key or click. That key does not turn the page.
 - UXD202 decks show the countdown in their own bar; everything else shows it at the bottom right of the projector.
 
 **My timer** (only you see it)
 
 - **Count up**, **Count down**, or **From–to**, to pace your talk. It makes no sound.
-- **From–to**: click the **clock** button and set your class periods: for each period, its weekdays (Mon … Sun) and its start and end on the 12-hour clock (hour : minute, **AM** or **PM**); up to 6 periods, two on one day are fine; they are listed by weekday, then by start time. During today's period My timer counts down to its end by itself; for 30 minutes after the end it shows **Over time**; before the next period it shows "Starts at 2:00 PM"; with none left today, "No class period now". There is no Start button in this mode. **±** changes only today's end. Presenter remembers the periods.
+- **From–to**: click the **clock** button and set your sessions: for each session, its weekdays (Mon … Sun) and its start and end on the 12-hour clock (hour : minute, **AM** or **PM**); up to 6 sessions, two on one day are fine; they are listed by weekday, then by start time. During today's session My timer counts down to its end by itself; for 30 minutes after the end it shows **Over time**; before the next session it shows "Starts at 2:00 PM"; with none left today, "No session now". There is no Start button in this mode. **±** changes only today's end. Presenter remembers the sessions.
 - A countdown keeps going past zero as **Over time**, in red.
 - The floating toolbar shows its time while it runs.
 
@@ -159,7 +159,7 @@ The bar above the current slide: **Pointer, Pen, Highlighter, Box, Arrow, Text, 
 
 - **±** opens a pop-up for that timer (you can still switch to the other one there). Type an amount (minutes : seconds), then click **− 1:00** to take it away or **+ 1:00** to add it.
 - It changes a timer that runs or is paused; a timer that has not started stays as it is.
-- The class timer keeps at least one second, so taking away too much makes it ring a second later. After it rang, **+** makes it run again for that time (for example "two more minutes").
+- The shared timer keeps at least one second, so taking away too much makes it ring a second later. After it rang, **+** makes it run again for that time (for example "two more minutes").
 - Taking time away past a warning bell's time rings that bell.
 
 ## Name picker
@@ -168,7 +168,7 @@ Click **Name picker** (top bar). Choose a list and click **Roll**: the list roll
 
 - Everyone not yet picked has the same chance. With "People already picked can be picked again (small chance)" on, picked people may come up again, rarely.
 - **Picked so far: X of Y** counts the picks; **↺ Reset** (after a confirmation) makes everyone unpicked again. Picks last while the app is open.
-- The first start has a sample list: click **Edit** and paste your class (one person per line; a number in front is optional). **New** makes another list. Lists are saved.
+- The first start has a sample list: click **Edit** and paste your list of people (one person per line; a number in front is optional). **New** makes another list. Lists are saved.
 - Without projecting, only you see the roll (in the console, or next to **Roll** on the floating toolbar).
 - **Random groups** (in the Name picker): choose how many groups and click **Make groups**. Everyone in the list is in one group; group sizes differ by at most one. The groups show on the projectors (any key or click hides them) and stay listed in the console.
 
@@ -190,7 +190,7 @@ Click **Name picker** (top bar). Choose a list and click **Roll**: the list roll
 ## For maintainers
 
 - Source: `src/`. Design: `docs/specs/`. Plans: `docs/superpowers/plans/`.
-- `npm run build` (build), `npm test` (unit tests), `npm run e2e` (end-to-end, 17 steps). With one display it opens windows and plays sounds; with a second display connected (a class may be on the projector) it runs hidden and muted, without the projecting steps. It never takes pictures of the screen. `PRESENTER_E2E_HIDDEN=1 npm run e2e` runs it hidden and muted on one display too.
+- `npm run build` (build), `npm test` (unit tests), `npm run e2e` (end-to-end, 17 steps). With one display it opens windows and plays sounds; with a second display connected (a presentation may be on the projector) it runs hidden and muted, without the projecting steps. It never takes pictures of the screen. `PRESENTER_E2E_HIDDEN=1 npm run e2e` runs it hidden and muted on one display too.
 - Checks that open no window: `npm run check:viewer` (PPT/PDF), `npm run check:ink` (marks: pen, box, eraser, arrow, Shift shapes, text), `npm run check:frameworks` (Reveal.js, remark, impress.js, Marp, plain slides, protocol example), `npm run check:console` (console layout in the dark and the light look, menus, start screen, floating toolbar and its timer, typing in the timer boxes, the 🔔 and ± pop-ups, holding A+), `npm run check:start` (starts hidden and muted, one by one and 8 at once).
 - Real conversions: `PRESENTER_CONVERT_IT=libreoffice npm test` (or `powerpoint`, or `keynote` on a Mac).
 - The LibreOffice inside the app: `node scripts/libreoffice.mjs prepare` downloads the official release (checked against its SHA-256), keeps only what turning slides into pages needs, and puts it in `vendor/` (`--from "C:/Program Files/LibreOffice"` uses an installed copy instead); `node scripts/libreoffice.mjs check` converts a test deck with click animations with it. LibreOffice is under the Mozilla Public License 2.0; its licence files go along.

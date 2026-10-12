@@ -26,7 +26,7 @@ function Group({ children }: { children: ReactNode }) {
   return <span className="flex items-center gap-1 border-l border-line pl-2">{children}</span>
 }
 
-/** The class timer's settings, opened from the ⏱ button (the students see this timer). */
+/** The shared timer's settings, opened from the ⏱ button (the participants see this timer). */
 function TimerDetails({ state }: { state: AppState }) {
   const t = useT()
   const timer = state.timer
@@ -53,7 +53,7 @@ function TimerDetails({ state }: { state: AppState }) {
 }
 
 /**
- * The floating tools over a program window shown on a projector: marks, the class timer (a
+ * The floating tools over a program window shown on a projector: marks, the shared timer (a
  * small ⏱ button that opens its settings), the name roll, and My timer's time while it runs.
  * It floats above the window, can fold to a small handle, is left out of screen capture, and
  * the audience never sees it.

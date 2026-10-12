@@ -82,13 +82,13 @@ describe('timer', () => {
 })
 
 describe('changing the time of a running timer', () => {
-  it('adds and takes away time on a running class timer, keeping at least one second', () => {
+  it('adds and takes away time on a running shared timer, keeping at least one second', () => {
     const running = T.start(T.initialTimer(), 300, 0)
     expect(T.adjust(running, 60, 10_000)).toMatchObject({ status: 'running', remainingMs: 350_000, endAt: 360_000, durationSec: 300 })
     expect(T.adjust(running, -120, 10_000)).toMatchObject({ remainingMs: 170_000, endAt: 180_000 })
     expect(T.adjust(running, -999, 10_000)).toMatchObject({ status: 'running', remainingMs: 1000, endAt: 11_000 })
   })
-  it('changes a paused class timer, gives a finished one more time, and leaves one not started alone', () => {
+  it('changes a paused shared timer, gives a finished one more time, and leaves one not started alone', () => {
     const paused = T.pause(T.start(T.initialTimer(), 300, 0), 100_000)
     expect(T.adjust(paused, 30, 500_000)).toMatchObject({ status: 'paused', remainingMs: 230_000, endAt: null })
     const done = T.tick(T.start(T.initialTimer(), 2, 0), 5000)
@@ -116,7 +116,7 @@ describe('changing the time of a running timer', () => {
   })
 })
 
-describe('My timer From–to: class periods by weekday', () => {
+describe('My timer From–to: sessions by weekday', () => {
   // 2026-10-09 is a Friday (day 5); 2026-10-10 a Saturday.
   const at = (h: number, m: number, sec = 0, date = 9): number => new Date(2026, 9, date, h, m, sec).getTime()
   const periods = [

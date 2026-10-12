@@ -287,7 +287,7 @@ function run(file: string, args: string[], cwd: string): Promise<void> {
 
 /**
  * PowerPoint through COM, invisible: opened read-only without a window. It quits
- * PowerPoint only when this script started it, so a teacher's open PowerPoint stays.
+ * PowerPoint only when this script started it, so a presenter's open PowerPoint stays.
  */
 const POWERPOINT_SCRIPT = `param([Parameter(Mandatory = $true)][string]$In, [Parameter(Mandatory = $true)][string]$Out)
 $ErrorActionPreference = 'Stop'

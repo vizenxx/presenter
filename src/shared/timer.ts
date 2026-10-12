@@ -107,7 +107,7 @@ export function timerCue(before: { status: TimerStatus; remainingSec: number } |
 }
 
 /**
- * Adds time to the class timer (a negative amount takes time away). A running or paused timer
+ * Adds time to the shared timer (a negative amount takes time away). A running or paused timer
  * keeps at least one second, so taking away too much makes it ring a second later. A timer that
  * has rung runs again for the added time. A timer that has not started does not change.
  */

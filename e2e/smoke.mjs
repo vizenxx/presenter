@@ -13,7 +13,7 @@ const UXD_DECK = process.env.DECK ?? path.resolve(root, '../2026-Autumn/UXD202/F
 const PLAIN_DECK = path.join(here, 'fixtures', 'plain-deck.html')
 const OUT = path.join(here, 'out')
 fs.mkdirSync(OUT, { recursive: true })
-// A fresh data folder per run: tests never touch the teacher's recent files or zoom memory.
+// A fresh data folder per run: tests never touch the presenter's recent files or zoom memory.
 const USER_DATA = path.join(OUT, 'userdata')
 fs.rmSync(USER_DATA, { recursive: true, force: true })
 // A warning time saved by 0.2.0 (one time, 3 beeps) must come back as one warning bell.
@@ -286,7 +286,7 @@ try {
   assert.equal(await call(() => globalThis.__presenter.keepsAwake()), false, 'nothing keeps the screens awake while nothing runs')
   await call(() => globalThis.__presenter.timerStart(60))
   await sleep(400)
-  assert.equal(await call(() => globalThis.__presenter.keepsAwake()), true, 'a running class timer keeps the screens awake')
+  assert.equal(await call(() => globalThis.__presenter.keepsAwake()), true, 'a running shared timer keeps the screens awake')
   await call(() => globalThis.__presenter.timerReset())
   await sleep(400)
   assert.equal(await call(() => globalThis.__presenter.keepsAwake()), false, 'the screens may sleep again after the timer')
@@ -325,9 +325,9 @@ try {
   await call(() => globalThis.__presenter.timerReset())
   await call(() => globalThis.__presenter.timerStart(120))
   await call(() => globalThis.__presenter.timerAdjust(60))
-  s = await waitFor('class timer + 1:00', (s) => s.timer.remainingSec >= 177 && s.timer.remainingSec <= 180)
+  s = await waitFor('shared timer + 1:00', (s) => s.timer.remainingSec >= 177 && s.timer.remainingSec <= 180)
   await call(() => globalThis.__presenter.timerAdjust(-999))
-  s = await waitFor('class timer keeps one second', (s) => s.timer.status === 'running' && s.timer.remainingSec === 1)
+  s = await waitFor('shared timer keeps one second', (s) => s.timer.status === 'running' && s.timer.remainingSec === 1)
   s = await waitFor('then it rings', (s) => s.timer.alarming, 4000)
   await call(() => globalThis.__presenter.timerAdjust(30))
   s = await waitFor('a rung timer runs again for the added time', (s) => s.timer.status === 'running' && !s.timer.alarming && s.timer.remainingSec >= 28)
@@ -341,18 +341,18 @@ try {
   s = await state()
   assert.ok(s.speaker.heldMs <= -59_000 && s.speaker.heldMs >= -60_000, `My timer counting down got one more minute (${s.speaker.heldMs})`)
   await call(() => globalThis.__presenter.speakerReset())
-  // My timer From–to: today's class period runs by itself; the periods are remembered; ± changes only today's end.
+  // My timer From–to: today's session runs by itself; the periods are remembered; ± changes only today's end.
   const today = await call(() => { const d = new Date(); return { day: d.getDay(), sec: d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds() } })
   if (today.sec > 120 && today.sec < 86000) {
     const from = Math.floor(today.sec / 60) * 60 - 60
     const periods = [{ days: [today.day], fromSec: from, untilSec: from + 180 }]
     await call(() => globalThis.__presenter.speakerMode('clock'))
     await call((_e, list) => globalThis.__presenter.speakerPeriods(list), periods)
-    s = await waitFor('class period set', (s) => s.speaker.mode === 'clock' && s.speaker.periods.length === 1 && s.speaker.periods[0].fromSec === from)
+    s = await waitFor('session set', (s) => s.speaker.mode === 'clock' && s.speaker.periods.length === 1 && s.speaker.periods[0].fromSec === from)
     assert.deepEqual(JSON.parse(fs.readFileSync(path.join(USER_DATA, 'mytimer.json'), 'utf8')), { mode: 'clock', minutes: s.speaker.minutes, periods }, 'My timer settings are remembered')
     await call(() => globalThis.__presenter.speakerToggle())
     s = await state()
-    assert.equal(s.speaker.startedAt, null, 'Start does nothing with class periods (they run by themselves)')
+    assert.equal(s.speaker.startedAt, null, 'Start does nothing with sessions (they run by themselves)')
     await call(() => globalThis.__presenter.speakerAdjust(600))
     s = await state()
     assert.equal(s.speaker.clockExtra?.sec, 600, '± changes today\'s end')
@@ -532,12 +532,12 @@ try {
     s = await waitFor('zoom reset', (s) => out(s, 'projector').zoomPercent === 100)
     console.log('ok 12 zoom memory')
 
-    // 13. 抽人: no students' screen = console only; while projecting the picture rolls on the
+    // 13. 抽人: no participants' screen = console only; while projecting the picture rolls on the
     // projector, keys wait for the landing, then a key closes it without turning the page.
     const pageBefore = out(await state(), 'projector').shownIndex
     await call(() => globalThis.__presenter.rollerRoll())
     s = await waitFor('roll without audience', (s) => s.roller.roll !== null)
-    assert.equal(s.roller.showing, false, 'nothing shown without a students screen')
+    assert.equal(s.roller.showing, false, 'nothing shown without a participants screen')
     await call(() => globalThis.__presenter.startProjecting())
     await call(() => globalThis.__presenter.rollerRoll())
     s = await waitFor('roller showing', (s) => s.roller.showing)

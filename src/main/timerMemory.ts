@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { cleanWarnings, DEFAULT_WARNINGS, type TimerWarning } from '../shared/timer'
 
-/** Remembers the class timer's warning bells. */
+/** Remembers the shared timer's warning bells. */
 const file = (): string => path.join(app.getPath('userData'), 'timer.json')
 
 export function loadWarnings(): TimerWarning[] {

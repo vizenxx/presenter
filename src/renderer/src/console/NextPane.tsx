@@ -7,7 +7,7 @@ const layoutNext = (rect: PreviewRect | null): void => window.presenter.layoutPr
 
 /**
  * The slide after the one the chosen screen shows. Clicking it selects it: page keys then
- * turn only the preview (students see nothing change) until a real screen is selected again.
+ * turn only the preview (participants see nothing change) until a real screen is selected again.
  */
 export function NextPane({ state, next, suspended }: { state: AppState; next: OutputView; suspended: boolean }) {
   const t = useT()

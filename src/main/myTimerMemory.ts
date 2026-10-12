@@ -4,7 +4,7 @@ import path from 'node:path'
 import { cleanPeriods, DEFAULT_PERIODS, SPEAKER_MODES } from '../shared/timer'
 import type { ClockPeriod, SpeakerMode } from '../shared/types'
 
-/** Remembers My timer's mode, minutes and class periods (they repeat every week). */
+/** Remembers My timer's mode, minutes and sessions (they repeat every week). */
 const file = (): string => path.join(app.getPath('userData'), 'mytimer.json')
 
 export interface MyTimerSettings {

@@ -19,7 +19,7 @@ export function copyText(text: string): void {
   clipboard.writeText(text)
 }
 
-/** Save dialog in the teacher's Documents folder; returns the saved path, or null when cancelled. */
+/** Save dialog in the presenter's Documents folder; returns the saved path, or null when cancelled. */
 export async function saveGuideFile(win: BrowserWindow, which: GuideFile, title: string): Promise<string | null> {
   const file = FILES[which]
   if (!file) return null

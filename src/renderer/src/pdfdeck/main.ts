@@ -129,7 +129,8 @@ async function start(): Promise<void> {
   const needTitles = slides.length !== pages
   if (needTitles) slides = Array.from({ length: pages }, (_, i) => ({ title: `Page ${i + 1}` }))
   await render()
-  showMedia()
+  // A GOTO that came while the first page was drawn has already laid out its media (and may be playing it).
+  if (!mediaShown) showMedia()
   report()
   if (needTitles) {
     slides = await textTitles(doc)

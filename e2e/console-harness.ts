@@ -93,9 +93,9 @@ const OPENERS: Record<string, string> = {
   'window-picker': `(() => { [...document.querySelectorAll('footer button')].find((x) => x.textContent.includes('＋')).click(); return new Promise((r) => setTimeout(() => r([...document.querySelectorAll('button')].find((x) => x.textContent.startsWith('A window'))), 300)) })()`,
   'add-menu': `[...document.querySelectorAll('footer button')].find((x) => x.textContent.includes('＋'))`,
   roller: `[...document.querySelectorAll('header button')].find((x) => x.title.startsWith('Pick a name at random'))`,
-  bells: `[...document.querySelectorAll('button')].find((x) => x.title.startsWith('Warning bells of the class timer'))`,
+  bells: `[...document.querySelectorAll('button')].find((x) => x.title.startsWith('Warning bells of the shared timer'))`,
   adjust: `[...document.querySelectorAll('button')].find((x) => x.textContent.trim() === '±')`,
-  clock: `[...document.querySelectorAll('button')].find((x) => x.title.startsWith('Class periods:'))`
+  clock: `[...document.querySelectorAll('button')].find((x) => x.title.startsWith('Sessions:'))`
 }
 
 async function shot(projecting: boolean, open: Open = null, page = 'console', theme: UiTheme = 'dark'): Promise<void> {
@@ -162,7 +162,7 @@ async function inputs(): Promise<void> {
   // An HTML deck: Text size works only for HTML.
   const state = sampleState(false)
   state.outputs = state.outputs.map((o) => (o.deck ? { ...o, deckKind: 'html' as const } : o))
-  // A stopped class timer: Set works only then.
+  // A stopped shared timer: Set works only then.
   state.timer = { status: 'idle', remainingSec: 300, durationSec: 300, alarming: false, warnings: [{ sec: 60, beeps: 3 }] }
   writeStub(state)
   const win = new BrowserWindow({ show: false, width: 1536, height: 864, useContentSize: true, webPreferences: { preload: STUB, contextIsolation: true, sandbox: true, offscreen: true } })
@@ -183,9 +183,9 @@ async function inputs(): Promise<void> {
 
   const clickText = (text: string): Promise<boolean> => js(`(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === ${JSON.stringify(text)}); if (b) b.click(); return !!b })()`)
 
-  // One Start in the class timer: Set only sets the time; the Start button starts it.
-  const starts = await js<number>(`[...document.querySelectorAll('section')].filter((x) => x.textContent.includes('Class timer · students see it')).flatMap((x) => [...x.querySelectorAll('button')]).filter((b) => b.textContent.trim() === 'Start').length`)
-  if (starts !== 1) throw new Error(`the class timer has ${starts} Start buttons`)
+  // One Start in the shared timer: Set only sets the time; the Start button starts it.
+  const starts = await js<number>(`[...document.querySelectorAll('section')].filter((x) => x.textContent.includes('Shared timer · participants see it')).flatMap((x) => [...x.querySelectorAll('button')]).filter((b) => b.textContent.trim() === 'Start').length`)
+  if (starts !== 1) throw new Error(`the shared timer has ${starts} Start buttons`)
   // Minutes: empty the box completely, then type 0.
   await js(`${field('Minutes')}.focus()`)
   await js(`${field('Minutes')}.setSelectionRange(9, 9)`)
@@ -207,13 +207,13 @@ async function inputs(): Promise<void> {
   await key('Enter')
   const started = (await calls()).filter((c) => c[0] === 'timerStart')
   if (started.length !== 1 || started[0][1] !== 30) throw new Error(`Enter should start 30 s: ${JSON.stringify(started)}`)
-  console.log('ok class timer: one Start; Set empties fully, sets 0:30, Enter starts it')
+  console.log('ok shared timer: one Start; Set empties fully, sets 0:30, Enter starts it')
 
-  // The bell button next to the class timer's name opens its warning bells in a pop-up; Esc closes it.
-  if ((await js<string>(`[...document.querySelectorAll('button')].find((x) => x.title.startsWith('Warning bells of the class timer')).textContent.trim()`)) !== '1') throw new Error('the bell button does not show 1 bell')
-  await js(`[...document.querySelectorAll('button')].find((x) => x.title.startsWith('Warning bells of the class timer')).click()`)
+  // The bell button next to the shared timer's name opens its warning bells in a pop-up; Esc closes it.
+  if ((await js<string>(`[...document.querySelectorAll('button')].find((x) => x.title.startsWith('Warning bells of the shared timer')).textContent.trim()`)) !== '1') throw new Error('the bell button does not show 1 bell')
+  await js(`[...document.querySelectorAll('button')].find((x) => x.title.startsWith('Warning bells of the shared timer')).click()`)
   await wait(150)
-  if (!(await js<boolean>(`document.body.textContent.includes('Warning bells · Class timer')`))) throw new Error('the bells pop-up does not say it is for the class timer')
+  if (!(await js<boolean>(`document.body.textContent.includes('Warning bells · Shared timer')`))) throw new Error('the bells pop-up does not say it is for the shared timer')
   // Warning bells: add one, change the minutes and the beeps of the first, remove it (the stub state stays at one bell 1:00 / 3 beeps).
   const sent = async (): Promise<string[]> => (await calls()).filter((c) => c[0] === 'timerWarnings').map((c) => JSON.stringify(c[1]))
   await js(`[...document.querySelectorAll('button')].find((x) => x.textContent.includes('Add a bell')).click()`)
@@ -239,11 +239,11 @@ async function inputs(): Promise<void> {
   await js(`document.body.focus()`)
   await key('Escape')
   await wait(150)
-  if (await js<boolean>(`document.body.textContent.includes('Warning bells · Class timer')`)) throw new Error('Esc does not close the bells pop-up')
+  if (await js<boolean>(`document.body.textContent.includes('Warning bells · Shared timer')`)) throw new Error('Esc does not close the bells pop-up')
   if ((await calls()).some((c) => c[0] === 'stopProjecting' || c[0] === 'setInkTool')) throw new Error('Esc in a pop-up did more than close it')
-  console.log('ok warning bells: a pop-up from the bell at the class timer; add, change, remove; Esc closes only it')
+  console.log('ok warning bells: a pop-up from the bell at the shared timer; add, change, remove; Esc closes only it')
 
-  // ± on My timer opens Change the time for My timer; the class timer (stopped) cannot be changed.
+  // ± on My timer opens Change the time for My timer; the shared timer (stopped) cannot be changed.
   const plusMinus = await js<number>(`[...document.querySelectorAll('button')].filter((x) => x.textContent.trim() === '±').length`)
   if (plusMinus !== 2) throw new Error(`expected ± on both timers, found ${plusMinus}`)
   await js(`[...document.querySelectorAll('button')].filter((x) => x.textContent.trim() === '±')[1].click()`)
@@ -261,15 +261,15 @@ async function inputs(): Promise<void> {
   await key('0')
   await wait(100)
   if (!(await clickText('− 0:30'))) throw new Error('no "− 0:30" button after typing 0:30')
-  if (!(await clickText('Class timer'))) throw new Error('no "Class timer" choice')
+  if (!(await clickText('Shared timer'))) throw new Error('no "Shared timer" choice')
   await wait(100)
-  if (!(await js<boolean>(`[...document.querySelectorAll('button')].find((x) => x.textContent.trim() === '+ 0:30').disabled`))) throw new Error('a stopped class timer can be changed')
+  if (!(await js<boolean>(`[...document.querySelectorAll('button')].find((x) => x.textContent.trim() === '+ 0:30').disabled`))) throw new Error('a stopped shared timer can be changed')
   const changes = (await calls()).filter((c) => c[0] === 'timerAdjust' || c[0] === 'speakerAdjust').map((c) => `${c[0]} ${c[1]}`)
   if (changes.join('|') !== 'speakerAdjust -30') throw new Error(`change the time sent: ${JSON.stringify(changes)}`)
   await js(`document.body.focus()`)
   await key('Escape')
   await wait(150)
-  console.log('ok change the time: a pop-up from ± on each timer; − 0:30 on My timer; a stopped class timer is not changed')
+  console.log('ok change the time: a pop-up from ± on each timer; − 0:30 on My timer; a stopped shared timer is not changed')
 
   // A slide number, then Enter: jump there; the number shows in the top bar while you type.
   await js(`document.body.focus()`)
@@ -301,7 +301,7 @@ async function inputs(): Promise<void> {
   await wait(300)
 }
 
-/** My timer From–to: no Start or Reset (it starts by itself); the clock pop-up edits class periods (weekdays, AM/PM). */
+/** My timer From–to: no Start or Reset (it starts by itself); the clock pop-up edits sessions (weekdays, AM/PM). */
 async function clockTimes(): Promise<void> {
   const state = sampleState(false)
   state.speaker = { ...state.speaker, mode: 'clock', heldMs: 0 }
@@ -320,8 +320,8 @@ async function clockTimes(): Promise<void> {
   const mine = `[...document.querySelectorAll('section')].find((x) => x.textContent.includes('My timer · only you see it'))`
   const buttons = await js<string[]>(`[...${mine}.querySelectorAll('button')].map((b) => b.textContent.trim())`)
   if (buttons.includes('Start') || buttons.includes('Resume') || buttons.includes('Reset')) throw new Error(`From–to should have no Start or Reset: ${JSON.stringify(buttons)}`)
-  if (!(await js<boolean>(`!![...document.querySelectorAll('button')].find((x) => x.title.startsWith('Class periods:'))`))) throw new Error(`no class periods (clock) button: ${JSON.stringify(buttons)}`)
-  await js(`[...document.querySelectorAll('button')].find((x) => x.title.startsWith('Class periods:')).click()`)
+  if (!(await js<boolean>(`!![...document.querySelectorAll('button')].find((x) => x.title.startsWith('Sessions:'))`))) throw new Error(`no sessions (clock) button: ${JSON.stringify(buttons)}`)
+  await js(`[...document.querySelectorAll('button')].find((x) => x.title.startsWith('Sessions:')).click()`)
   await wait(150)
   const field = (title: string): string => `document.querySelector('input[title="${title}"]')`
   const leave = (title: string): Promise<unknown> => js(`${field(title)}.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))`)
@@ -349,7 +349,7 @@ async function clockTimes(): Promise<void> {
     [],
     [p0, { days: [1, 2, 3, 4, 5], fromSec: 11 * 3600 + 5 * 60, untilSec: 12 * 3600 + 5 * 60 }]
   ].map((x) => JSON.stringify(x))
-  if (JSON.stringify(sent) !== JSON.stringify(want)) throw new Error(`class periods sent ${JSON.stringify(sent)}, expected ${JSON.stringify(want)}`)
+  if (JSON.stringify(sent) !== JSON.stringify(want)) throw new Error(`sessions sent ${JSON.stringify(sent)}, expected ${JSON.stringify(want)}`)
   console.log('ok My timer From–to: no Start or Reset; the clock pop-up edits hour, AM/PM, weekdays, remove and add')
   win.destroy()
   await wait(300)
@@ -404,10 +404,10 @@ async function consoleText(): Promise<void> {
   await wait(300)
 }
 
-/** The students' screen with random groups (23 people in 5 groups), at 1280 x 720. */
+/** The participants' screen with random groups (23 people in 5 groups), at 1280 x 720. */
 async function groupsShot(): Promise<void> {
   const stub = path.join(OUT, 'harness', 'roller-stub-preload.cjs')
-  const names = Array.from({ length: 23 }, (_, i) => `Student ${String.fromCharCode(65 + (i % 26))}${i + 1} Wangmo`)
+  const names = Array.from({ length: 23 }, (_, i) => `Person ${String.fromCharCode(65 + (i % 26))}${i + 1} Wangmo`)
   const groups = [0, 1, 2, 3, 4].map((g) => names.filter((_, i) => i % 5 === g))
   fs.writeFileSync(stub, `const { contextBridge } = require('electron')
 contextBridge.exposeInMainWorld('roller', {
@@ -421,11 +421,11 @@ contextBridge.exposeInMainWorld('roller', {
   await win.loadFile(path.join(ROOT, 'out', 'renderer', 'roller.html'))
   await wait(1500)
   const shown = await win.webContents.executeJavaScript(`document.querySelectorAll('.group').length`)
-  if (shown !== 5) throw new Error(`the students' screen shows ${shown} groups`)
+  if (shown !== 5) throw new Error(`the participants' screen shows ${shown} groups`)
   const cut = await win.webContents.executeJavaScript(`[...document.querySelectorAll('.group')].some((g) => g.getBoundingClientRect().bottom > innerHeight)`)
-  if (cut) throw new Error('a group runs off the students screen')
+  if (cut) throw new Error('a group runs off the participants screen')
   fs.writeFileSync(path.join(OUT, 'roller-groups.png'), (await win.webContents.capturePage()).toPNG())
-  console.log('ok random groups on the students screen: 5 groups fit')
+  console.log('ok random groups on the participants screen: 5 groups fit')
   win.destroy()
   await wait(300)
 }

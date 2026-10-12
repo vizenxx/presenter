@@ -78,7 +78,7 @@ const CASES: Case[] = [
   { name: 'remark', folder: path.join(FIXTURES, 'remark'), file: 'index.html', total: 4, firstTitle: 'Remark opening', note: 'Remark note one' },
   { name: 'impress.js', folder: path.join(FIXTURES, 'impress'), file: 'index.html', total: 4, firstTitle: 'Impress opening', note: 'Impress note one' },
   { name: 'Marp', folder: path.join(FIXTURES, 'marp'), file: 'index.html', total: 4, firstTitle: 'Marp opening', note: 'Speaker note for slide one' },
-  { name: 'protocol example', folder: path.join(ROOT, 'examples'), file: 'minimal-deck.html', total: 4, firstTitle: 'Welcome', note: "Greet the class and state today's goal.", minutes: [1, 8] },
+  { name: 'protocol example', folder: path.join(ROOT, 'examples'), file: 'minimal-deck.html', total: 4, firstTitle: 'Welcome', note: "Greet everyone and state today's goal.", minutes: [1, 8] },
   { name: 'plain slides, keys', folder: path.join(FIXTURES, 'plain-keys'), file: 'index.html', total: 4, firstTitle: 'Keys opening', note: 'Keys note one', minutes: [2, 8] },
   { name: 'plain slides, goToSlide from 1', folder: path.join(FIXTURES, 'plain-goto1'), file: 'index.html', total: 4, firstTitle: 'One based opening', note: 'Script one EN\n\n脚本一', minutes: [2, 6] }
 ]

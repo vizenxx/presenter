@@ -1,7 +1,7 @@
 import { WebContentsView } from 'electron'
 import type { RollerPlay } from '../shared/types'
 
-/** The full-screen 抽人 picture laid over a students' screen. Hidden until a roll. */
+/** The full-screen 抽人 picture laid over a participants' screen. Hidden until a roll. */
 export class RollerOverlay {
   readonly view: WebContentsView
 
@@ -19,7 +19,7 @@ export class RollerOverlay {
     wc.send('roller:play', payload)
   }
 
-  /** Random groups on the students' screen (sound: this screen plays the landing sound). */
+  /** Random groups on the participants' screen (sound: this screen plays the landing sound). */
   showGroups(groups: string[][], sound: boolean): void {
     const wc = this.view.webContents
     if (wc.isDestroyed()) return

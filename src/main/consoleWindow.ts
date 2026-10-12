@@ -3,7 +3,7 @@ import { consoleDisplay } from './displays'
 import { HEADLESS } from './headless'
 import { startupLog } from './startupLog'
 
-/** The teacher's control window on the laptop display. */
+/** The presenter's control window on the laptop display. */
 export class ConsoleWindow {
   readonly win: BrowserWindow
 

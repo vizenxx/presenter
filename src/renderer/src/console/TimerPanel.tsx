@@ -11,7 +11,7 @@ const MAX_MINUTES = 180
 const SMALL = 'rounded-full bg-panel-2 px-2.5 py-1 text-sm hover:bg-line disabled:cursor-not-allowed disabled:opacity-40'
 
 /**
- * Sets the class timer's time (minutes : seconds) while it is stopped: the big time shows it and
+ * Sets the shared timer's time (minutes : seconds) while it is stopped: the big time shows it and
  * the one Start button starts it (Enter in a box starts too). − and + change the minutes and
  * repeat while held. While the timer runs or is paused the boxes rest: ± gives more or less time.
  */
@@ -58,7 +58,7 @@ export function SetTime({ timer, buttonClass = SMALL }: { timer: TimerView; butt
 }
 
 /**
- * The class timer's warning bells, in their pop-up: a title line ("Warning bells · Class timer",
+ * The shared timer's warning bells, in their pop-up: a title line ("Warning bells · Shared timer",
  * "＋ Add a bell"), then one row per bell in the order they ring (most time left first): time
  * left (minutes : seconds), number of beeps, ✕. The list is sorted again when you leave a box,
  * never while you type. Up to 5 bells; Presenter remembers them.
@@ -103,7 +103,7 @@ export function WarningBells({ warnings }: { warnings: TimerWarning[] }) {
 }
 
 /**
- * The class timer (students see it on the projector), in two rows. Row 1: name, 🔔 (its warning
+ * The shared timer (participants see it on the projector), in two rows. Row 1: name, 🔔 (its warning
  * bells, in a pop-up), the time, the one Start / Pause button, Reset, ± (change the time, in a
  * pop-up). Row 2: presets (start at once) and Set (the time Start will use).
  */

@@ -10,7 +10,7 @@ interface Draft {
   text: string
 }
 
-/** The name the console shows: flips along the same path as the students' screens. */
+/** The name the console shows: flips along the same path as the participants' screens. */
 export function useRollFace(r: RollerView): { person: { name: string; id: string } | null; landed: boolean } {
   const [now, setNow] = useState(() => Date.now())
   const roll = r.roll
@@ -71,7 +71,7 @@ function ListEditor({ draft, onDone }: { draft: Draft; onDone: () => void }) {
   )
 }
 
-/** Random groups of the active list: how many groups, then Make groups; they show on the students' screens. */
+/** Random groups of the active list: how many groups, then Make groups; they show on the participants' screens. */
 function GroupsMaker({ r, audience }: { r: RollerView; audience: boolean }) {
   const t = useT()
   const [count, setCount] = useState(4)
@@ -99,7 +99,7 @@ function GroupsMaker({ r, audience }: { r: RollerView; audience: boolean }) {
   )
 }
 
-/** Random student (随机点名, formerly 抽人); the rolling names show on the students' screens. */
+/** Random student (随机点名, formerly 抽人); the rolling names show on the participants' screens. */
 export function RollerPanel({ state }: { state: AppState }) {
   const t = useT()
   const r = state.roller

@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { resumeIndex, type SavedPage } from '../shared/resume'
 
-/** Remembers the page each deck file showed last (and when), so a restart in class goes back there. */
+/** Remembers the page each deck file showed last (and when), so a restart while presenting goes back there. */
 const file = (): string => path.join(app.getPath('userData'), 'pages.json')
 const keyOf = (deckPath: string): string => path.resolve(deckPath).toLowerCase()
 let cache: Record<string, SavedPage> | null = null

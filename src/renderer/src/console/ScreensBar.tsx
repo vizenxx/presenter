@@ -25,7 +25,7 @@ function ProjectorPicker(props: { o: OutputView; state: AppState; menu: ConsoleM
   const menuId: ConsoleMenu = `show:${o.id}`
   const on = o.shownOn
   const canShow = o.deck !== null || o.kind === 'capture'
-  // Students see Projector 1 only while projecting; other projectors are always shown.
+  // Participants see Projector 1 only while projecting; other projectors are always shown.
   const live = on !== null && (on > 1 || state.projecting)
   const occupant = (n: number): string => {
     const id = n === 1 ? state.onAirId : (state.projectors.find((p) => p.number === n)?.contentId ?? null)

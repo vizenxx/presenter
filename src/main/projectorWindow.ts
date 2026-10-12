@@ -8,7 +8,7 @@ const OVERLAY = { width: 320, height: 120, margin: 24 }
 export const WINDOWED = { width: 1280, height: 720 }
 
 /**
- * The students' screen. Hidden until the teacher starts projecting; then it shows
+ * The participants' screen. Hidden until the teacher starts projecting; then it shows
  * the projector deck full-screen on the external display (or as a 1280x720 window
  * when there is no second display), with the timer overlay on top.
  */

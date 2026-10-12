@@ -29,7 +29,7 @@ PPT, PPTX and PDF files need nothing: Presenter converts them and shows them pag
 | `tabId` | string | From the address (`?tabId=`). |
 | `currentSlide` | number | Current slide, **0-based**. |
 | `totalSlides` | number | Number of slides. |
-| `metadata` | array | One entry per slide: `{ title, notes?, minutes?, section?, sectionLabel? }`. `minutes` is the planned time for the slide (the console timer suggests it). `notes` is shown only to the teacher. |
+| `metadata` | array | One entry per slide: `{ title, notes?, minutes?, section?, sectionLabel? }`. `minutes` is the planned time for the slide (the console timer suggests it). `notes` is shown only to the presenter. |
 | `milestones` | array | Optional jump points: `{ label, slideIndex, range?: [first, last] }`. |
 | `ownTimer` | boolean | `true` only when the deck displays Presenter's countdown itself (see `SYNC_TIMER`). Otherwise Presenter shows its own timer on the projector. |
 

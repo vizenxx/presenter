@@ -63,7 +63,7 @@ function SavePicture() {
 
 /**
  * Not projecting: the deck itself, live, in the console (marks drawn here are on it).
- * Projecting: a live video of what the students see, with a marking canvas on top.
+ * Projecting: a live video of what the participants see, with a marking canvas on top.
  */
 export function CurrentPane(props: {
   state: AppState

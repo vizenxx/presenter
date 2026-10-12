@@ -1,5 +1,5 @@
 /**
- * 抽人 (random student picker). Rules are taken unchanged from the teacher's
+ * 抽人 (random student picker). Rules are taken unchanged from the presenter's
  * earlier Lucky Roller page: everyone not yet picked has the same chance;
  * with Super Lucky on, picked people stay in at a small chance (0.05 / wins).
  */

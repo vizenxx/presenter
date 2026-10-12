@@ -34,10 +34,10 @@ interface State {
   steps?: { count: number; done: number }
 }
 
-/** One second of a quiet 440 Hz tone as a WAV file (a stand-in for a slide's video or sound). */
+/** Four seconds of a quiet 440 Hz tone as a WAV file (a stand-in for a slide's video or sound; long enough not to end while the test pauses and plays it again). */
 function wavTone(): Buffer {
   const rate = 8000
-  const samples = rate
+  const samples = rate * 4
   const data = Buffer.alloc(samples * 2)
   for (let i = 0; i < samples; i++) data.writeInt16LE(Math.round(Math.sin((2 * Math.PI * 440 * i) / rate) * 2000), i * 2)
   const head = Buffer.alloc(44)
@@ -60,15 +60,19 @@ function wavTone(): Buffer {
  * A converted deck with a video on page 3 (here a WAV in a video player) and a sound on page 4:
  * the ▶ shows where they stand, the console's command plays and pauses, and the file is served in parts.
  */
-async function media(win: BrowserWindow, convertedFolder: string): Promise<void> {
+async function media(win: BrowserWindow, convertedFolder: string, clip: { mp4: Buffer } | null): Promise<void> {
   latest = null
   const folder = path.join(OUT, 'media-deck')
   fs.rmSync(folder, { recursive: true, force: true })
   fs.mkdirSync(path.join(folder, 'media'), { recursive: true })
   fs.copyFileSync(path.join(convertedFolder, 'deck.pdf'), path.join(folder, 'deck.pdf'))
   fs.writeFileSync(path.join(folder, 'media', '1.wav'), wavTone())
+  // The playing and pausing is checked with a clip that has no sound track (it runs on the system clock, so a locked or
+  // sleeping computer, with no audio clock, cannot stall it); the sound slide only has to list and stop its sound.
+  const videoFile = clip ? 'media/1.mp4' : 'media/1.wav'
+  if (clip) fs.writeFileSync(path.join(folder, videoFile), clip.mp4)
   const meta = JSON.parse(fs.readFileSync(path.join(convertedFolder, 'meta.json'), 'utf8'))
-  meta.slides[2].media = [{ kind: 'video', x: 0.25, y: 0.25, w: 0.5, h: 0.5, file: 'media/1.wav' }]
+  meta.slides[2].media = [{ kind: 'video', x: 0.25, y: 0.25, w: 0.5, h: 0.5, file: videoFile }]
   meta.slides[3].media = [{ kind: 'audio', x: 0.8, y: 0.8, w: 0.1, h: 0.1, file: 'media/1.wav' }]
   fs.writeFileSync(path.join(folder, 'meta.json'), JSON.stringify(meta))
   const { host, url } = deckUrl(folder, '__presenter__/pdfdeck.html?file=deck.pdf&meta=meta.json', 'projector')
@@ -80,7 +84,7 @@ async function media(win: BrowserWindow, convertedFolder: string): Promise<void>
   // Measured once the page is drawn (the GOTO's render ends a moment after the report).
   const box = await win.webContents.executeJavaScript(`new Promise((done) => { const t0 = Date.now(); const look = () => { const b = document.querySelector('.media'); const r = b.getBoundingClientRect(); const c = document.getElementById('page').getBoundingClientRect(); if (r.width > 0 || Date.now() - t0 > 3000) done([(r.left - c.left) / c.width, (r.top - c.top) / c.height, r.width / c.width]); else setTimeout(look, 50) }; look() })`)
   if (Math.abs(box[0] - 0.25) > 0.01 || Math.abs(box[1] - 0.25) > 0.01 || Math.abs(box[2] - 0.5) > 0.01) throw new Error(`the video is not where it stands on the slide: ${box}`)
-  const part = await win.webContents.executeJavaScript(`fetch('/media/1.wav', { headers: { Range: 'bytes=0-9' } }).then(async (r) => [r.status, (await r.arrayBuffer()).byteLength, r.headers.get('content-range')])`)
+  const part = await win.webContents.executeJavaScript(`fetch('/${videoFile}', { headers: { Range: 'bytes=0-9' } }).then(async (r) => [r.status, (await r.arrayBuffer()).byteLength, r.headers.get('content-range')])`)
   if (part[0] !== 206 || part[1] !== 10) throw new Error(`the file is not served in parts: ${JSON.stringify(part)}`)
   win.webContents.send('deck:cmd', { type: 'MEDIA', action: 'toggle', index: 0 })
   await until('the video plays', (s) => s.media?.playing === 0)
@@ -302,8 +306,7 @@ async function freshProfile(): Promise<void> {
 }
 
 /** The whole path with a real video in a real PPTX: convert, take the video out, play it in place. */
-async function realVideo(win: BrowserWindow): Promise<void> {
-  const video = await recordVideo()
+async function realVideo(win: BrowserWindow, video: { mp4: Buffer; png: Buffer } | null): Promise<void> {
   if (!video) {
     console.log('skip real video: this Chromium cannot record MP4')
     return
@@ -354,10 +357,11 @@ app.whenReady().then(async () => {
     const prepared = await prepareDeck(SAMPLE, { cacheRoot: path.join(OUT, 'convert-cache'), converters, view: 'pdf' })
     fs.copyFileSync(path.join(prepared.folder, 'deck.pdf'), pdf)
     await check(win, pdf, 'pdf', false)
-    await media(win, prepared.folder)
+    const clip = await recordVideo()
+    await media(win, prepared.folder, clip)
     await freshProfile()
     await clickSteps(win)
-    await realVideo(win)
+    await realVideo(win, clip)
     console.log('VIEWER OK')
   } catch (error) {
     console.error(String(error))

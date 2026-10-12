@@ -7,7 +7,7 @@ describe('aiRequestText', () => {
   it('takes the paste-ready block out of docs/ai-integration.md', () => {
     const doc = fs.readFileSync(path.join(__dirname, '..', 'docs', 'ai-integration.md'), 'utf8')
     const text = aiRequestText(doc)
-    expect(text.startsWith('Build the deck so it works with the "Presenter" classroom app')).toBe(true)
+    expect(text.startsWith('Build the deck so it works with the "Presenter" presentation app')).toBe(true)
     expect(text).toContain('PresenterBridge.connect({')
     expect(text).not.toContain('````')
   })

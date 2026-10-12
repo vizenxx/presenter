@@ -54,7 +54,7 @@ function TimeField({ label, sec, onSec, name }: { label: string; sec: number; on
 }
 
 /**
- * The class periods of My timer From–to, in the 🕘 pop-up: one card per period with its weekdays
+ * The sessions of My timer From–to, in the 🕘 pop-up: one card per period with its weekdays
  * (Mon … Sun) and its start and end on the 12-hour clock. Up to 6 periods, in order of start time.
  */
 function ClassPeriods({ periods }: { periods: ClockPeriod[] }) {
@@ -109,8 +109,8 @@ function ClassPeriods({ periods }: { periods: ClockPeriod[] }) {
 
 /**
  * The speaker's own timer, for pacing the talk. The audience never sees it and it makes no
- * sound; the class timer is separate. The console and the floating toolbar show the same one.
- * From–to: today's class periods: during one it counts down to its end by itself, then shows
+ * sound; the shared timer is separate. The console and the floating toolbar show the same one.
+ * From–to: today's sessions: during one it counts down to its end by itself, then shows
  * Over time for 30 minutes; before the next one it says when that starts. Periods are set in 🕘.
  */
 export function SpeakerTimer({ state, menu, onMenu }: { state: AppState; menu: ConsoleMenu; onMenu: (m: ConsoleMenu) => void }) {

@@ -69,7 +69,7 @@ export function mountInkSurface(): void {
     })
   }
 
-  // The ink pad lies on the teacher's real window: it never enlarges (the projector's picture does).
+  // The ink pad lies on the presenter's real window: it never enlarges (the projector's picture does).
   const isPad = location.pathname.endsWith('inkpad.html')
   let savedOverflow: string | null = null
   /** Enlarges the page (and its marks, which keep their places on it) to show the zoom box, or shows it all again. */

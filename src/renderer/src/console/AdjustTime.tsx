@@ -10,7 +10,7 @@ const CHANGE = 'rounded-full bg-panel-2 px-3 py-1 text-sm font-semibold tabular-
 
 /**
  * Change the time (in the pop-up of a timer's ± button): the timer (that card's timer at first),
- * an amount (minutes : seconds), then − takes it away and + adds it. The class timer keeps at
+ * an amount (minutes : seconds), then − takes it away and + adds it. The shared timer keeps at
  * least one second; after it rang, + makes it run again for that time. A timer that has not
  * started is not changed.
  */
@@ -22,7 +22,7 @@ export function AdjustTime({ state, initial }: { state: AppState; initial: Targe
   const amount = minutes * 60 + seconds
   const label = `${minutes}:${String(seconds).padStart(2, '0')}`
   const classStatus = state.timer.status
-  // My timer From–to with no class period today has nothing to change.
+  // My timer From–to with no session today has nothing to change.
   const mineOn = speakerStarted(state.speaker) && !(state.speaker.mode === 'clock' && clockNow(state.speaker, Date.now()).phase === 'none')
   const on = target === 'class' ? classStatus !== 'idle' : mineOn
   const canMore = on && amount > 0

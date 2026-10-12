@@ -207,7 +207,7 @@ export class Store {
     this.scene('projector').apply({ t: 'clear' })
     this.inkPages.delete('projector')
     const zoom = zoomFor(deck.path)
-    // A restart in class goes back to the page shown last (within 3 hours); otherwise page 1.
+    // A restart while presenting goes back to the page shown last (within 3 hours); otherwise page 1.
     const start = resumePage(deck.path) ?? 0
     this.inkPage = start
     this.projector().index = start
@@ -502,7 +502,7 @@ export class Store {
 
   // ---------- 抽人 ----------
 
-  /** Pick one person; every students' screen plays the same rolling highlight. */
+  /** Pick one person; every participants' screen plays the same rolling highlight. */
   rollerRoll(): void {
     const roll = this.roller.roll()
     if (roll) {
@@ -514,7 +514,7 @@ export class Store {
     this.emit()
   }
 
-  /** Random groups of the active list: on every students' screen, and in the console's picker. */
+  /** Random groups of the active list: on every participants' screen, and in the console's picker. */
   rollerGroups(count: number): void {
     const groups = this.roller.groups(Number(count))
     if (groups) {
@@ -654,7 +654,7 @@ export class Store {
     this.emit()
   }
 
-  /** My timer's class periods (From–to): during a period it counts down to its end by itself. */
+  /** My timer's sessions (From–to): during a period it counts down to its end by itself. */
   speakerPeriods(periods: unknown): void {
     // Today's ± change belongs to a period by its place in the list; a new list starts without it.
     this.speaker = { ...this.speaker, periods: T.cleanPeriods(periods), clockExtra: null }
@@ -759,7 +759,7 @@ export class Store {
   navigate(action: NavAction): void {
     if (this.resumed !== null) this.setResumed(null)
     const selected = this.outputs.get(this.selectedId)
-    // The selected next preview turns alone: the teacher looks ahead; students see nothing change.
+    // The selected next preview turns alone: the teacher looks ahead; participants see nothing change.
     if (selected?.kind === 'preview') {
       this.applyMoves(planMove([{ id: selected.id, index: selected.index, total: selected.total, linked: false }], selected.id, action))
       return
@@ -790,7 +790,7 @@ export class Store {
   select(id: OutputId): void {
     const o = this.outputs.get(id)
     // A window content: clicking its card only selects it; the window comes forward when a
-    // projector is chosen for it (the teacher's choice, 2026-10-01).
+    // projector is chosen for it (the presenter's choice, 2026-10-01).
     if (o?.kind === 'capture') {
       this.selectedId = id
       this.emit()
@@ -845,7 +845,7 @@ export class Store {
 
   /**
    * Keeps the laptop and projector screens from turning off while a class needs them: while
-   * projecting, while a projector is open, or while a timer runs (also My timer's class period).
+   * projecting, while a projector is open, or while a timer runs (also My timer's session).
    */
   private updateKeepAwake(): void {
     const s = this.speaker
@@ -865,7 +865,7 @@ export class Store {
     this.syncTimer(true)
   }
 
-  /** Sets the class timer's time while it is stopped (not running or paused); Start then uses it. */
+  /** Sets the shared timer's time while it is stopped (not running or paused); Start then uses it. */
   timerSet(sec: number): void {
     if (this.timer.status === 'running' || this.timer.status === 'paused') return
     const seconds = Math.round(Number(sec))
@@ -874,7 +874,7 @@ export class Store {
     this.syncTimer(true)
   }
 
-  /** Adds time to the class timer (below zero: takes time away) while it runs, is paused, or has rung. */
+  /** Adds time to the shared timer (below zero: takes time away) while it runs, is paused, or has rung. */
   timerAdjust(deltaSec: number): void {
     const next = T.adjust(this.timer, Number(deltaSec) || 0, Date.now())
     if (next === this.timer) return
@@ -896,7 +896,7 @@ export class Store {
     this.syncTimer(true)
   }
 
-  /** The class timer's warning bells: time left and number of beeps for each. */
+  /** The shared timer's warning bells: time left and number of beeps for each. */
   timerWarnings(list: unknown): void {
     this.warnings = T.cleanWarnings(list)
     saveWarnings(this.warnings)
@@ -956,7 +956,7 @@ export class Store {
 
   // ---------- internals ----------
 
-  /** Students' screens that show the 抽人 picture: the projector while projecting, plus every extra screen. */
+  /** Participants' screens that show the 抽人 picture: the projector while projecting, plus every extra screen. */
   private audienceRollers(): RollerOverlay[] {
     return [...(this.projecting ? [this.projectorRoller] : []), ...[...this.extras.values()].map((x) => x.roller)]
   }
@@ -1194,7 +1194,7 @@ export class Store {
   }
 
   private afterMove(): void {
-    // Each deck file remembers its page, for a restart in class.
+    // Each deck file remembers its page, for a restart while presenting.
     rememberPages([...this.outputs.values()].filter((o) => o.deck && o.kind !== 'preview').map((o) => ({ path: (o.deck as DeckRef).path, index: o.shownIndex() })))
     this.swapInkPage()
     this.followPreview()

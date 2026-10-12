@@ -5,7 +5,7 @@
 When you ask an AI assistant to build an HTML slide deck, paste the whole block below after your content request. The deck will then work fully with Presenter (see [protocol.md](protocol.md)).
 
 ````text
-Build the deck so it works with the "Presenter" classroom app (deck protocol v1). Follow every rule:
+Build the deck so it works with the "Presenter" presentation app (deck protocol v1). Follow every rule:
 
 1. Output ONE self-contained HTML file. Put every style, script, font and image inline (images as data URIs). No links to CDNs or other websites; the deck must work offline.
 2. Each slide is one element with class "slide". Exactly one slide is visible at a time. The arrow keys, PageUp/PageDown and Space turn pages.

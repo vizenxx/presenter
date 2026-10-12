@@ -43,7 +43,7 @@ function Table({ head, rows, widths }: { head: string[]; rows: string[][]; width
 }
 
 /**
- * Guide with two parts: using Presenter in class, and which decks need preparation
+ * Guide with two parts: using Presenter while presenting, and which decks need preparation
  * (with the paste-ready request for AI assistants, the example deck and the protocol).
  */
 export function GuideDialog({ onClose }: { onClose: () => void }) {
