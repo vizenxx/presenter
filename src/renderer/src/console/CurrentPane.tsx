@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import type { AppState, OutputView, PreviewRect } from '../../../shared/types'
-import type { DrawerTab } from './Drawer'
+import { SlidesPopup } from './SidePanels'
 import { screenLabel, useT } from './i18n'
 import { InkToolbar, MirrorView } from './Ink'
-import { Btn, goToSlide, IconLabel, Milestones, PageText, UiIcon, ZoomControl } from './ui'
+import { Btn, goToSlide, IconLabel, Milestones, PageText, UiIcon, ZoomControl, Menu, type ConsoleMenu } from './ui'
 import { ViewSlot } from './ViewSlot'
 
 const layoutCurrent = (rect: PreviewRect | null): void => window.presenter.layoutCurrent(rect)
@@ -70,12 +70,12 @@ export function CurrentPane(props: {
   projector: OutputView
   mirror: string | null
   suspended: boolean
-  drawer: DrawerTab | null
-  onDrawer: (tab: DrawerTab | null) => void
+  menu: ConsoleMenu
+  onMenu: (menu: ConsoleMenu) => void
   onGuide: () => void
   onPickWindow: () => void
 }) {
-  const { state, projector, mirror, suspended, drawer, onDrawer, onGuide, onPickWindow } = props
+  const { state, projector, mirror, suspended, menu, onMenu, onGuide, onPickWindow } = props
   const t = useT()
   if (!state.mainDeck && projector.kind !== 'capture') return <EmptyState state={state} onGuide={onGuide} onPickWindow={onPickWindow} />
   const selected = state.selectedId === projector.id
@@ -90,12 +90,6 @@ export function CurrentPane(props: {
         <div className="ml-auto flex shrink-0 items-center gap-2">
           <ZoomControl o={projector} />
           <span className="mx-1 h-5 w-px bg-line" />
-          <Btn tone={drawer === 'list' ? 'primary' : 'default'} onClick={() => onDrawer(drawer === 'list' ? null : 'list')}>
-            {t.slides}
-          </Btn>
-          <Btn tone={drawer === 'notes' ? 'primary' : 'default'} onClick={() => onDrawer(drawer === 'notes' ? null : 'notes')}>
-            {t.notes}
-          </Btn>
           <SavePicture />
         </div>
       </div>
@@ -108,6 +102,16 @@ export function CurrentPane(props: {
         </ViewSlot>
       )}
       <div className="mt-2 flex min-w-0 items-center gap-3">
+        <span className="relative shrink-0">
+          <Btn tone={menu === 'slides' ? 'primary' : 'default'} title={t.slidesTitle} onClick={() => onMenu(menu === 'slides' ? null : 'slides')}>
+            <IconLabel icon="list">{t.slides}</IconLabel>
+          </Btn>
+          {menu === 'slides' && (
+            <Menu up width="w-[28rem]" onClose={() => onMenu(null)}>
+              <SlidesPopup state={state} />
+            </Menu>
+          )}
+        </span>
         <span className="shrink-0 text-sm text-muted">
           <PageText o={projector} />
           {projector.steps && (

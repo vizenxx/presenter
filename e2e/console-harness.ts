@@ -84,7 +84,7 @@ contextBridge.exposeInMainWorld('presenter', api)
   )
 }
 
-type Open = 'guide' | 'guide-prepare' | 'window-picker' | 'start' | 'screen-menu' | 'add-menu' | 'crowd' | 'roller' | 'bells' | 'adjust' | 'clock' | 'media' | null
+type Open = 'guide' | 'guide-prepare' | 'window-picker' | 'start' | 'screen-menu' | 'add-menu' | 'crowd' | 'roller' | 'bells' | 'adjust' | 'clock' | 'media' | 'slides' | null
 /** Clicks the button that opens each pop-up. */
 const OPENERS: Record<string, string> = {
   guide: `[...document.querySelectorAll('header button')].find((x) => x.title.startsWith('How to use Presenter'))`,
@@ -92,7 +92,8 @@ const OPENERS: Record<string, string> = {
   'screen-menu': `[...document.querySelectorAll('footer button')].find((x) => x.textContent.trim() === '⋯')`,
   'window-picker': `(() => { [...document.querySelectorAll('footer button')].find((x) => x.textContent.includes('＋')).click(); return new Promise((r) => setTimeout(() => r([...document.querySelectorAll('button')].find((x) => x.textContent.startsWith('A window'))), 300)) })()`,
   'add-menu': `[...document.querySelectorAll('footer button')].find((x) => x.textContent.includes('＋'))`,
-  roller: `[...document.querySelectorAll('header button')].find((x) => x.title.startsWith('Pick a name at random'))`,
+  roller: `[...document.querySelectorAll('button')].find((x) => x.textContent.trim() === 'Participants')`,
+  slides: `[...document.querySelectorAll('button')].find((x) => x.textContent.trim() === 'Slides')`,
   bells: `[...document.querySelectorAll('button')].find((x) => x.title.startsWith('Warning bells of the shared timer'))`,
   adjust: `[...document.querySelectorAll('button')].find((x) => x.textContent.trim() === '±')`,
   clock: `[...document.querySelectorAll('button')].find((x) => x.title.startsWith('Sessions:'))`
@@ -147,7 +148,21 @@ async function shot(projecting: boolean, open: Open = null, page = 'console', th
     const stepsText = await win.webContents.executeJavaScript(`document.body.innerText.includes('1/3 clicks')`)
     if (!stepsText) throw new Error('the slide line does not show 1/3 clicks')
   }
+  if (page === 'console' && open === null && !projecting) {
+    const text = await win.webContents.executeJavaScript('document.body.innerText')
+    if (!text.includes('Notes · slide 3') || !text.includes('Ask the class first.')) throw new Error('the notes of the slide in view are not shown under the next slide')
+    if (text.includes('Slide title 18')) throw new Error('the slide list is open by itself')
+  }
+  if (open === 'slides') {
+    const text = await win.webContents.executeJavaScript('document.body.innerText')
+    if (!text.includes('Slide title 1') || !text.includes('Slide title 18')) throw new Error(`the slide list is not in the pop-up: ${text.slice(0, 80)}`)
+  }
   if (open === 'roller') {
+    // With teams already made the panel opens on Teams; otherwise it opens on Pick one: switch to Teams to read its hint.
+    if (theme !== 'light') {
+      await win.webContents.executeJavaScript(`[...document.querySelectorAll('[role=tab]')].find((x) => x.textContent.trim() === 'Teams').click()`)
+      await wait(200)
+    }
     const text = await win.webContents.executeJavaScript('document.body.innerText')
     const withGroups = theme === 'light'
     if (withGroups !== (text.includes('Shuffle again') && text.includes('Clear'))) throw new Error(`the picker ${withGroups ? 'with groups lacks Shuffle again or Clear' : 'without groups shows them'}`)
@@ -475,6 +490,7 @@ app.whenReady().then(async () => {
     await shot(false, 'crowd')
     await shot(false, 'window-picker')
     await shot(false, 'roller')
+    await shot(false, 'slides')
     await shot(false, 'crowd', 'toolbar')
     await shot(false, 'start')
     // The light look: the same views that carry the most colours.

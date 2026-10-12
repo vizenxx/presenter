@@ -1,22 +1,21 @@
 import { useCallback, useState } from 'react'
 import { CurrentPane } from './CurrentPane'
-import { Drawer, type DrawerTab } from './Drawer'
 import { GuideDialog } from './GuideDialog'
 import { Header } from './Header'
 import { useAppState, useConsoleKeys, useFileDrop, useMirror } from './hooks'
 import { NextPane } from './NextPane'
 import { ScreensBar } from './ScreensBar'
+import { NotesPane, ParticipantsPopup } from './SidePanels'
 import { SpeakerTimer } from './SpeakerTimer'
 import { TimerPanel } from './TimerPanel'
 import { WindowPicker } from './WindowPicker'
 import { useT } from './i18n'
-import { DeckStatusBar, type ConsoleMenu } from './ui'
+import { Btn, DeckStatusBar, IconLabel, Menu, type ConsoleMenu } from './ui'
 
 export function App() {
   const t = useT()
   const state = useAppState()
   const mirror = useMirror()
-  const [drawer, setDrawer] = useState<DrawerTab | null>(null)
   const [menu, setMenu] = useState<ConsoleMenu>(null)
   const [guide, setGuide] = useState(false)
   const closeGuide = useCallback(() => setGuide(false), [])
@@ -34,7 +33,7 @@ export function App() {
   const nothingOnProjector = !onAir && state.mainDeck !== null
   // Native deck views draw above the page, so they step aside while a menu or the guide is open.
   const suspended = menu !== null || guide || picker !== null
-  const cols = drawer ? 'grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_20rem]' : 'grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]'
+  const activeList = state.roller.lists.find((l) => l.id === state.roller.activeListId)
   return (
     <div
       className="flex h-full flex-col"
@@ -42,20 +41,37 @@ export function App() {
         if (state.timer.alarming) window.presenter.timerDismiss()
       }}
     >
-      <Header state={state} jump={jump} menu={menu} onMenu={setMenu} rollerOpen={drawer === 'roller'} onRoller={() => setDrawer(drawer === 'roller' ? null : 'roller')} onGuide={() => setGuide(true)} />
+      <Header state={state} jump={jump} menu={menu} onMenu={setMenu} onGuide={() => setGuide(true)} />
       <DeckStatusBar status={state.deckStatus} />
-      <main className={`grid min-h-0 flex-1 gap-3 p-3 ${cols}`}>
+      <main className="grid min-h-0 flex-1 grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] gap-3 p-3">
         {nothingOnProjector ? (
           <section className="grid min-h-0 place-items-center rounded-card border-2 border-dashed border-line bg-panel p-6 text-center text-base text-muted">{t.projector1Empty}</section>
         ) : (
-          <CurrentPane state={state} projector={projector} mirror={mirror} suspended={suspended} drawer={drawer} onDrawer={setDrawer} onGuide={() => setGuide(true)} onPickWindow={() => setPicker('show')} />
+          <CurrentPane state={state} projector={projector} mirror={mirror} suspended={suspended} menu={menu} onMenu={setMenu} onGuide={() => setGuide(true)} onPickWindow={() => setPicker('show')} />
         )}
         <div className="flex min-h-0 flex-col gap-3">
-          {state.mainDeck ? <NextPane state={state} next={next} suspended={suspended} /> : <div className="flex-1" />}
+          {/* What goes with the slide: the next slide and its notes. */}
+          <div className="flex min-h-0 flex-1 flex-col gap-3">
+            {state.mainDeck ? <NextPane state={state} next={next} suspended={suspended} /> : <div className="flex-1" />}
+            {state.mainDeck && <NotesPane state={state} />}
+          </div>
+          {/* Tools that are not about one slide. */}
           <TimerPanel state={state} menu={menu} onMenu={setMenu} />
           <SpeakerTimer state={state} menu={menu} onMenu={setMenu} />
+          <section className="flex items-center gap-2 rounded-card bg-panel px-3 py-2 ring-1 ring-line/60">
+            <span className="relative">
+              <Btn tone={menu === 'participants' ? 'primary' : 'default'} title={t.rollerButtonTitle} onClick={() => setMenu(menu === 'participants' ? null : 'participants')}>
+                <IconLabel icon="users">{t.participants}</IconLabel>
+              </Btn>
+              {menu === 'participants' && (
+                <Menu up width="w-[26rem]" onClose={() => setMenu(null)}>
+                  <ParticipantsPopup state={state} />
+                </Menu>
+              )}
+            </span>
+            <span className="min-w-0 truncate text-sm text-muted">{activeList ? t.listOption(activeList.name, activeList.count) : ''}</span>
+          </section>
         </div>
-        {drawer && <Drawer state={state} tab={drawer} onTab={setDrawer} />}
       </main>
       <ScreensBar state={state} menu={menu} onMenu={setMenu} onPickWindow={() => setPicker('wait')} />
       {guide && <GuideDialog onClose={closeGuide} />}

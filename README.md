@@ -33,12 +33,12 @@ Presenter is a folder you unzip; there is no installer and no administrator pass
 
 | Area | What it does |
 |---|---|
-| Top bar | **Open deck**, **Recent**, **Name picker**, **Guide**, **☀ / ☾** (light or dark look), **▶ Start projecting** |
-| Current slide (left) | What Projector 1 shows. Before projecting it is the deck itself; while projecting it is a live copy of what the audience sees. The mark tools are above it. |
-| Next slide (right) | The slide after the selected card's slide. Click it to look further ahead. |
+| Top bar | **Open deck**, **Recent**, **Guide**, **☀ / ☾** (light or dark look), **Black screen**, **▶ Start projecting** |
+| Current slide (left) | What Projector 1 shows. Before projecting it is the deck itself; while projecting it is a live copy of what the audience sees. The mark tools are above it. Under it: **Slides** (the slide list, to jump), the slide number and the title. |
+| Next slide (right) | The slide after the selected card's slide. Click it to look further ahead. Under it, always: the **notes** of the slide in view. |
 | Shared timer | The countdown the audience sees on the projector. The **bell** next to its name: its warning bells. **±**: give it more or less time. |
 | My timer | Your own timer. Only you see it. |
-| Slides / Notes | The slide list and speaker notes of the selected card (buttons above the current slide). |
+| Participants | Pick one person at random, or make teams (a pop-up from the **Participants** button, bottom right). |
 | Bottom bar | One card per content (deck or program window), each with its **Projector ▾** button. **＋ Add screen** at the end. |
 
 The **Guide** in the app has the same help in two parts: **1 · Use Presenter** ("I want to … → do this") and **2 · Prepare decks**.
@@ -73,7 +73,7 @@ The **Guide** in the app has the same help in two parts: **1 · Use Presenter** 
   - Old .ppt files: save them as .pptx first to play their videos.
   - After an update that changes the conversion, each file is converted once more (once only).
 - Hidden slides are left out, as in PowerPoint's own show.
-- Slide titles appear under **Slides**, speaker notes under **Notes**.
+- Slide titles appear in the **Slides** list, speaker notes under the next slide.
 
 ## Turn pages
 
@@ -162,15 +162,15 @@ The bar above the current slide: **Pointer, Pen, Highlighter, Box, Arrow, Text, 
 - The shared timer keeps at least one second, so taking away too much makes it ring a second later. After it rang, **+** makes it run again for that time (for example "two more minutes").
 - Taking time away past a warning bell's time rings that bell.
 
-## Name picker
+## Participants
 
-Click **Name picker** (top bar). Choose a list and click **Roll**: the list rolls on the projectors, slows down and stops on one person. After it stops, any key or click hides it; that key does not turn the page.
+Click **Participants** (bottom right of the console). Choose a list and, under **Pick one**, click **Roll**: the list rolls on the projectors, slows down and stops on one person. After it stops, any key or click hides it; that key does not turn the page.
 
 - Everyone not yet picked has the same chance. With "People already picked can be picked again (small chance)" on, picked people may come up again, rarely.
 - **Picked so far: X of Y** counts the picks; **↺ Reset** (after a confirmation) makes everyone unpicked again. Picks last while the app is open.
 - The first start has a sample list: click **Edit** and paste your list of people (one person per line; a number in front is optional). **New** makes another list. Lists are saved.
 - Without projecting, only you see the roll (in the console, or next to **Roll** on the floating toolbar).
-- **Random groups** (in the Name picker): choose how many groups and click **Make groups**. Everyone in the list is in one group; group sizes differ by at most one. The groups show on the projectors (any key or click hides them) and stay listed in the console.
+- **Teams** (the other side of the switch in Participants): choose how many teams and click **Make teams**. Everyone in the list is in one team; team sizes differ by at most one. The teams show on the projectors (any key or click hides them) and stay listed in the pop-up. **Shuffle again** makes new teams; **Clear** removes them.
 
 ## Light or dark look
 

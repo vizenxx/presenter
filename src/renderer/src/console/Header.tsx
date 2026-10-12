@@ -60,11 +60,9 @@ export function Header(props: {
   jump: string
   menu: ConsoleMenu
   onMenu: (m: ConsoleMenu) => void
-  rollerOpen: boolean
-  onRoller: () => void
   onGuide: () => void
 }) {
-  const { state, jump, menu, onMenu, rollerOpen, onRoller, onGuide } = props
+  const { state, jump, menu, onMenu, onGuide } = props
   const t = useT()
   const close = (): void => onMenu(null)
   return (
@@ -95,9 +93,6 @@ export function Header(props: {
           </Menu>
         )}
       </span>
-      <Btn tone={rollerOpen ? 'primary' : 'default'} title={t.rollerButtonTitle} onClick={onRoller}>
-        <IconLabel icon="dice">{t.rollerButton}</IconLabel>
-      </Btn>
       <Btn title={t.guideButtonTitle} onClick={onGuide}>
         <IconLabel icon="book">{t.guideButton}</IconLabel>
       </Btn>

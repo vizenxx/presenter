@@ -80,8 +80,7 @@ function GroupsMaker({ r, audience }: { r: RollerView; audience: boolean }) {
     <div className="flex flex-col gap-2 rounded-card bg-panel-2 p-3">
       <div className="flex items-center gap-2">
         <span className="text-sm font-semibold">{t.groupsTitle}</span>
-        <NumberField value={Math.min(count, most)} min={2} max={most} onChange={setCount} title={t.groupsCount} className="ml-auto w-12 bg-panel" />
-        <span className="text-sm text-muted">{t.groupsCountUnit}</span>
+        <NumberField value={Math.min(count, most)} min={2} max={most} onChange={setCount} title={t.groupsCount} className="ml-auto w-14 bg-panel" />
       </div>
       <div className="flex items-center gap-2">
         <Btn tone="primary" disabled={r.people.length < 2} onClick={() => window.presenter.rollerGroups(Math.min(count, most))}>
@@ -108,11 +107,13 @@ function GroupsMaker({ r, audience }: { r: RollerView; audience: boolean }) {
   )
 }
 
-/** Random student (随机点名, formerly 抽人); the rolling names show on the participants' screens. */
+/** The participants: pick one at random, or make teams (随机点名, formerly 抽人); the result shows on the participants' screens. */
 export function RollerPanel({ state }: { state: AppState }) {
   const t = useT()
   const r = state.roller
   const [draft, setDraft] = useState<Draft | null>(null)
+  // Teams made earlier are still on show: open on them.
+  const [mode, setMode] = useState<'one' | 'teams'>(r.groups ? 'teams' : 'one')
   const face = useRollFace(r)
   if (draft) return <ListEditor draft={draft} onDone={() => setDraft(null)} />
 
@@ -150,6 +151,25 @@ export function RollerPanel({ state }: { state: AppState }) {
         <Btn onClick={() => setDraft({ id: null, name: '', text: '' })}>{t.newList}</Btn>
       </div>
 
+      <div className="flex self-start rounded-full bg-panel-2 p-0.5" role="tablist">
+        {(['one', 'teams'] as const).map((m) => (
+          <button
+            key={m}
+            type="button"
+            role="tab"
+            aria-selected={mode === m}
+            onClick={() => setMode(m)}
+            className={`rounded-full px-4 py-1 text-sm ${mode === m ? 'bg-raised font-semibold text-ink shadow-sm' : 'text-muted hover:text-ink'}`}
+          >
+            {m === 'one' ? t.modeOne : t.modeTeams}
+          </button>
+        ))}
+      </div>
+
+      {mode === 'teams' && <GroupsMaker r={r} audience={audience} />}
+
+      {mode === 'one' && (
+        <>
       <div className={`rounded-card p-4 text-center ${faceBox}`}>
         <div className={`truncate text-2xl font-semibold tracking-tight ${faceText}`}>{face.person ? face.person.name : t.ready}</div>
         <div className="mt-1 min-h-5 text-sm text-muted tabular-nums">{face.person ? face.person.id : t.pressToPick}</div>
@@ -181,8 +201,8 @@ export function RollerPanel({ state }: { state: AppState }) {
         <input type="checkbox" checked={r.superLucky} onChange={(e) => window.presenter.rollerSetSuperLucky(e.target.checked)} className="mt-0.5 h-4 w-4 accent-link" />
         <span>{t.superLucky}</span>
       </label>
-
-      <GroupsMaker r={r} audience={audience} />
+        </>
+      )}
 
       <h3 className="text-sm font-semibold text-muted">{t.listCount(r.people.length)}</h3>
       <ul className="flex flex-col gap-0.5">
