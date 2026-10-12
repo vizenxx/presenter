@@ -70,6 +70,11 @@ export class RollerController {
     this.groupsMade = null
   }
 
+  /** Takes the made groups away (the picks stay as they are). */
+  clearGroups(): void {
+    this.groupsMade = null
+  }
+
   /** Random groups of the active list (names); null when the list is empty. */
   groups(count: number): string[][] | null {
     if (this.people.length === 0) return null

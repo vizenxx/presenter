@@ -81,10 +81,19 @@ function GroupsMaker({ r, audience }: { r: RollerView; audience: boolean }) {
       <div className="flex items-center gap-2">
         <span className="text-sm font-semibold">{t.groupsTitle}</span>
         <NumberField value={Math.min(count, most)} min={2} max={most} onChange={setCount} title={t.groupsCount} className="ml-auto w-12 bg-panel" />
-        <Btn tone="primary" disabled={r.people.length < 2} onClick={() => window.presenter.rollerGroups(Math.min(count, most))}>
-          {t.groupsMake}
-        </Btn>
+        <span className="text-sm text-muted">{t.groupsCountUnit}</span>
       </div>
+      <div className="flex items-center gap-2">
+        <Btn tone="primary" disabled={r.people.length < 2} onClick={() => window.presenter.rollerGroups(Math.min(count, most))}>
+          {r.groups ? t.groupsAgain : t.groupsMake}
+        </Btn>
+        {r.groups && (
+          <Btn title={t.groupsClearTitle} onClick={() => window.presenter.rollerClearGroups()}>
+            {t.groupsClear}
+          </Btn>
+        )}
+      </div>
+      {!r.groups && <p className="text-sm text-muted">{t.groupsHint}</p>}
       {r.groups && (
         <ol className="flex flex-col gap-1 text-sm">
           {r.groups.map((names, i) => (

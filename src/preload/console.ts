@@ -66,6 +66,7 @@ const api: ConsoleApi = {
   rollerHide: () => ipcRenderer.send('console:roller-hide'),
   rollerReset: () => ipcRenderer.send('console:roller-reset'),
   rollerGroups: (count) => ipcRenderer.send('console:roller-groups', count),
+  rollerClearGroups: () => ipcRenderer.send('console:roller-clear-groups'),
   rollerSetSuperLucky: (on) => ipcRenderer.send('console:roller-super-lucky', on),
   rollerSelectList: (id) => ipcRenderer.send('console:roller-select-list', id),
   rollerSaveList: (id, name, text) => ipcRenderer.send('console:roller-save-list', id, name, text),

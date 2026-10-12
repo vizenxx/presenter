@@ -525,6 +525,13 @@ export class Store {
     this.emit()
   }
 
+  /** Takes the groups away: from the picker and from the participants' screens. */
+  rollerClearGroups(): void {
+    if (this.roller.showing) this.rollerHide()
+    this.roller.clearGroups()
+    this.emit()
+  }
+
   rollerHide(): void {
     this.projectorRoller.hide()
     for (const x of this.extras.values()) x.roller.hide()

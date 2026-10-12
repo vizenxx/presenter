@@ -114,6 +114,7 @@ function wireIpc(store: Store): void {
   ipcMain.on('console:roller-delete-list', (_e, id: string) => store.rollerDeleteList(id))
   ipcMain.on('roller:pointer', () => store.rollerPointer())
   ipcMain.on('console:roller-groups', (_e, count: number) => store.rollerGroups(count))
+  ipcMain.on('console:roller-clear-groups', () => store.rollerClearGroups())
 }
 
 app.whenReady().then(() => {

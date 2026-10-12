@@ -292,6 +292,8 @@ export interface ConsoleApi {
   rollerReset(): void
   /** Random groups of the active list, shown on the participants' screens. */
   rollerGroups(count: number): void
+  /** Takes the made groups away (picker and participants' screens). */
+  rollerClearGroups(): void
   rollerSetSuperLucky(on: boolean): void
   rollerSelectList(id: string): void
   /** id null = a new list. */

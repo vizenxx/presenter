@@ -13,7 +13,7 @@ const OUT = path.join(ROOT, 'e2e', 'out')
 const STUB = path.join(OUT, 'harness', 'console-stub-preload.cjs')
 const AI_REQUEST = aiRequestText(fs.readFileSync(path.join(ROOT, 'docs', 'ai-integration.md'), 'utf8'))
 /** Every ConsoleApi method (contextBridge copies plain objects only, so no Proxy). */
-const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "listWindows", "addWindowScreen", "setTheme", "timerWarnings", "speakerAdjust", "timerAdjust", "timerSet", "speakerPeriods", "setBlank", "savePicture", "addWhiteboard", "rollerGroups", "mediaToggle"]
+const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "listWindows", "addWindowScreen", "setTheme", "timerWarnings", "speakerAdjust", "timerAdjust", "timerSet", "speakerPeriods", "setBlank", "savePicture", "addWhiteboard", "rollerGroups", "rollerClearGroups", "mediaToggle"]
 
 app.disableHardwareAcceleration()
 // Each screenshot closes its window; keep the app alive between them.
@@ -107,6 +107,8 @@ async function shot(projecting: boolean, open: Open = null, page = 'console', th
   }
   // My timer by clock times, its 🕘 pop-up open.
   if (open === 'clock') state.speaker = { ...state.speaker, mode: 'clock', heldMs: 0 }
+  // The picker with made groups (light look): Shuffle again and Clear show; without groups (dark look) the hint does.
+  if (open === 'roller' && theme === 'light') state.roller.groups = [['Ann Lee', 'Bo Chen', 'Cai Dorji'], ['Dema Wangmo', 'Eli Tashi', 'Fay Zangpo']]
   // Three warning bells: the timer panel must still fit.
   if (open === 'bells') state.timer.warnings = [{ sec: 300, beeps: 1 }, { sec: 120, beeps: 2 }, { sec: 30, beeps: 5 }]
   // A PPT slide with a video (playing) and a sound: their buttons sit next to the slide title.
@@ -144,6 +146,12 @@ async function shot(projecting: boolean, open: Open = null, page = 'console', th
     if (!calls.some((c: unknown[]) => c[0] === 'mediaToggle' && c[1] === 1)) throw new Error('▶ Sound 2 did not ask to play the sound')
     const stepsText = await win.webContents.executeJavaScript(`document.body.innerText.includes('1/3 clicks')`)
     if (!stepsText) throw new Error('the slide line does not show 1/3 clicks')
+  }
+  if (open === 'roller') {
+    const text = await win.webContents.executeJavaScript('document.body.innerText')
+    const withGroups = theme === 'light'
+    if (withGroups !== (text.includes('Shuffle again') && text.includes('Clear'))) throw new Error(`the picker ${withGroups ? 'with groups lacks Shuffle again or Clear' : 'without groups shows them'}`)
+    if (!withGroups && !text.includes('Splits this list into teams at random')) throw new Error('the picker without groups has no hint')
   }
   const image = await win.webContents.capturePage()
   const name = `${page}${projecting ? '-projecting' : ''}${open ? `-${open}` : ''}${theme === 'light' ? '-light' : ''}.png`

@@ -440,7 +440,10 @@ try {
   const sizes = s.roller.groups.map((g) => g.length)
   assert.equal(sizes.reduce((a, b) => a + b, 0), s.roller.people.length, 'everyone is in a group')
   assert.ok(Math.max(...sizes) - Math.min(...sizes) <= 1, 'group sizes differ by at most one')
-  console.log('ok 8e random groups')
+  await call(() => globalThis.__presenter.rollerClearGroups())
+  s = await waitFor('groups cleared', (s) => s.roller.groups === null)
+  assert.equal(s.roller.people.length > 0, true, 'the list is kept')
+  console.log('ok 8e random groups, and Clear takes them away')
 
   // 8f. PowerPoint click animations (the LibreOffice inside Presenter, vendor/): a page key first
   // shows the next click step, then turns the page; going back shows the slide with all its steps.
