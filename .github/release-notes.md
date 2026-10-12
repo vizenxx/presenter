@@ -1,3 +1,8 @@
+## What's new in 0.3.3
+
+- **Words for any kind of presenting**: "students" are now "participants", the **Class timer** is the **Shared timer**, and class periods are **Sessions**. Your saved settings, lists and sessions stay as they were.
+- **Fix**: a video of a slide could stop by itself when you jumped to its slide right after the deck opened.
+
 ## What's new in 0.3.2
 
 - **One look for all icons**: the buttons that used coloured emoji (Name picker, Guide, Black screen, window, Whiteboard, warning bells, sessions, save picture, video and sound, the floating toolbar) now have line icons in the text colour, so they follow the light and the dark look.
