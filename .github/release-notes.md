@@ -1,3 +1,13 @@
+## What's new in 0.4.0
+
+- **A console built around how you present.** **Slides** and **Notes** are two buttons at the left of the current slide's row; their panel comes in from the left, and the same button closes it. **Participants** is back in the top bar and opens as a pop-up (**Pick one** or **Teams**).
+- **Two timers, side by side.** The shared timer and My timer are two upright cards that line up row for row. **The time is its own entry**: double-click the minutes or the seconds, type, press **Enter**. While a timer runs, the other parts keep running; **Esc** leaves it as it was. **±** is still there.
+- **Teams on the participants' screen**: every name is shown whole, one name per row with a dot and a line between rows. **Clear** takes made teams away; **Shuffle again** makes new ones.
+- **Swap the sides**: the **⇄** button in the top bar turns the whole console left to right (and the floating toolbar with it). Presenter remembers it.
+- **Everything stays in view**: pop-ups move away from the window edge or open on the other side of their button; the floating toolbar always stays inside its display.
+- **One set of tools on the floating toolbar**: the same marks and the same two timer cards as in the console, a **Screens** menu (show another content on Projector 1) and a **Console** button (back to the console).
+- **Fix**: in the narrowest console window the **±** button of My timer and the preset times no longer overlap or wrap.
+
 ## What's new in 0.3.3
 
 - **Words for any kind of presenting**: "students" are now "participants", the **Class timer** is the **Shared timer**, and class periods are **Sessions**. Your saved settings, lists and sessions stay as they were.

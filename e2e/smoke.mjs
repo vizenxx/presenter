@@ -697,11 +697,42 @@ try {
     s = await waitFor('roll from the toolbar', (s) => s.roller.roll !== null, 4000)
     assert.equal(await clickBar('Timer'), true, 'the toolbar has a Timer button')
     await sleep(400)
-    assert.equal(await call(() => globalThis.__presenter.tools.toolbar.webContents.executeJavaScript('!!document.querySelector("input[title=Minutes]")')), true, 'Timer opens its settings')
-    await sleep(3500)
+    const barText = (js) => call((_e, js) => globalThis.__presenter.tools.toolbar.webContents.executeJavaScript(js), js)
+    assert.deepEqual(await barText('[...document.querySelectorAll("section h2")].map((h) => h.textContent)'), ['Shared timer', 'My timer'], 'Timer opens the two console timer cards')
+    // The toolbar grew with the cards: it must still lie inside its display; pushed past an edge it comes back.
+    const insideDisplay = () =>
+      call((e) => {
+        const b = globalThis.__presenter.tools.toolbar.getBounds()
+        const a = e.screen.getDisplayMatching(b).workArea
+        // 2 px of room: a scaled display (125 %) rounds window sizes.
+        return b.x >= a.x - 2 && b.y >= a.y - 2 && b.x + b.width <= a.x + a.width + 2 && b.y + b.height <= a.y + a.height + 2
+      })
+    assert.equal(await insideDisplay(), true, 'the toolbar with its timer cards is inside its display')
+    await call((e) => {
+      const t = globalThis.__presenter.tools
+      const b = t.toolbar.getBounds()
+      const a = e.screen.getDisplayMatching(b).workArea
+      t.toolbar.setBounds({ ...b, x: a.x + a.width - 40, y: a.y + a.height - 10 })
+      t.keepToolbarInside()
+    })
+    assert.equal(await insideDisplay(), true, 'a toolbar pushed past the edge comes back inside its display')
+    // Screens: a menu of the contents (inside the toolbar window), one of them on Projector 1.
+    assert.equal(await clickBar('Screens'), true, 'the toolbar has a Screens button')
+    await sleep(300)
+    assert.ok((await barText('[...document.querySelectorAll("button.group")].length')) >= 2, 'the Screens menu lists the contents')
+    await barText('(() => { const i = [...document.querySelectorAll("button.group")].find((b) => b.textContent.startsWith("✓")); if (i) i.click() })()')
+    await sleep(300)
+    await sleep(3000)
     await call(() => globalThis.__presenter.rollerHide())
     await call(() => globalThis.__presenter.rollerReset())
-    await call(() => globalThis.__presenter.consoleWin.win.focus())
+    // The way back: the Console button brings the console to the front (the tools hide behind it).
+    assert.equal(await clickBar('Console'), true, 'the toolbar has a Console button')
+    let consoleFront = false
+    for (let i = 0; i < 25 && !consoleFront; i++) {
+      consoleFront = await call(() => globalThis.__presenter.consoleWin.win.isFocused())
+      if (!consoleFront) await sleep(150)
+    }
+    assert.ok(consoleFront, 'the Console button brings the console to the front')
     let toolsGone = false
     for (let i = 0; i < 25 && !toolsGone; i++) {
       toolsGone = !(await toolsShown())

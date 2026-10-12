@@ -76,7 +76,9 @@ export class WindowTools {
     if (HEADLESS || this.toolbar.isDestroyed()) return
     const b = this.toolbar.getBounds()
     const next = keepInside(b, screen.getDisplayMatching(b).workArea)
-    if (next.x !== b.x || next.y !== b.y || next.width !== b.width || next.height !== b.height) this.toolbar.setBounds(next)
+    // A pixel or two of difference is only the rounding of a scaled display (125 %, 150 %); moving for it would never settle.
+    const off = (a: number, c: number): boolean => Math.abs(a - c) > 2
+    if (off(next.x, b.x) || off(next.y, b.y) || off(next.width, b.width) || off(next.height, b.height)) this.toolbar.setBounds(next)
   }
 
   handles(): number[] {
