@@ -30,14 +30,16 @@ function Icon({ name }: { name: InkIconName }) {
   return <span className="grid shrink-0 place-items-center" dangerouslySetInnerHTML={{ __html: inkSvg(name, 18) }} />
 }
 
-/** Marking tools. The same tool is active on the console and on the projector palette. */
-export function InkToolbar({ ink, enabled }: { ink: InkSettings; enabled: boolean }) {
+/**
+ * The tool, colour, undo and clear buttons: one set, used by the console and by the floating
+ * toolbar (which has no text tool: text is typed on slides only). The names show when the bar
+ * sits in a container that is wide enough for them; otherwise the icons alone (the name is in the tooltip).
+ */
+export function InkButtons({ ink, enabled = true, textTool = true }: { ink: InkSettings; enabled?: boolean; textTool?: boolean }) {
   const t = useT()
   return (
-    // The names show when the pane is wide enough for them; otherwise the icons alone (the name is in the tooltip).
-    <div className="@container mb-2">
-    <div className="flex flex-wrap items-center gap-0.5 rounded-[20px] bg-panel-2 px-1.5 py-1" title={t.inkHint}>
-      {INK_TOOL_LIST.map(({ tool, label }) => (
+    <>
+      {INK_TOOL_LIST.filter(({ tool }) => textTool || tool !== 'text').map(({ tool, label }) => (
         <button
           key={tool}
           type="button"
@@ -71,7 +73,18 @@ export function InkToolbar({ ink, enabled }: { ink: InkSettings; enabled: boolea
       <button type="button" disabled={!enabled} title={`${t.inkClear} · ${t.inkClearTitle}`} aria-label={t.inkClear} onClick={() => window.presenter.inkOp({ t: 'clear' }, false)} className="rounded-full p-1.5 text-ink hover:bg-line disabled:opacity-40">
         <Icon name="clear" />
       </button>
-    </div>
+    </>
+  )
+}
+
+/** Marking tools. The same tool is active on the console and on the projector palette. */
+export function InkToolbar({ ink, enabled }: { ink: InkSettings; enabled: boolean }) {
+  const t = useT()
+  return (
+    <div className="@container mb-2">
+      <div className="flex flex-wrap items-center gap-0.5 rounded-[20px] bg-panel-2 px-1.5 py-1" title={t.inkHint}>
+        <InkButtons ink={ink} enabled={enabled} />
+      </div>
     </div>
   )
 }

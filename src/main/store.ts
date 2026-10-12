@@ -29,6 +29,8 @@ import { rememberZoom, zoomFor } from './zoomMemory'
 import { rememberPages, resumePage } from './pageMemory'
 import { whiteboardFile } from './whiteboard'
 import { loadTheme, saveTheme, themeBackground } from './themeMemory'
+import { loadFlipped, saveFlipped } from './layoutMemory'
+import { HEADLESS } from './headless'
 import { loadWarnings, saveWarnings } from './timerMemory'
 import { loadMyTimer, saveMyTimer } from './myTimerMemory'
 import { loadFolder, saveFolder } from './folderMemory'
@@ -86,6 +88,7 @@ export class Store {
   private tracking = false
   private speaker: SpeakerTimerView = { mode: 'up', minutes: 45, startedAt: null, heldMs: 0, periods: T.cleanPeriods(T.DEFAULT_PERIODS), clockExtra: null }
   private theme: UiTheme | null = null
+  private flipped = false
   private warnings: T.TimerWarning[] = T.DEFAULT_WARNINGS.map((w) => ({ ...w }))
   /** The main deck opened again on the page it showed last (0-based); null after the next page move. */
   private resumed: number | null = null
@@ -126,6 +129,7 @@ export class Store {
   start(): void {
     this.recent = loadRecent()
     this.theme = loadTheme()
+    this.flipped = loadFlipped()
     this.warnings = loadWarnings()
     this.speaker = { ...loadMyTimer(), startedAt: null, heldMs: 0, clockExtra: null }
     this.lastFolder = loadFolder()
@@ -646,6 +650,16 @@ export class Store {
     this.tools.resizeToolbar(width, height)
   }
 
+  /** The floating toolbar's way back: the console comes to the front (the tools over the program window step aside). */
+  focusConsole(): void {
+    const win = this.consoleWin?.win
+    if (!win || win.isDestroyed() || HEADLESS) return
+    if (win.isMinimized()) win.restore()
+    win.show()
+    win.moveTop()
+    win.focus()
+  }
+
   // ---------- my timer (the speaker's own) ----------
 
   speakerMode(mode: SpeakerMode): void {
@@ -695,6 +709,12 @@ export class Store {
   }
 
   // ---------- look ----------
+
+  setFlipped(flipped: boolean): void {
+    this.flipped = flipped === true
+    saveFlipped(this.flipped)
+    this.emit()
+  }
 
   setTheme(theme: UiTheme): void {
     if (theme !== 'light' && theme !== 'dark') return
@@ -956,6 +976,7 @@ export class Store {
       ink: this.inkSettings,
       zoomed: !!this.inkTargetId() && !!this.scene(this.inkTargetId() as OutputId).zoom,
       theme: this.theme,
+      flipped: this.flipped,
       blank: this.blank,
       resumedAt: this.resumed
     }
@@ -1463,6 +1484,7 @@ export class Store {
   private onDisplaysChanged(): void {
     this.projectorWin.place()
     this.consoleWin.place()
+    this.tools?.keepToolbarInside()
     this.applyCurrent()
     this.applyPreview()
     this.emit()

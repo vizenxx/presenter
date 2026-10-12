@@ -2,52 +2,36 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 import { createRoot } from 'react-dom/client'
 import '../styles.css'
 import { clock, mmss } from '../../../shared/format'
-import { INK_COLORS, INK_TOOLS, inkKeyAction } from '../../../shared/ink'
+import { inkKeyAction } from '../../../shared/ink'
 import { clockNow, speakerSeconds, speakerStarted } from '../../../shared/timer'
-import { inkSvg, type InkIconName } from '../../../shared/inkIcons'
 import type { AppState } from '../../../shared/types'
 import { useAppState } from '../console/hooks'
-import { inkToolTitle } from '../console/Ink'
+import { InkButtons } from '../console/Ink'
 import { IS_MAC } from '../console/platform'
 import { screenLabel, useT } from '../console/i18n'
 import { useRollFace } from '../console/RollerPanel'
-import { useNow } from '../console/SpeakerTimer'
-import { PRESETS, SetTime } from '../console/TimerPanel'
-import { IconLabel } from '../console/ui'
+import { SpeakerTimer, useNow } from '../console/SpeakerTimer'
+import { TimerPanel } from '../console/TimerPanel'
+import { FlipContext, IconLabel, Menu, MenuHostContext, MenuItem, type ConsoleMenu } from '../console/ui'
 
-const ICON_BTN = 'grid h-8 w-8 place-items-center rounded-full hover:bg-line'
 const SMALL_BTN = 'rounded-full px-2.5 py-1 text-sm hover:bg-line'
-
-function Icon({ name }: { name: InkIconName }) {
-  return <span className="grid place-items-center" dangerouslySetInnerHTML={{ __html: inkSvg(name, 18) }} />
-}
 
 function Group({ children }: { children: ReactNode }) {
   return <span className="flex items-center gap-1 border-l border-line pl-2">{children}</span>
 }
 
-/** The shared timer's settings, opened from the ⏱ button (the participants see this timer). */
-function TimerDetails({ state }: { state: AppState }) {
-  const t = useT()
-  const timer = state.timer
+/**
+ * The two timers, opened from the ⏱ button: the same two cards as in the console (the time is its
+ * own entry, ±, warning bells, the presets, My timer's modes), so there is one way to use them.
+ * Their pop-ups open below, inside this window, which grows with them.
+ */
+function TimerCards({ state, flipped, menu, onMenu }: { state: AppState; flipped: boolean; menu: ConsoleMenu; onMenu: (m: ConsoleMenu) => void }) {
+  const shared = <TimerPanel state={state} menu={menu} onMenu={onMenu} />
+  const mine = <SpeakerTimer state={state} menu={menu} onMenu={onMenu} />
   return (
-    <div className="flex flex-wrap items-center gap-1 border-t border-line pt-1.5">
-      <span className="text-sm text-muted">{t.timer}</span>
-      <span className={`mx-1 text-xl font-semibold tracking-tight tabular-nums ${timer.alarming ? 'text-alarm' : timer.status === 'running' ? 'text-ink' : 'text-muted'}`}>{mmss(timer.remainingSec)}</span>
-      <button type="button" onClick={() => window.presenter.timerToggle()} className={`${SMALL_BTN} bg-accent/15 text-tint`}>
-        {timer.alarming ? t.stopAlarm : timer.status === 'running' ? t.pause : timer.status === 'paused' ? t.resume : t.start}
-      </button>
-      <button type="button" onClick={() => window.presenter.timerReset()} className={SMALL_BTN}>
-        {t.reset}
-      </button>
-      <span className="mx-1 h-5 w-px bg-line" />
-      {PRESETS.map((m) => (
-        <button key={m} type="button" onClick={() => window.presenter.timerStart(m * 60)} className={SMALL_BTN}>
-          {t.presetMinutes(m)}
-        </button>
-      ))}
-      <span className="mx-1 h-5 w-px bg-line" />
-      <SetTime timer={state.timer} buttonClass={`${SMALL_BTN} disabled:opacity-40`} />
+    <div className="grid min-w-[34rem] grid-cols-2 gap-2 border-t border-line pt-1.5">
+      {flipped ? mine : shared}
+      {flipped ? shared : mine}
     </div>
   )
 }
@@ -63,6 +47,9 @@ function Toolbar() {
   const state = useAppState()
   const [open, setOpen] = useState(true)
   const [timerOpen, setTimerOpen] = useState(false)
+  const [menu, setMenu] = useState<ConsoleMenu>(null)
+  // Where the cards' pop-ups open: below them, inside this window (it is only as big as its content).
+  const [host, setHost] = useState<HTMLElement | null>(null)
   const root = useRef<HTMLDivElement>(null)
   const clockMode = !!state && state.speaker.mode === 'clock'
   const running = !!state && (state.speaker.startedAt !== null || (clockMode && clockNow(state.speaker, Date.now()).phase === 'during'))
@@ -119,8 +106,10 @@ function Toolbar() {
   const audience = !!state && (state.projecting || state.projectors.length > 0)
 
   return (
+    <FlipContext.Provider value={!!state?.flipped}>
+    <MenuHostContext.Provider value={host}>
     <div ref={root} className="inline-flex w-max flex-col gap-1.5 rounded-[22px] border border-line bg-panel/95 px-2 py-1.5 whitespace-nowrap text-ink">
-      <div className="flex items-center gap-2">
+      <div className={`flex items-center gap-2 ${state?.flipped ? 'flex-row-reverse' : ''}`}>
         <span className="cursor-move px-1 text-lg leading-none text-muted [-webkit-app-region:drag]" title={t.toolbarDrag}>
           ⠿
         </span>
@@ -133,26 +122,13 @@ function Toolbar() {
         ) : (
           <>
             <span className="flex items-center gap-0.5" title={target ? t.toolbarFor(screenLabel(t, target)) : undefined}>
-              {INK_TOOLS.filter((name) => name !== 'text').map((name) => (
-                <button key={name} type="button" title={inkToolTitle(t, name)} onClick={() => window.presenter.setInkTool(name)} className={`${ICON_BTN} ${tool === name ? 'bg-accent text-white' : ''}`}>
-                  <Icon name={name} />
-                </button>
-              ))}
-              {INK_COLORS.map((color) => (
-                <button key={color} type="button" title={t.inkColor} onClick={() => window.presenter.setInkColor(color)} style={{ background: color }} className={`mx-0.5 h-5 w-5 rounded-full ring-1 ring-black/15 ring-inset ${state.ink.color === color ? 'outline-2 outline-offset-1 outline-accent' : ''}`} />
-              ))}
-              <button type="button" title={t.inkUndo} onClick={() => window.presenter.inkOp({ t: 'undo' }, false)} className={ICON_BTN}>
-                <Icon name="undo" />
-              </button>
-              <button type="button" title={t.inkClear} onClick={() => window.presenter.inkOp({ t: 'clear' }, false)} className={ICON_BTN}>
-                <Icon name="clear" />
-              </button>
+              <InkButtons ink={state.ink} textTool={false} />
             </span>
             <Group>
               <button
                 type="button"
                 title={t.timer}
-                onClick={() => setTimerOpen((o) => !o)}
+                onClick={() => { setMenu(null); setTimerOpen((o) => !o) }}
                 className={`${SMALL_BTN} tabular-nums ${timer.alarming ? 'bg-alarm text-white' : timerOpen ? 'bg-line' : ''} ${timer.status === 'running' ? 'text-ink' : timerOn ? 'text-gold' : ''}`}
               >
                 <IconLabel icon="timer" size={15}>
@@ -186,6 +162,37 @@ function Toolbar() {
                   {!audience && ' *'}
                 </span>
               )}
+              <span className="relative">
+                <button type="button" title={t.toolbarScreensTitle} onClick={() => setMenu(menu === 'screens' ? null : 'screens')} className={`${SMALL_BTN} ${menu === 'screens' ? 'bg-line' : ''}`}>
+                  <IconLabel icon="window" size={15}>
+                    {t.toolbarScreens} ▾
+                  </IconLabel>
+                </button>
+                {menu === 'screens' && (
+                  <Menu onClose={() => setMenu(null)}>
+                    {state.outputs
+                      .filter((o) => o.kind !== 'preview' && (o.deck !== null || o.kind === 'capture'))
+                      .map((o) => (
+                        <MenuItem
+                          key={o.id}
+                          onClick={() => {
+                            setMenu(null)
+                            window.presenter.showOn(o.id, 1)
+                          }}
+                        >
+                          {o.id === state.onAirId ? '✓ ' : ''}
+                          {screenLabel(t, o)}
+                          {o.deck ? <span className="text-muted group-hover:text-white/75"> · {o.deck.name}</span> : null}
+                        </MenuItem>
+                      ))}
+                  </Menu>
+                )}
+              </span>
+              <button type="button" title={t.toolbarBackTitle} onClick={() => window.presenter.focusConsole()} className={SMALL_BTN}>
+                <IconLabel icon="console" size={15}>
+                  {t.toolbarBack}
+                </IconLabel>
+              </button>
               <button type="button" title={t.toolbarHide} onClick={() => setOpen(false)} className={SMALL_BTN}>
                 ◂
               </button>
@@ -193,8 +200,11 @@ function Toolbar() {
           </>
         )}
       </div>
-      {open && state && timerOpen && <TimerDetails state={state} />}
+      {open && state && timerOpen && <TimerCards state={state} flipped={state.flipped} menu={menu} onMenu={setMenu} />}
+      <div ref={setHost} />
     </div>
+    </MenuHostContext.Provider>
+    </FlipContext.Provider>
   )
 }
 

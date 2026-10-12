@@ -1,6 +1,6 @@
 import type { AppState, OutputView } from '../../../shared/types'
 import { screenLabel, useT } from './i18n'
-import { Menu, MenuItem, UiIcon, ZoomControl, type ConsoleMenu } from './ui'
+import { Menu, MenuItem, UiIcon, ZoomControl, useFlipped, type ConsoleMenu } from './ui'
 
 const SMALL_BTN = 'grid h-7 min-w-7 place-items-center rounded-full px-1.5 text-sm hover:bg-line'
 
@@ -150,9 +150,10 @@ function ScreenChip(props: { o: OutputView; state: AppState; menu: ConsoleMenu; 
 /** Multi-screen management. The next preview is not listed: it is selected by clicking its pane. */
 export function ScreensBar({ state, menu, onMenu, onPickWindow }: { state: AppState; menu: ConsoleMenu; onMenu: (m: ConsoleMenu) => void; onPickWindow: () => void }) {
   const t = useT()
+  const flipped = useFlipped()
   const close = (): void => onMenu(null)
   return (
-    <footer className="flex flex-wrap items-center gap-2 border-t border-line/70 bg-panel px-3 py-2">
+    <footer className={`flex flex-wrap items-center gap-2 border-t border-line/70 bg-panel px-3 py-2 ${flipped ? 'flex-row-reverse' : ''}`}>
       <span className="mr-1 cursor-help text-sm text-muted" title={t.screensHint}>
         {t.screens}
       </span>

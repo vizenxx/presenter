@@ -3,7 +3,7 @@ import type { AppState, OutputView, PreviewRect } from '../../../shared/types'
 import { screenLabel, useT } from './i18n'
 import { BarButtons, type BarKind } from './SlideBar'
 import { InkToolbar, MirrorView } from './Ink'
-import { Btn, goToSlide, IconLabel, Milestones, PageText, UiIcon, ZoomControl, Menu, type ConsoleMenu } from './ui'
+import { Btn, goToSlide, IconLabel, Milestones, PageText, UiIcon, ZoomControl, Menu, useFlipped, type ConsoleMenu } from './ui'
 import { ViewSlot } from './ViewSlot'
 
 const layoutCurrent = (rect: PreviewRect | null): void => window.presenter.layoutCurrent(rect)
@@ -77,6 +77,7 @@ export function CurrentPane(props: {
 }) {
   const { state, projector, mirror, suspended, bar, onBar, onGuide, onPickWindow } = props
   const t = useT()
+  const flipped = useFlipped()
   if (!state.mainDeck && projector.kind !== 'capture') return <EmptyState state={state} onGuide={onGuide} onPickWindow={onPickWindow} />
   const selected = state.selectedId === projector.id
   const aspect = state.projectorSize.width / Math.max(1, state.projectorSize.height)
@@ -101,7 +102,7 @@ export function CurrentPane(props: {
           {t.loadingDeck}
         </ViewSlot>
       )}
-      <div className="mt-2 flex min-w-0 items-center gap-3">
+      <div className={`mt-2 flex min-w-0 items-center gap-3 ${flipped ? 'flex-row-reverse' : ''}`}>
         <BarButtons open={bar} onOpen={onBar} />
         <span className="shrink-0 text-sm text-muted">
           <PageText o={projector} />

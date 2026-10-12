@@ -23,7 +23,8 @@ export function TimerCard(props: { title: string; caption: string; corner?: Reac
         {time}
         {note}
       </div>
-      <div className="flex h-10 flex-wrap items-center justify-center gap-2">{controls}</div>
+      {/* One row at any width: in a narrow card the buttons get less padding instead of wrapping. */}
+      <div className="flex h-10 items-center justify-center gap-2 @max-[16rem]:gap-1 @max-[16rem]:[&_button]:px-2">{controls}</div>
       <div className="mt-auto flex flex-col gap-1.5 pt-3">{footer}</div>
     </section>
   )

@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { inkSvg, type InkIconName } from '../../../shared/inkIcons'
 import type { AppState, DeckStatus, OutputView } from '../../../shared/types'
 import { useT } from './i18n'
@@ -126,19 +127,43 @@ export function NumberField(props: { value: number; min: number; max: number; on
 }
 
 /** Menus that can be open in the console; native deck views step aside while one is. */
-export type ConsoleMenu = 'recent' | 'add' | 'bells' | 'times' | 'adjust-class' | 'adjust-mine' | 'slides' | 'participants' | `screen:${string}` | `show:${string}` | null
+export type ConsoleMenu = 'recent' | 'add' | 'bells' | 'times' | 'adjust-class' | 'adjust-mine' | 'slides' | 'participants' | 'screens' | `screen:${string}` | `show:${string}` | null
+
+/** True when the console is turned left to right: menus then open towards the other side. */
+export const FlipContext = createContext(false)
+export const useFlipped = (): boolean => useContext(FlipContext)
 
 /**
- * A pop-up menu below (or above) its button, from its left edge (or, align right, its right edge).
+ * A page that is only as big as its content (the floating toolbar's window) gives its menus a
+ * place inside itself: they open there, below the buttons, and the page grows with them.
+ */
+export const MenuHostContext = createContext<HTMLElement | null>(null)
+
+const VIEW_MARGIN = 8
+
+/**
+ * A pop-up menu below (or above) its button, from its left edge (or, align right, its right edge;
+ * both are swapped when the console is turned left to right). It always stays inside the window:
+ * pushed sideways when it would pass an edge, opened on the other side of its button when that
+ * side has more room, and scrolled when it is still too tall.
  * A press anywhere else or Esc closes it (Esc then does nothing else, e.g. it does not stop
  * projecting); the button itself toggles it (presses inside the menu's parent do not count as "elsewhere").
  */
 export function Menu(props: { children: ReactNode; onClose: () => void; up?: boolean; width?: string; align?: 'left' | 'right' }) {
   const { children, onClose, up = false, width = 'w-96', align = 'left' } = props
+  const flipped = useFlipped()
+  const host = useContext(MenuHostContext)
+  const anchor = useRef<HTMLSpanElement>(null)
   const box = useRef<HTMLDivElement>(null)
+  const shift = useRef(0)
+  const [fit, setFit] = useState<{ down: boolean; maxHeight: number | null }>({ down: !up, maxHeight: null })
+  const toRight = (align === 'right') !== flipped
+
   useEffect(() => {
     const close = (e: PointerEvent): void => {
-      if (box.current?.parentElement?.contains(e.target as Node)) return
+      const owner = host ? anchor.current?.parentElement : box.current?.parentElement
+      const target = e.target as Node
+      if (owner?.contains(target) || box.current?.contains(target)) return
       onClose()
     }
     const escape = (e: KeyboardEvent): void => {
@@ -153,9 +178,66 @@ export function Menu(props: { children: ReactNode; onClose: () => void; up?: boo
       window.removeEventListener('pointerdown', close)
       window.removeEventListener('keydown', escape, true)
     }
-  }, [onClose])
+  }, [onClose, host])
+
+  // Keep inside the window: measured after every render, when the window changes and when the menu itself changes size.
+  const place = useRef<() => void>(() => undefined)
+  place.current = (): void => {
+    const el = box.current
+    const owner = el?.parentElement
+    if (host || !el || !owner) return
+    const view = document.documentElement
+    const r = el.getBoundingClientRect()
+    const natural = r.left - shift.current
+    let dx = 0
+    if (natural + r.width > view.clientWidth - VIEW_MARGIN) dx = view.clientWidth - VIEW_MARGIN - (natural + r.width)
+    if (natural + dx < VIEW_MARGIN) dx = VIEW_MARGIN - natural
+    dx = Math.round(dx)
+    if (dx !== shift.current) {
+      shift.current = dx
+      el.style.transform = dx ? `translateX(${dx}px)` : ''
+    }
+    const o = owner.getBoundingClientRect()
+    const need = el.scrollHeight + 8
+    const room = (down: boolean): number => (down ? view.clientHeight - o.bottom : o.top) - VIEW_MARGIN
+    let down = !up
+    if (room(down) < need && room(!down) > room(down)) down = !down
+    const maxHeight = need > room(down) ? Math.max(96, Math.floor(room(down)) - 8) : null
+    setFit((f) => (f.down === down && f.maxHeight === maxHeight ? f : { down, maxHeight }))
+  }
+  useLayoutEffect(() => place.current())
+  useEffect(() => {
+    const el = box.current
+    const again = (): void => place.current()
+    window.addEventListener('resize', again)
+    const ro = new ResizeObserver(again)
+    if (el) ro.observe(el)
+    return () => {
+      window.removeEventListener('resize', again)
+      ro.disconnect()
+    }
+  }, [])
+
+  if (host) {
+    return (
+      <>
+        <span ref={anchor} hidden />
+        {createPortal(
+          <div ref={box} onClick={(e) => e.stopPropagation()} className="mt-2 w-full rounded-2xl bg-panel p-1.5 ring-1 ring-line/70">
+            {children}
+          </div>,
+          host
+        )}
+      </>
+    )
+  }
   return (
-    <div ref={box} onClick={(e) => e.stopPropagation()} className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} z-20 rounded-2xl bg-panel p-1.5 shadow-xl ring-1 ring-line/70 ${up ? 'bottom-full mb-2' : 'top-full mt-2'} ${width}`}>
+    <div
+      ref={box}
+      onClick={(e) => e.stopPropagation()}
+      style={fit.maxHeight === null ? undefined : { maxHeight: fit.maxHeight, overflowY: 'auto' }}
+      className={`absolute ${toRight ? 'right-0' : 'left-0'} z-20 max-w-[calc(100vw-1rem)] rounded-2xl bg-panel p-1.5 shadow-xl ring-1 ring-line/70 ${fit.down ? 'top-full mt-2' : 'bottom-full mb-2'} ${width}`}
+    >
       {children}
     </div>
   )

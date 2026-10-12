@@ -1,63 +1,14 @@
-import { useEffect, useRef, useState } from 'react'
 import { mmss } from '../../../shared/format'
 import { MAX_BEEPS, MAX_WARNINGS, type TimerWarning } from '../../../shared/timer'
-import type { AppState, TimerView } from '../../../shared/types'
+import type { AppState } from '../../../shared/types'
 import { AdjustTime } from './AdjustTime'
 import { useT } from './i18n'
 import { EditableTime } from './TimeEdit'
 import { TimerCard } from './TimerCard'
-import { Btn, HoldBtn, Menu, NumberField, UiIcon, type ConsoleMenu } from './ui'
+import { Btn, Menu, NumberField, UiIcon, type ConsoleMenu } from './ui'
 
 export const PRESETS = [1, 3, 5, 10, 15, 20]
-const MAX_MINUTES = 180
 const SMALL = 'rounded-full bg-panel-2 px-2.5 py-1 text-sm hover:bg-line disabled:cursor-not-allowed disabled:opacity-40'
-
-/**
- * Sets the shared timer's time (minutes : seconds) while it is stopped: the big time shows it and
- * the one Start button starts it (Enter in a box starts too). − and + change the minutes and
- * repeat while held. While the timer runs or is paused the boxes rest: ± gives more or less time.
- */
-export function SetTime({ timer, buttonClass = SMALL }: { timer: TimerView; buttonClass?: string }) {
-  const t = useT()
-  const stopped = timer.status === 'idle' || timer.status === 'done'
-  const total = timer.durationSec
-  // The boxes keep what you type (0 : 30 passes through 0 : 00 on the way); the timer gets every time above zero.
-  const [mm, setMm] = useState(Math.floor(total / 60))
-  const [ss, setSs] = useState(total % 60)
-  useEffect(() => {
-    setMm(Math.floor(total / 60))
-    setSs(total % 60)
-  }, [total])
-  const now = useRef({ mm, ss })
-  now.current = { mm, ss }
-  const apply = (m: number, s: number): void => {
-    setMm(m)
-    setSs(s)
-    if (m * 60 + s > 0) window.presenter.timerSet(m * 60 + s)
-  }
-  const start = (m: number, s: number): void => {
-    if (m * 60 + s > 0) window.presenter.timerStart(m * 60 + s)
-  }
-  const step = (delta: number): void => {
-    const { mm: m, ss: s } = now.current
-    const next = Math.min(MAX_MINUTES, Math.max(0, m + delta))
-    if (next * 60 + s > 0) apply(next, s)
-  }
-  return (
-    <span className="flex items-center gap-1" title={stopped ? t.setTimeTitle : t.setTimeBusy}>
-      <span className="mr-0.5 text-sm text-muted">{t.setTime}</span>
-      <HoldBtn disabled={!stopped} title={t.holdToRepeat} onStep={() => step(-1)} className={buttonClass}>
-        −
-      </HoldBtn>
-      <NumberField disabled={!stopped} value={mm} min={0} max={MAX_MINUTES} onChange={(m) => apply(m, now.current.ss)} onEnter={(m) => start(m, now.current.ss)} title={t.minutesBox} className="w-11" />
-      <span className="text-sm text-muted">:</span>
-      <NumberField disabled={!stopped} value={ss} min={0} max={59} digits={2} onChange={(s) => apply(now.current.mm, s)} onEnter={(s) => start(now.current.mm, s)} title={t.secondsBox} className="w-11" />
-      <HoldBtn disabled={!stopped} title={t.holdToRepeat} onStep={() => step(1)} className={buttonClass}>
-        +
-      </HoldBtn>
-    </span>
-  )
-}
 
 /**
  * The shared timer's warning bells, in their pop-up: a title line ("Warning bells · Shared timer",
@@ -159,7 +110,7 @@ export function TimerPanel({ state, menu, onMenu }: { state: AppState; menu: Con
       footer={
         <div className="grid grid-cols-3 gap-1.5">
           {PRESETS.map((m) => (
-            <button key={m} type="button" title={t.presetTitle} className={`${SMALL} h-8 text-center`} onClick={() => window.presenter.timerStart(m * 60)}>
+            <button key={m} type="button" title={t.presetTitle} className={`${SMALL} h-8 text-center whitespace-nowrap @max-[16rem]:px-0.5`} onClick={() => window.presenter.timerStart(m * 60)}>
               {t.presetMinutes(m)}
             </button>
           ))}

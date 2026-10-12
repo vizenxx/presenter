@@ -212,6 +212,8 @@ export interface AppState {
   zoomed: boolean
   /** Light or dark console; null = follow the computer's setting. */
   theme: UiTheme | null
+  /** The console is turned left to right: the two sides, the bar and the bottom row swap places. */
+  flipped: boolean
   /** The projectors are black or white (B / W); null = the slides show. */
   blank: 'black' | 'white' | null
   /** The main deck opened again on the page it showed last (0-based), for a short notice; null otherwise. */
@@ -252,10 +254,14 @@ export interface ConsoleApi {
   /** Adds seconds to the shared timer (negative: takes them away). */
   timerAdjust(deltaSec: number): void
   setTheme(theme: UiTheme): void
+  /** Turns the console left to right (and back). */
+  setFlipped(flipped: boolean): void
   /** Black or white projectors (null = show the slides again). The same kind again also shows them again. */
   setBlank(kind: 'black' | 'white' | null): void
   /** The floating toolbar page reports its size. */
   toolbarSize(width: number, height: number): void
+  /** Brings the Presenter console to the front (the floating toolbar's way back). */
+  focusConsole(): void
   closeProjector(n: number): void
   listWindows(): Promise<WindowSource[]>
   /** show = put it on Projector 1 at once (the start screen's choice); otherwise it waits. */

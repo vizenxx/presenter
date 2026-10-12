@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useRef } from 'react'
 import type { AppState } from '../../../shared/types'
 import { screenLabel, useT } from './i18n'
-import { Btn, goToSlide, IconLabel } from './ui'
+import { Btn, goToSlide, IconLabel, useFlipped } from './ui'
 
 /** What the slide bar shows: the slide list (jump), or the speaker notes of the slide in view. Both go with the slides. */
 export type BarKind = 'slides' | 'notes'
@@ -71,10 +71,11 @@ export function BarButtons({ open, onOpen }: { open: BarKind | null; onOpen: (ki
 /** The slide bar's panel, at the left of the console: the slide list or the notes of the slide in view. */
 export function SlidePanel({ state, open, onClose }: { state: AppState; open: BarKind; onClose: () => void }) {
   const t = useT()
+  const flipped = useFlipped()
   const { label, deck, current } = useFocus(state)
   const note = state.slides[current]?.notes
   return (
-    <aside className="flex min-h-0 w-72 shrink-0 animate-[slideInLeft_0.18s_ease-out] flex-col overflow-hidden rounded-card bg-panel ring-1 ring-line/60">
+    <aside className={`flex min-h-0 w-72 shrink-0 ${flipped ? 'animate-[slideInRight_0.18s_ease-out]' : 'animate-[slideInLeft_0.18s_ease-out]'} flex-col overflow-hidden rounded-card bg-panel ring-1 ring-line/60`}>
       <div className="flex items-center gap-2 border-b border-line/70 px-3 py-2">
         <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">
           {open === 'slides' ? t.slides : t.notesOf(current + 1)}

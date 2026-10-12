@@ -1,4 +1,5 @@
 import { BrowserWindow, screen, type Rectangle } from 'electron'
+import { keepInside } from '../shared/place'
 import { HEADLESS } from './headless'
 import { IS_MAC } from './platform'
 
@@ -66,6 +67,16 @@ export class WindowTools {
     this.toolbar.setContentProtection(true)
     if (IS_MAC) this.toolbar.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
     paths.loadToolbar(this.toolbar)
+    // Dragged to or past the edge: it comes back inside the display it is on (never lost off screen).
+    this.toolbar.on('moved', () => this.keepToolbarInside())
+  }
+
+  /** Puts the toolbar wholly inside the work area of the display it is mostly on. */
+  keepToolbarInside(): void {
+    if (HEADLESS || this.toolbar.isDestroyed()) return
+    const b = this.toolbar.getBounds()
+    const next = keepInside(b, screen.getDisplayMatching(b).workArea)
+    if (next.x !== b.x || next.y !== b.y || next.width !== b.width || next.height !== b.height) this.toolbar.setBounds(next)
   }
 
   handles(): number[] {
@@ -95,6 +106,7 @@ export class WindowTools {
       const size = this.toolbar.getBounds()
       this.toolbar.setPosition(Math.round(area.x + (area.width - size.width) / 2), area.y + 8)
       this.placed = true
+      this.keepToolbarInside()
     }
     if (!this.shown) {
       this.shown = true
@@ -114,11 +126,13 @@ export class WindowTools {
   resizeToolbar(width: number, height: number): void {
     if (this.toolbar.isDestroyed()) return
     const w = Math.max(40, Math.min(1600, Math.round(width)))
-    const h = Math.max(24, Math.min(400, Math.round(height)))
+    const h = Math.max(24, Math.min(900, Math.round(height)))
     const b = this.toolbar.getBounds()
     if (b.width === w && b.height === h) return
     // Keep the toolbar's centre where it is.
     this.toolbar.setBounds({ x: Math.round(b.x + (b.width - w) / 2), y: b.y, width: w, height: h })
+    // The bar grew: it may now reach past the edge of the display.
+    this.keepToolbarInside()
   }
 
   destroy(): void {

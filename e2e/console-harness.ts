@@ -13,7 +13,7 @@ const OUT = path.join(ROOT, 'e2e', 'out')
 const STUB = path.join(OUT, 'harness', 'console-stub-preload.cjs')
 const AI_REQUEST = aiRequestText(fs.readFileSync(path.join(ROOT, 'docs', 'ai-integration.md'), 'utf8'))
 /** Every ConsoleApi method (contextBridge copies plain objects only, so no Proxy). */
-const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "listWindows", "addWindowScreen", "setTheme", "timerWarnings", "speakerAdjust", "timerAdjust", "timerSet", "speakerPeriods", "setBlank", "savePicture", "addWhiteboard", "rollerGroups", "rollerClearGroups", "mediaToggle"]
+const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "focusConsole", "listWindows", "addWindowScreen", "setTheme", "setFlipped", "timerWarnings", "speakerAdjust", "timerAdjust", "timerSet", "speakerPeriods", "setBlank", "savePicture", "addWhiteboard", "rollerGroups", "rollerClearGroups", "mediaToggle"]
 
 app.disableHardwareAcceleration()
 // Each screenshot closes its window; keep the app alive between them.
@@ -54,6 +54,7 @@ function sampleState(projecting: boolean, crowd = false, theme: UiTheme = 'dark'
     ink: { tool: 'pen', color: '#ef4444' },
     zoomed: false,
     theme,
+    flipped: false,
     blank: null,
     resumedAt: null
   }
@@ -563,7 +564,10 @@ contextBridge.exposeInMainWorld('roller', {
   }
 }
 
-/** The floating toolbar's timer settings: the same Set as the console, and one Start. */
+/**
+ * The floating toolbar's timers: the same two cards as the console (the time is its own entry,
+ * the bells open in a pop-up inside the toolbar's own window, which grows with them).
+ */
 async function toolbarTimer(): Promise<void> {
   const state = sampleState(false, true)
   state.timer = { status: 'idle', remainingSec: 300, durationSec: 300, alarming: false, warnings: [{ sec: 60, beeps: 3 }] }
@@ -572,17 +576,120 @@ async function toolbarTimer(): Promise<void> {
   await win.loadFile(path.join(ROOT, 'out', 'renderer', 'toolbar.html'))
   await wait(1200)
   const js = <T>(code: string): Promise<T> => win.webContents.executeJavaScript(code) as Promise<T>
+  const wc = win.webContents
+  const key = async (keyCode: string): Promise<void> => {
+    wc.sendInputEvent({ type: 'keyDown', keyCode })
+    if (keyCode.length === 1) wc.sendInputEvent({ type: 'char', keyCode })
+    wc.sendInputEvent({ type: 'keyUp', keyCode })
+    await wait(60)
+  }
+  const size = (): Promise<number[]> => js(`(() => { const r = document.getElementById('root').firstElementChild.getBoundingClientRect(); return [Math.ceil(r.width), Math.ceil(r.height)] })()`)
+  const bar = await size()
   const opened = await js<boolean>(`(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === 'Timer'); if (b) b.click(); return !!b })()`)
   if (!opened) throw new Error('the toolbar has no timer button')
   await wait(300)
-  const starts = await js<number>(`[...document.querySelectorAll('button')].filter((b) => b.textContent.trim() === 'Start').length`)
-  if (starts !== 1) throw new Error(`the toolbar timer has ${starts} Start buttons`)
-  if (!(await js<boolean>(`!!document.querySelector('input[title="Minutes"]') && !document.querySelector('input[title="Minutes"]').disabled`))) throw new Error('the toolbar timer has no usable Set')
+  // The two cards of the console: Start on each (the shared timer, My timer), once.
+  const names = await js<string[]>(`[...document.querySelectorAll('section h2')].map((h) => h.textContent)`)
+  if (names.join('|') !== 'Shared timer|My timer') throw new Error(`the toolbar should hold the two console cards: ${JSON.stringify(names)}`)
+  const starts = await js<number>(`[...document.querySelectorAll('section')].filter((s) => [...s.querySelectorAll('button')].filter((b) => ['Start', 'Resume'].includes(b.textContent.trim())).length === 1).length`)
+  if (starts !== 2) throw new Error(`each timer card has one Start or Resume button (2 cards expected): ${starts}`)
+  if (await js<boolean>(`!!document.querySelector('input[title="Minutes"]')`)) throw new Error('a time box is open before anything was double-clicked')
+  // The time is its own entry here too.
+  await js(`document.querySelector('section [role=button]').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))`)
+  await wait(100)
+  if (!(await js<boolean>(`!!document.querySelector('input[title="Minutes"]')`))) throw new Error('double-clicking the minutes opens no box on the toolbar')
+  await key('Backspace')
+  await key('Backspace')
+  await key('8')
+  await key('Enter')
+  await wait(100)
+  const calls = (await js<unknown[][]>('window.presenter.__calls()')).filter((c) => c[0] === 'timerSet').map((c) => c[1])
+  if (calls.join(',') !== '480') throw new Error(`8 in the minutes sets 8:00 (480 s): ${JSON.stringify(calls)}`)
+  // Another screen on Projector 1, from the toolbar's own pop-up (inside its window).
+  await js(`[...document.querySelectorAll('button')].find((x) => x.title.startsWith('Show another screen on Projector 1')).click()`)
+  await wait(200)
+  const picked = await js<boolean>(`(() => { const i = [...document.querySelectorAll('button')].find((x) => x.className.includes('group') && x.textContent.includes('Screen 2')); if (!i) return false; i.click(); return true })()`)
+  if (!picked) throw new Error('the toolbar screen menu lists no Screen 2')
+  const shows = (await js<unknown[][]>('window.presenter.__calls()')).filter((c) => c[0] === 'showOn').map((c) => `${c[1]}:${c[2]}`)
+  if (shows.join(',') !== 'screen-2:1') throw new Error(`the toolbar should show Screen 2 on Projector 1: ${JSON.stringify(shows)}`)
+  // The way back: one button asks for the console.
+  await js(`[...document.querySelectorAll('button')].find((x) => x.title.startsWith('Back to the Presenter console')).click()`)
+  if (!(await js<unknown[][]>('window.presenter.__calls()')).some((c) => c[0] === 'focusConsole')) throw new Error('the toolbar has no way back to the console')
+  // The bells: a pop-up inside the toolbar window; the window (its content) grows to hold it.
+  const before = await size()
+  await js(`[...document.querySelectorAll('button')].find((x) => x.title.startsWith('Warning bells of the shared timer')).click()`)
+  await wait(300)
+  const after = await size()
+  const inside = await js<boolean>(`(() => { const m = [...document.querySelectorAll('h3')].find((h) => h.textContent.includes('Warning bells')); if (!m) return false; const r = m.getBoundingClientRect(); const root = document.getElementById('root').firstElementChild.getBoundingClientRect(); return r.top >= root.top && r.bottom <= root.bottom + 1 && r.left >= root.left && r.right <= root.right + 1 })()`)
+  if (!inside) throw new Error('the bells pop-up is not inside the toolbar')
+  if (after[1] <= before[1]) throw new Error(`the toolbar did not grow for the pop-up: ${before} -> ${after}`)
+  win.setContentSize(Math.max(after[0], bar[0]), after[1])
+  await wait(300)
   const image = await win.webContents.capturePage()
   fs.writeFileSync(path.join(OUT, 'toolbar-timer.png'), image.toPNG())
-  console.log('ok floating toolbar timer: one Start and Set')
+  console.log('ok floating toolbar timers: the console cards; the time is its own entry; the bells open inside the window')
   win.destroy()
   await wait(300)
+}
+
+/**
+ * Every pop-up stays inside the window, at the smallest console size and turned either way, and
+ * a turned console puts the two sides, the bar buttons and the header the other way round.
+ */
+async function sidesAndPopups(): Promise<void> {
+  const openers: Array<[string, string]> = [
+    ['recent', `[...document.querySelectorAll('header button')].find((x) => x.textContent.trim().startsWith('Recent'))`],
+    ['participants', OPENERS['roller'] as string],
+    ['bells', OPENERS['bells'] as string],
+    ['adjust', OPENERS['adjust'] as string],
+    ['add', OPENERS['add-menu'] as string],
+    ['screen', OPENERS['screen-menu'] as string],
+    ['slides', OPENERS['slides'] as string]
+  ]
+  const rects: Record<string, Record<string, number[]>> = {}
+  for (const flipped of [false, true]) {
+    const key = flipped ? 'flipped' : 'normal'
+    rects[key] = {}
+    for (const [name, opener] of openers) {
+      const state = sampleState(false, name === 'participants')
+      state.flipped = flipped
+      writeStub(state)
+      const win = new BrowserWindow({ show: false, width: 1024, height: 620, useContentSize: true, webPreferences: { preload: STUB, contextIsolation: true, sandbox: true, offscreen: true } })
+      await win.loadFile(path.join(ROOT, 'out', 'renderer', 'console.html'))
+      await wait(900)
+      const js = <T>(code: string): Promise<T> => win.webContents.executeJavaScript(code) as Promise<T>
+      // The bar buttons are always there; a pop-up opens from its button.
+      if (name === 'slides') {
+        await js(`(async () => { const b = await ${opener}; b.click() })()`)
+        await wait(400)
+        const panel = await js<number[] | null>(`(() => { const a = document.querySelector('aside'); if (!a) return null; const r = a.getBoundingClientRect(); return [r.left, r.right, innerWidth] })()`)
+        if (!panel) throw new Error('the slide panel did not open')
+        // Normal: at the left edge. Turned: at the right edge.
+        if (!flipped && panel[0] > 40) throw new Error(`the slide panel should be at the left edge: ${panel}`)
+        if (flipped && panel[2] - panel[1] > 40) throw new Error(`a turned console has the slide panel at the right edge: ${panel}`)
+        rects[key]['slides'] = panel
+      } else {
+        const ok = await js<boolean>(`(async () => { const b = await ${opener}; if (b) b.click(); return !!b })()`)
+        if (!ok) throw new Error(`${name} button not found`)
+        await wait(400)
+        const r = await js<number[] | null>(`(() => { const m = document.querySelector('div.absolute.z-20'); if (!m) return null; const r = m.getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom, innerWidth, innerHeight] })()`)
+        if (!r) throw new Error(`${name}: no pop-up in the ${key} console`)
+        if (r[0] < 0 || r[1] < 0 || r[2] > r[4] || r[3] > r[5]) throw new Error(`${name} pop-up leaves the window (${key}): ${JSON.stringify(r.map(Math.round))}`)
+        rects[key][name] = r
+        if (name === 'bells' || name === 'participants') fs.writeFileSync(path.join(OUT, `console-${key}-${name}.png`), (await win.webContents.capturePage()).toPNG())
+      }
+      if (name === 'participants') {
+        // Whole interface turned over: the header's first item is at the other end, the sides swap.
+        const g = await js<number[]>(`(() => { const x = (el) => el.getBoundingClientRect(); const h = x(document.querySelector('header span')); const cur = [...document.querySelectorAll('section')].find((s) => s.textContent.includes('Current slide')); const nxt = [...document.querySelectorAll('section')].find((s) => s.textContent.includes('Next slide')); return [h.left, innerWidth, x(cur).left, x(nxt).left] })()`)
+        if (!flipped && !(g[0] < g[1] / 2 && g[2] < g[3])) throw new Error(`normal console: brand left, current slide left of the next slide: ${JSON.stringify(g)}`)
+        if (flipped && !(g[0] > g[1] / 2 && g[2] > g[3])) throw new Error(`turned console: brand right, current slide right of the next slide: ${JSON.stringify(g)}`)
+      }
+      win.destroy()
+      await wait(200)
+    }
+  }
+  fs.writeFileSync(path.join(OUT, 'popup-rects.json'), JSON.stringify(rects, null, 1))
+  console.log('ok pop-ups stay inside the window at 1024 x 620 (normal and turned); a turned console swaps the sides and the slide panel')
 }
 
 app.whenReady().then(async () => {
@@ -590,6 +697,7 @@ app.whenReady().then(async () => {
   try {
     await inputs()
     await toolbarTimer()
+    await sidesAndPopups()
     await groupsShot()
     await consoleText()
     await timeEditing()

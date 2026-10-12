@@ -3,7 +3,7 @@ import type { AppState, UiTheme } from '../../../shared/types'
 import { useDarkLook } from './hooks'
 import { useT } from './i18n'
 import { RollerPanel } from './RollerPanel'
-import { Btn, IconLabel, Menu, MenuItem, type ConsoleMenu } from './ui'
+import { Btn, IconLabel, Menu, MenuItem, UiIcon, useFlipped, type ConsoleMenu } from './ui'
 
 function ProjectStatus({ state }: { state: AppState }) {
   const t = useT()
@@ -48,6 +48,23 @@ function ThemeSwitch({ theme }: { theme: AppState['theme'] }) {
   )
 }
 
+/** Swaps the left and the right side of the console (and the floating toolbar). */
+function FlipSwitch({ flipped }: { flipped: boolean }) {
+  const t = useT()
+  return (
+    <button
+      type="button"
+      aria-label={t.flipLabel}
+      aria-pressed={flipped}
+      title={t.flipTitle}
+      onClick={() => window.presenter.setFlipped(!flipped)}
+      className={`grid h-8 w-9 shrink-0 place-items-center rounded-full ${flipped ? 'bg-accent text-white' : 'bg-panel-2 text-ink hover:bg-line'}`}
+    >
+      <UiIcon name="swap" size={17} />
+    </button>
+  )
+}
+
 /** Something to show: the screen on air has a deck, or is a window screen. */
 function canProject(state: AppState): boolean {
   const onAir = state.outputs.find((o) => o.id === state.onAirId)
@@ -65,9 +82,10 @@ export function Header(props: {
 }) {
   const { state, jump, menu, onMenu, onGuide } = props
   const t = useT()
+  const flipped = useFlipped()
   const close = (): void => onMenu(null)
   return (
-    <header className="flex items-center gap-3 border-b border-line/70 bg-panel px-4 py-2.5">
+    <header className={`flex items-center gap-3 border-b border-line/70 bg-panel px-4 py-2.5 ${flipped ? 'flex-row-reverse' : ''}`}>
       <span className="text-[17px] font-semibold tracking-tight">Presenter</span>
       <span className="max-w-[22rem] truncate text-sm" title={state.mainDeck?.path}>
         {state.mainDeck?.name ?? t.noDeck}
@@ -110,6 +128,7 @@ export function Header(props: {
         <IconLabel icon="book">{t.guideButton}</IconLabel>
       </Btn>
       <ThemeSwitch theme={state.theme} />
+      <FlipSwitch flipped={state.flipped} />
       <ProjectStatus state={state} />
       {(state.projecting || state.projectors.length > 0) && (
         <Btn tone={state.blank ? 'primary' : 'default'} title={t.blankTitle} onClick={() => window.presenter.setBlank(state.blank ? null : 'black')}>

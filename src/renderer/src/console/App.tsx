@@ -10,7 +10,7 @@ import { SpeakerTimer } from './SpeakerTimer'
 import { TimerPanel } from './TimerPanel'
 import { WindowPicker } from './WindowPicker'
 import { useT } from './i18n'
-import { DeckStatusBar, type ConsoleMenu } from './ui'
+import { DeckStatusBar, FlipContext, type ConsoleMenu } from './ui'
 
 export function App() {
   const t = useT()
@@ -35,7 +35,43 @@ export function App() {
   const nothingOnProjector = !onAir && state.mainDeck !== null
   // Native deck views draw above the page, so they step aside while a menu or the guide is open.
   const suspended = menu !== null || guide || picker !== null
+  // Turned left to right: the slide panel is at the right edge, the right column on the left, the timers swapped.
+  const flipped = state.flipped
+  const panelOpen = !!bar && !!state.mainDeck
+  const columns = panelOpen
+    ? flipped
+      ? 'grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)_18rem]'
+      : 'grid-cols-[18rem_minmax(0,1.35fr)_minmax(0,1fr)]'
+    : flipped
+      ? 'grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]'
+      : 'grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]'
+  const panel = bar && state.mainDeck ? <SlidePanel state={state} open={bar} onClose={() => setBar(null)} /> : null
+  const current = nothingOnProjector ? (
+    <section className="grid min-h-0 place-items-center rounded-card border-2 border-dashed border-line bg-panel p-6 text-center text-base text-muted">{t.projector1Empty}</section>
+  ) : (
+    <CurrentPane state={state} projector={projector} mirror={mirror} suspended={suspended} bar={bar} onBar={setBar} onGuide={() => setGuide(true)} onPickWindow={() => setPicker('show')} />
+  )
+  const side = (
+    <div className="flex min-h-0 flex-col gap-3">
+      {state.mainDeck ? <NextPane state={state} next={next} suspended={suspended} /> : <div className="flex-1" />}
+      {/* Not about one slide: the two timers, side by side. */}
+      <div className="grid shrink-0 grid-cols-2 gap-3">
+        {flipped ? (
+          <>
+            <SpeakerTimer state={state} menu={menu} onMenu={setMenu} />
+            <TimerPanel state={state} menu={menu} onMenu={setMenu} />
+          </>
+        ) : (
+          <>
+            <TimerPanel state={state} menu={menu} onMenu={setMenu} />
+            <SpeakerTimer state={state} menu={menu} onMenu={setMenu} />
+          </>
+        )}
+      </div>
+    </div>
+  )
   return (
+    <FlipContext.Provider value={flipped}>
     <div
       className="flex h-full flex-col"
       onPointerDownCapture={() => {
@@ -44,25 +80,25 @@ export function App() {
     >
       <Header state={state} jump={jump} menu={menu} onMenu={setMenu} onGuide={() => setGuide(true)} />
       <DeckStatusBar status={state.deckStatus} />
-      <main className={`grid min-h-0 flex-1 gap-3 p-3 ${bar && state.mainDeck ? 'grid-cols-[18rem_minmax(0,1.35fr)_minmax(0,1fr)]' : 'grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]'}`}>
-        {bar && state.mainDeck && <SlidePanel state={state} open={bar} onClose={() => setBar(null)} />}
-        {nothingOnProjector ? (
-          <section className="grid min-h-0 place-items-center rounded-card border-2 border-dashed border-line bg-panel p-6 text-center text-base text-muted">{t.projector1Empty}</section>
+      <main className={`grid min-h-0 flex-1 gap-3 p-3 ${columns}`}>
+        {flipped ? (
+          <>
+            {side}
+            {current}
+            {panel}
+          </>
         ) : (
-          <CurrentPane state={state} projector={projector} mirror={mirror} suspended={suspended} bar={bar} onBar={setBar} onGuide={() => setGuide(true)} onPickWindow={() => setPicker('show')} />
+          <>
+            {panel}
+            {current}
+            {side}
+          </>
         )}
-        <div className="flex min-h-0 flex-col gap-3">
-          {state.mainDeck ? <NextPane state={state} next={next} suspended={suspended} /> : <div className="flex-1" />}
-          {/* Not about one slide: the two timers, side by side. */}
-          <div className="grid shrink-0 grid-cols-2 gap-3">
-            <TimerPanel state={state} menu={menu} onMenu={setMenu} />
-            <SpeakerTimer state={state} menu={menu} onMenu={setMenu} />
-          </div>
-        </div>
       </main>
       <ScreensBar state={state} menu={menu} onMenu={setMenu} onPickWindow={() => setPicker('wait')} />
       {guide && <GuideDialog onClose={closeGuide} />}
       {picker && <WindowPicker show={picker === 'show'} onClose={closePicker} />}
     </div>
+    </FlipContext.Provider>
   )
 }

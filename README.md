@@ -115,10 +115,12 @@ While a program window shown on a projector is in front, a small toolbar floats 
 
 - The mark tools. With a drawing tool you draw right on the window; the marks show on the projector over the window's picture. With the pointer, you use the window as usual.
 - While you draw on a window, the toolbar takes the keyboard: **Ctrl+Z** (⌘Z) undoes a mark, **Esc** returns to the pointer and gives the keyboard back to the window.
-- **Timer**: the shared timer. It shows the time left while it runs; click it for the timer's settings.
+- **Timer**: the shared timer. It shows the time left while it runs; click it to open the same two timer cards as in the console (the time is its own entry: double-click the minutes or seconds; **±**, the bells, the presets, My timer's modes). Their pop-ups open inside the toolbar.
 - **Roll**: picks a name; the name shows next to the button.
 - **Mine**: My timer's time, once you started it in the console.
-- **◂** folds the toolbar; drag **⠿** to move it.
+- **Screens ▾**: shows another content on Projector 1 (a deck, another program window, a whiteboard) without going to the console.
+- **Console**: brings the Presenter console to the front. The tools come back when you click the program window again.
+- **◂** folds the toolbar; drag **⠿** to move it. The toolbar always stays inside its display.
 
 The audience never sees the toolbar. It hides when you switch to the console or another program.
 
@@ -176,6 +178,10 @@ Click **Participants** (top bar). Choose a list and, under **Pick one**, click *
 ## Light or dark look
 
 **☀ / ☾** in the top bar switches the console and the floating toolbar between a light and a dark look. Presenter remembers the choice; until you choose, it follows the computer's setting. The projector does not change.
+
+## Swap the sides
+
+The **⇄** button in the top bar turns the whole console left to right: the current slide and the next slide change sides, the slide bar comes in from the right, the two timers and the top and bottom rows swap, and pop-ups open towards the other side. The floating toolbar follows. Presenter remembers the side. Use it when the projector or the lectern is on your other side.
 
 ## Text size
 

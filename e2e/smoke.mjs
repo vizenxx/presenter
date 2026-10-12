@@ -192,6 +192,14 @@ try {
   await waitFor('dark look again', (s) => s.theme === 'dark')
   console.log('ok 7c light and dark look')
 
+  // 7c2. The console turned left to right: kept in the state and saved; turned back.
+  await call(() => globalThis.__presenter.setFlipped(true))
+  await waitFor('console turned', (s) => s.flipped === true)
+  assert.equal(JSON.parse(fs.readFileSync(path.join(USER_DATA, 'layout.json'), 'utf8')).flipped, true, 'the side is saved')
+  await call(() => globalThis.__presenter.setFlipped(false))
+  await waitFor('console turned back', (s) => s.flipped === false)
+  console.log('ok 7c2 console turned left to right, saved, turned back')
+
   // 7d. Marking keys on a slide and on the floating toolbar: Ctrl+Z undoes, Esc leaves the drawing tool.
   const keyTo = (target, keyCode, modifiers = []) =>
     call((_electron, a) => {
