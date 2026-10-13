@@ -55,6 +55,7 @@ public static class PresenterWin {
   [DllImport("user32.dll")] static extern bool EnumWindows(EnumProc f, IntPtr l);
   [DllImport("user32.dll")] static extern bool IsWindowVisible(IntPtr h);
   [DllImport("user32.dll")] static extern bool IsIconic(IntPtr h);
+  [DllImport("user32.dll")] static extern bool IsZoomed(IntPtr h);
   [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int GetWindowText(IntPtr h, StringBuilder s, int n);
   [DllImport("user32.dll")] static extern int GetWindowTextLength(IntPtr h);
   [DllImport("user32.dll")] static extern IntPtr GetWindow(IntPtr h, uint cmd);
@@ -125,6 +126,20 @@ public static class PresenterWin {
     }
     return "{\\"fg\\":" + GetForegroundWindow().ToInt64() + ",\\"w\\":[" + string.Join(",", items) + "]}";
   }
+  // Windows this helper maximized itself: only those are put back.
+  static readonly HashSet<long> filled = new HashSet<long>();
+  public static void Fill(long value) {
+    IntPtr h = new IntPtr(value);
+    if (IsIconic(h)) ShowWindow(h, 9);
+    if (!IsZoomed(h)) {
+      ShowWindow(h, 3);
+      filled.Add(value);
+    }
+  }
+  public static void Release(long value) {
+    IntPtr h = new IntPtr(value);
+    if (filled.Remove(value) && IsZoomed(h)) ShowWindow(h, 9);
+  }
   public static void Restore(long value) {
     IntPtr h = new IntPtr(value);
     if (IsIconic(h)) ShowWindow(h, 4);
@@ -186,6 +201,21 @@ export class WindowsHelper {
   raise(sourceId: string): void {
     const handle = windowHandle(sourceId)
     if (handle !== null && this.available()) this.send(this.isMac() ? `raise ${handle}` : `[PresenterWin]::Raise(${handle})`)
+  }
+
+  /**
+   * Windows: the window fills its screen (maximized), so that the picture the projector gets has
+   * as many pixels as the screen has: a small window would be enlarged and look soft. Only a
+   * window that was not maximized is changed, and release puts it back as it was.
+   */
+  fill(sourceId: string): void {
+    const handle = windowHandle(sourceId)
+    if (handle !== null && process.platform === 'win32') this.send(`[PresenterWin]::Fill(${handle})`)
+  }
+
+  release(sourceId: string): void {
+    const handle = windowHandle(sourceId)
+    if (handle !== null && process.platform === 'win32') this.send(`[PresenterWin]::Release(${handle})`)
   }
 
   private isMac(): boolean {

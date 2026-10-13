@@ -317,6 +317,7 @@ export class Store {
     const on = this.shownOn(o)
     if (on === 1 && this.hasContent(this.projector())) this.showOn('projector', 1)
     else if (on !== null) this.showOn(id, null)
+    if (o.capture) this.windows.release(o.capture.sourceId)
     this.outputs.delete(id)
     if (this.selectedId === id) this.setSelected('projector')
     if (this.previewOfId === id) this.previewOfId = 'projector'
@@ -476,7 +477,17 @@ export class Store {
     else o.view.setVisible(false)
     if (from === 1 || to === 1) this.afterStageChange()
     // A window shown on a projector comes to the front (restored if minimized), ready to use.
-    if (to !== null && o.capture) this.windows.raise(o.capture.sourceId)
+    if (to !== null && o.capture) {
+      this.windows.raise(o.capture.sourceId)
+      // It fills the laptop screen, so the projector gets all its pixels (put back when it leaves the projector).
+      this.windows.fill(o.capture.sourceId)
+    }
+    // A window that is no longer on a projector goes back to its own size.
+    if (to === null && o.capture) this.windows.release(o.capture.sourceId)
+    if (replaced && replaced !== o.id) {
+      const waiting = this.outputs.get(replaced)
+      if (waiting?.capture) this.windows.release(waiting.capture.sourceId)
+    }
     this.sendInkSettings()
     this.emit()
   }

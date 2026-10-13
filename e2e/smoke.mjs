@@ -657,6 +657,15 @@ try {
       if (!raised) await sleep(200)
     }
     assert.ok(raised, 'the window came to the front')
+    // On Windows it fills the screen while a projector shows it (all the pixels for the projector).
+    if (process.platform === 'win32') {
+      let filled = false
+      for (let i = 0; i < 25 && !filled; i++) {
+        filled = await call(() => globalThis.__e2eWin.isMaximized())
+        if (!filled) await sleep(200)
+      }
+      assert.ok(filled, 'the window fills the screen while it is shown on a projector')
+    }
 
     // 17. Floating tools over the program window in front: the toolbar and the ink pad come up,
     // the pad lies on the window, marks belong to the window, and all of it hides behind the console.
@@ -756,6 +765,14 @@ try {
     await call((_e, id) => globalThis.__presenter.removeScreen(id), wid)
     s = await state()
     assert.equal(s.onAirId, 'projector', 'removing it puts screen 1 back')
+    if (process.platform === 'win32') {
+      let back = false
+      for (let i = 0; i < 25 && !back; i++) {
+        back = !(await call(() => globalThis.__e2eWin.isMaximized()))
+        if (!back) await sleep(200)
+      }
+      assert.ok(back, 'the window goes back to its own size when it leaves the projector')
+    }
     // The start screen's choice: a program window as the content shown on Projector 1 at once.
     await call((_e, w) => globalThis.__presenter.addWindowScreen(w.id, w.name, true), src)
     s = await waitFor('window straight onto Projector 1', (s) => s.outputs.some((o) => o.kind === 'capture' && o.id === s.onAirId))

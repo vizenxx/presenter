@@ -105,7 +105,7 @@ The **Guide** in the app has the same help in two parts: **1 · Use Presenter** 
 ## Program windows
 
 - **＋ Add screen → A window on this computer** (or **Show a program window…** on the start screen) lists every program window, minimized ones too, as in Zoom.
-- The real window stays on your laptop, where you use it as usual; the projector shows it live.
+- The real window stays on your laptop, where you use it as usual; the projector shows it live. On Windows the window fills your laptop screen while a projector shows it (it is maximized, so the projector gets all the pixels of the screen and the picture stays sharp); when it leaves the projector it goes back to its own size.
 - Adding a window or clicking its card does not move the window. Choosing a projector for it brings it to the front (restored if it was minimized).
 - Page turns and notes do not apply to a window. **✕** on its card removes it.
 - On a Mac this needs Screen Recording, and Accessibility for the exact window (see **Open → Mac**). Windows on another desktop Space count as minimized.
