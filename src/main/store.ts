@@ -277,14 +277,21 @@ export class Store {
     const prepared = sameDeck ? this.mainPrepared : await this.prepare(deck)
     if (!prepared) return
     if (!sameDeck) this.remember(deck)
+    const first = this.nothingOnAir()
     const n = this.screenSeq++
     const id = `screen-${n}`
-    // A new content waits (it opens no window); its card's projector menu shows it somewhere.
+    // A new content waits (it opens no window); its card's projector menu shows it somewhere. The very first content goes on Projector 1.
     const o = this.createOutput(id, n, 'window', sameDeck ? this.projector().index : (resumePage(deck.path) ?? 0))
     o.followsMain = sameDeck
     o.setZoomPercent(zoomFor(deck.path))
     o.load(deck, prepared)
+    if (first) this.showOn(id, 1)
     this.emit()
+  }
+
+  /** True while Projector 1 shows nothing yet: no main deck and no other content on it. */
+  private nothingOnAir(): boolean {
+    return this.onAirId === 'projector' && !this.hasContent(this.projector())
   }
 
   /** Play or pause a video or sound of the slide on Projector 1 (PPT decks). */
@@ -301,13 +308,14 @@ export class Store {
     const deck = this.toDeck(whiteboardFile())
     const prepared = await this.prepare(deck)
     if (!prepared) return
+    const first = this.nothingOnAir()
     const n = this.screenSeq++
     const id = `screen-${n}`
     const o = this.createOutput(id, n, 'window', 0)
     o.followsMain = false
     o.linked = false
     o.load(deck, prepared)
-    if (show) this.showOn(id, 1)
+    if (show || first) this.showOn(id, 1)
     this.emit()
   }
 
@@ -338,8 +346,14 @@ export class Store {
     if (id === 'projector') {
       if (spec.kind === 'dialog') await this.openDialog()
       else if (spec.kind === 'deck') await this.openMainDeck(spec.path)
-      else if (spec.kind === 'whiteboard') await this.addWhiteboard(true)
-      else this.addWindowScreen(spec.sourceId, spec.name, true)
+      else if (spec.kind === 'whiteboard') {
+        await this.addWhiteboard(true)
+        this.closeMainDeck()
+      } else {
+        // The window takes Projector 1 and Screen 1's place: the main deck is closed (Recent brings it back).
+        this.addWindowScreen(spec.sourceId, spec.name, true)
+        this.closeMainDeck()
+      }
       return
     }
     const was = this.shownOn(o)
@@ -355,6 +369,12 @@ export class Store {
       if (!deck) return
       const prepared = await this.prepare(deck)
       if (!prepared || this.outputs.get(id) !== o) return
+      if (!board && !this.mainDeck && o.kind === 'capture') {
+        // No main deck yet: this deck becomes Screen 1 (with the next preview, notes and slide list), and the window card goes.
+        await this.openMainDeck(deck.path)
+        this.removeScreen(id)
+        return
+      }
       if (!board) this.remember(deck)
       const start = board ? 0 : (resumePage(deck.path) ?? 0)
       if (o.kind === 'window') {
@@ -384,6 +404,26 @@ export class Store {
     if (was !== null) this.showOn(added, was)
     this.select(added)
     this.removeScreen(id)
+  }
+
+  /** Screen 1 gives up its deck (another content took its place). Copies of it keep their own deck. */
+  private closeMainDeck(): void {
+    if (!this.mainDeck) return
+    this.mainDeck = null
+    this.mainPrepared = null
+    this.applyInk('projector', { t: 'clear' }, 'main')
+    this.inkPages.delete('projector')
+    for (const o of this.outputs.values()) if (o.followsMain) o.followsMain = false
+    this.projector().unload()
+    this.setResumed(null)
+    this.followPreview(true)
+    this.emit()
+  }
+
+  /** The card's window icon: that program window comes to the front again (its floating tools come back with it). */
+  raiseWindow(id: OutputId): void {
+    const o = this.outputs.get(id)
+    if (o?.capture) this.windows.raise(o.capture.sourceId)
   }
 
   /**
@@ -540,6 +580,7 @@ export class Store {
   /** A window screen: another program's window, shown live on the projector (like screen sharing). */
   addWindowScreen(sourceId: string, name: string, show = false): void {
     if (!/^window:/.test(sourceId)) return
+    const first = this.nothingOnAir()
     const n = this.screenSeq++
     const id = `window-${n}`
     const o = this.createOutput(id, n, 'capture', 0)
@@ -554,8 +595,8 @@ export class Store {
       this.askedAccessibility = true
       systemPreferences.isTrustedAccessibilityClient(true)
     }
-    // From the start screen (no deck yet) it is the first content: straight onto Projector 1.
-    if (show) this.showOn(id, 1)
+    // The very first content (from the start screen, or the first one added) goes straight onto Projector 1.
+    if (show || first) this.showOn(id, 1)
     this.emit()
   }
 

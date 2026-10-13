@@ -452,6 +452,16 @@ try {
   await call((_e, id) => globalThis.__presenter.removeScreen(id), swap.id)
   console.log('ok 8g a screen takes another content in place')
 
+  // 8h. Screen 1 replaced by another content: the main deck is closed and the content is on Projector 1; a deck reopens as Screen 1.
+  await call(() => globalThis.__presenter.replaceScreen('projector', { kind: 'whiteboard' }))
+  s = await waitFor('Screen 1 replaced by a whiteboard', (s) => s.mainDeck === null && s.outputs.some((o) => o.id === s.onAirId && o.deck?.name === 'Whiteboard'), 20000)
+  assert.equal(s.outputs.find((o) => o.id === 'projector').deck, null, 'Screen 1 holds no deck any more')
+  await call((_e, p) => globalThis.__presenter.replaceScreen('projector', { kind: 'deck', path: p }), UXD_DECK)
+  s = await waitFor('the deck is Screen 1 again', (s) => s.mainDeck !== null && s.onAirId === 'projector', 60000)
+  const boardAgain = s.outputs.find((o) => o.deck?.name === 'Whiteboard')
+  if (boardAgain) await call((_e, id) => globalThis.__presenter.removeScreen(id), boardAgain.id)
+  console.log('ok 8h Screen 1 replaced by a whiteboard, then by a deck again')
+
   // 8e. Random groups: everyone once, sizes differ by at most one.
   await call(() => globalThis.__presenter.rollerGroups(3))
   s = await waitFor('groups made', (s) => Array.isArray(s.roller.groups) && s.roller.groups.length === 3)
@@ -758,6 +768,15 @@ try {
       if (!toolsGone) await sleep(150)
     }
     assert.ok(toolsGone, 'tools hide when the console is in front')
+    // The window card's icon brings the window back, and the floating tools with it.
+    await call((_e, id) => globalThis.__presenter.raiseWindow(id), wid)
+    let toolsBack = false
+    for (let i = 0; i < 30 && !toolsBack; i++) {
+      toolsBack = await toolsShown()
+      if (!toolsBack) await sleep(200)
+    }
+    assert.ok(toolsBack, 'the window card icon brings the window and its floating tools back')
+    await call(() => globalThis.__presenter.consoleWin.win.focus())
     console.log('ok 17 floating tools: over the window in front, pad on the window, marks on the window, hidden behind the console')
     await call(() => globalThis.__presenter.startProjecting())
     assert.equal(await call((_e, id) => globalThis.__presenter.projectorWin.content === globalThis.__presenter.outputs.get(id).view, wid), true, 'projector window shows the window screen')

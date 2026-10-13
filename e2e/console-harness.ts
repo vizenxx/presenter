@@ -13,7 +13,7 @@ const OUT = path.join(ROOT, 'e2e', 'out')
 const STUB = path.join(OUT, 'harness', 'console-stub-preload.cjs')
 const AI_REQUEST = aiRequestText(fs.readFileSync(path.join(ROOT, 'docs', 'ai-integration.md'), 'utf8'))
 /** Every ConsoleApi method (contextBridge copies plain objects only, so no Proxy). */
-const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "focusConsole", "listWindows", "addWindowScreen", "setTheme", "setFlipped", "dismissResumed", "replaceScreen", "switchTo", "timerWarnings", "speakerAdjust", "timerAdjust", "timerSet", "speakerPeriods", "setBlank", "savePicture", "addWhiteboard", "rollerGroups", "rollerClearGroups", "mediaToggle"]
+const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "focusConsole", "listWindows", "addWindowScreen", "setTheme", "setFlipped", "dismissResumed", "replaceScreen", "switchTo", "raiseWindow", "timerWarnings", "speakerAdjust", "timerAdjust", "timerSet", "speakerPeriods", "setBlank", "savePicture", "addWhiteboard", "rollerGroups", "rollerClearGroups", "mediaToggle"]
 
 app.disableHardwareAcceleration()
 // Each screenshot closes its window; keep the app alive between them.
@@ -715,7 +715,12 @@ async function screenNameMenu(): Promise<void> {
   const calls = (await js<unknown[][]>('window.presenter.__calls()')).filter((c) => c[0] === 'replaceScreen')
   const kinds = calls.map((c) => `${c[1]}:${(c[2] as { kind: string }).kind}`)
   if (kinds.join(',') !== 'screen-2:whiteboard,screen-2:deck') throw new Error(`replaceScreen calls: ${JSON.stringify(kinds)}`)
-  console.log('ok a screen name opens a list: deck, program window, whiteboard, Recent; each replaces that screen')
+  // A window card has an icon that brings that window back to the front.
+  const raised = await js<boolean>(`(() => { const b = [...document.querySelectorAll('footer button')].find((x) => x.title.startsWith('Bring this window back')); if (b) b.click(); return !!b })()`)
+  if (!raised) throw new Error('a window card has no way to bring its window back')
+  const raise = (await js<unknown[][]>('window.presenter.__calls()')).filter((c) => c[0] === 'raiseWindow')
+  if (raise.length !== 1) throw new Error(`raiseWindow calls: ${JSON.stringify(raise)}`)
+  console.log('ok a screen name opens a list: deck, program window, whiteboard, Recent; each replaces that screen; a window card can bring its window back')
   win.destroy()
   await wait(300)
 }

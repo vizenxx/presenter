@@ -36,6 +36,7 @@ const api: ConsoleApi = {
   dismissResumed: () => ipcRenderer.send('console:dismiss-resumed'),
   replaceScreen: (id, spec) => ipcRenderer.send('console:replace-screen', id, spec),
   switchTo: (id) => ipcRenderer.send('console:switch-to', id),
+  raiseWindow: (id) => ipcRenderer.send('console:raise-window', id),
   setBlank: (kind) => ipcRenderer.send('console:set-blank', kind),
   toolbarSize: (width, height) => ipcRenderer.send('console:toolbar-size', width, height),
   focusConsole: () => ipcRenderer.send('console:focus'),

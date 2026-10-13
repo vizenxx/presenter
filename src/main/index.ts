@@ -48,6 +48,7 @@ function wireIpc(store: Store): void {
   ipcMain.on('console:set-flipped', (_e, flipped: boolean) => store.setFlipped(flipped === true))
   ipcMain.on('console:dismiss-resumed', () => store.dismissResumed())
   ipcMain.on('console:switch-to', (_e, id: string) => store.switchTo(String(id)))
+  ipcMain.on('console:raise-window', (_e, id: string) => store.raiseWindow(String(id)))
   ipcMain.on('console:replace-screen', (_e, id: string, spec: unknown) => {
     const s = (spec ?? {}) as { kind?: unknown; path?: unknown; sourceId?: unknown; name?: unknown }
     const target = String(id)

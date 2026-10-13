@@ -78,7 +78,7 @@ export function CurrentPane(props: {
   const { state, projector, mirror, suspended, bar, onBar, onGuide, onPickWindow } = props
   const t = useT()
   const flipped = useFlipped()
-  if (!state.mainDeck && projector.kind !== 'capture') return <EmptyState state={state} onGuide={onGuide} onPickWindow={onPickWindow} />
+  if (!state.mainDeck && projector.deck === null && projector.kind !== 'capture') return <EmptyState state={state} onGuide={onGuide} onPickWindow={onPickWindow} />
   const selected = state.selectedId === projector.id
   const aspect = state.projectorSize.width / Math.max(1, state.projectorSize.height)
   return (
@@ -119,7 +119,7 @@ export function CurrentPane(props: {
         </ViewSlot>
       )}
       <div className={`mt-2 flex min-w-0 items-center gap-3 ${flipped ? 'flex-row-reverse' : ''}`}>
-        <BarButtons open={bar} onOpen={onBar} />
+        {state.mainDeck && <BarButtons open={bar} onOpen={onBar} />}
         <span className="shrink-0 text-sm text-muted">
           <PageText o={projector} />
           {projector.steps && (

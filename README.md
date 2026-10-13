@@ -98,7 +98,9 @@ The **Guide** in the app has the same help in two parts: **1 · Use Presenter** 
 - A projector shows one content at a time. The content it showed before waits and **keeps its page**, so you can switch back and go on where you were.
 - The same menu has **full screen** and **close** for Projector 2, 3 …. Closing a projector lets its content wait.
 - **Clicking a card only selects it**: page keys, Next slide and Notes follow it, and the audience keeps seeing the same thing. Use this to look through a waiting deck quietly.
-- Click a card's **name** (it has a ▾) to change what it holds: **Open a deck…**, **A program window…**, **Whiteboard**, or a deck from **Recent**. The card keeps its place and its projector. On Screen 1 a deck replaces the main deck; a window or a whiteboard goes on Projector 1 as a new card.
+- Click a card's **name** (it has a ▾) to change what it holds: **Open a deck…**, **A program window…**, **Whiteboard**, or a deck from **Recent**. The card keeps its place and its projector. On Screen 1 a deck replaces the main deck; a program window or a whiteboard takes Screen 1's place and Projector 1, and the old deck is closed (it is in **Recent**).
+- The very first content you add (a program window, a whiteboard or a deck) goes on Projector 1 at once; later ones wait.
+- A program window's card has a small **window icon** (↗): it brings that window back to the front on your laptop, with its floating tools. Use it after the toolbar's **Console** button.
 - A deck card's **⋯** menu has text size and **Remove**; a window card has **✕**.
 - A green dot on the Projector button means the audience sees that content now.
 

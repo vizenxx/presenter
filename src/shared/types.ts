@@ -263,6 +263,8 @@ export interface ConsoleApi {
   dismissResumed(): void
   /** Puts another content in a screen's place (the card keeps its projector). */
   replaceScreen(id: OutputId, spec: ReplaceSpec): void
+  /** A window card's icon: that program window comes to the front. */
+  raiseWindow(id: OutputId): void
   /** From the floating toolbar: show this content on Projector 1 (a deck brings the console forward). */
   switchTo(id: OutputId): void
   /** Black or white projectors (null = show the slides again). The same kind again also shows them again. */

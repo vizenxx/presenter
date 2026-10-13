@@ -25,6 +25,7 @@ export const INK_ICONS = {
   clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/>',
   undo: '<path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 010 11H11"/>',
   console: '<rect x="5" y="5.5" width="14" height="10" rx="1.8"/><path d="M2.5 19.5h19"/>',
+  raise: '<rect x="3" y="7" width="13" height="13" rx="2"/><path d="M14 4h6v6"/><path d="M20 4l-9 9"/>',
   swap: '<path d="M4 8h15"/><path d="M15 4l4 4-4 4"/><path d="M20 16H5"/><path d="M9 12l-4 4 4 4"/>',
   clear: '<path d="M4 7h16"/><path d="M9.5 7V4h5v3"/><path d="M6.5 7l1 13h9l1-13"/>'
 } as const

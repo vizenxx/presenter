@@ -227,6 +227,23 @@ export class Output {
     this.emit({ type: 'changed' })
   }
 
+  /** Empties the screen: no deck any more (Screen 1, when its deck was replaced by another content). */
+  unload(): void {
+    this.deck = null
+    this.prepared = null
+    this.adapter = 'none'
+    this.total = null
+    this.slides = []
+    this.milestones = []
+    this.keysAt = 0
+    this.pendingTarget = null
+    this.media = null
+    this.steps = null
+    this.index = 0
+    void this.view.webContents.loadURL('about:blank')
+    this.emit({ type: 'changed' })
+  }
+
   /** Move to a logical index and drive the deck there. */
   moveTo(logical: number): void {
     // Another slide: its click steps are unknown until the deck reports them (a quick key must not

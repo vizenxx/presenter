@@ -168,6 +168,11 @@ function ScreenChip(props: { o: OutputView; state: AppState; menu: ConsoleMenu; 
         +
       </button>}
       {capture && (
+        <button type="button" title={t.raiseWindowTitle} aria-label={t.raiseWindowTitle} onClick={(e) => { stop(e); window.presenter.raiseWindow(o.id) }} className={SMALL_BTN}>
+          <UiIcon name="raise" size={15} />
+        </button>
+      )}
+      {capture && (
         <button type="button" title={t.removeWindowScreen} onClick={(e) => { stop(e); window.presenter.removeScreen(o.id) }} className={`${SMALL_BTN} text-muted`}>
           ✕
         </button>
