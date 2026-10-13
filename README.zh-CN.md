@@ -77,7 +77,7 @@ Presenter 是一个解压即用的文件夹。没有安装程序，也不需要�
 
 ## 翻页
 
-- 3 小时内重新打开同一份课件（例如演示时程序重开），会回到上次停的那一页，并显示提示和 **Go to slide 1** 按钮。超过 3 小时，从第 1 页开始。
+- 3 小时内重新打开同一份课件（例如演示时程序重开），会回到上次停的那一页。当前页上方会出现一个二选一：**Stay at slide N**（蓝色，留在这一页）或 **Go to slide 1**（回到第 1 页）。翻页也等于留在这一页；30 秒后选项自动消失。超过 3 小时，从第 1 页开始。
 
 - 翻页笔、方向键、PageUp / PageDown、空格键都可以翻页。Home 键回到第一页，End 键跳到最后一页。
 - **选中的卡片会翻页。** 它勾选了 **Linked** 时，所有勾选了 Linked 的卡片一起翻；没勾选时，只有它自己翻。
@@ -186,6 +186,12 @@ Presenter 是一个解压即用的文件夹。没有安装程序，也不需要�
 ## 字号
 
 **Text size**（Ctrl + / Ctrl − / Ctrl 0；Mac 用 ⌘）放大或缩小 HTML 课件，每次 5%，并按课件文件记住。按住 **A−** 或 **A+** 不放会快速加减。Projector 1 的字号在当前页上方，其他课件在卡片的 **⋯** 菜单里。PPT 和 PDF 按整页显示，字号对它们不适用。
+
+## 许可和隐私
+
+- Presenter 免费：可以使用、复制和分享。它自己的代码用 MIT 许可（[LICENSE](LICENSE)），不提供任何担保。
+- 它包含其他人的免费软件（Electron 和 Chromium、LibreOffice、PDF.js、React……），各自有自己的许可。清单在 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)，许可文件也在程序文件夹里。LibreOffice 的源代码在 https://www.libreoffice.org/download/source-code/。
+- Presenter 自己的代码不会发送任何东西：没有账号、没有使用统计、没有检查更新。你的课件留在你的电脑里。（你打开的课件本身可能像在浏览器里一样自己联网。）
 
 ## 常见问题
 

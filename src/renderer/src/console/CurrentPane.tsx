@@ -95,6 +95,22 @@ export function CurrentPane(props: {
         </div>
       </div>
       <InkToolbar ink={state.ink} enabled={projector.deck !== null && projector.adapter !== 'loading'} />
+      {state.resumedAt !== null && (
+        // A deck opened again within 3 hours stands on the slide it showed last: the two ways on, side by side, right above the slide.
+        <div role="group" aria-label={t.resumedAsk} title={t.resumedTitle} className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl bg-accent/10 p-2 pl-4 ring-1 ring-accent/40">
+          <span className="min-w-0 flex-1 text-sm font-semibold text-ink">{t.resumedAsk}</span>
+          <span className="flex shrink-0 gap-2">
+            <button type="button" onClick={() => window.presenter.dismissResumed()} className="flex w-48 flex-col items-center rounded-xl bg-accent px-4 py-1.5 text-white hover:bg-accent-strong">
+              <span className="text-sm font-semibold">{t.resumedStay(state.resumedAt + 1)}</span>
+              <span className="text-sm opacity-85">{t.resumedStayHint}</span>
+            </button>
+            <button type="button" onClick={() => goToSlide(0, state.onAirId ?? 'projector')} className="flex w-48 flex-col items-center rounded-xl bg-panel-2 px-4 py-1.5 text-ink ring-2 ring-line hover:bg-line">
+              <span className="text-sm font-semibold">{t.resumedFirst}</span>
+              <span className="text-sm text-muted">{t.resumedFirstHint}</span>
+            </button>
+          </span>
+        </div>
+      )}
       {state.projecting ? (
         <MirrorView aspect={aspect} ink={state.ink} fallback={mirror} />
       ) : (
@@ -127,14 +143,6 @@ export function CurrentPane(props: {
                 </Btn>
               )
             })}
-          </span>
-        )}
-        {state.resumedAt !== null && (
-          <span className="flex shrink-0 items-center gap-1 rounded-full bg-accent/15 py-0.5 pr-0.5 pl-3 text-sm text-tint" title={t.resumedTitle}>
-            {t.resumed(state.resumedAt + 1)}
-            <button type="button" onClick={() => goToSlide(0, state.onAirId ?? 'projector')} className="rounded-full px-2 py-0.5 hover:bg-accent/20">
-              {t.resumedFirst}
-            </button>
           </span>
         )}
         <Milestones state={state} index={projector.shownIndex} />

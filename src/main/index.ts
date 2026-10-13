@@ -46,6 +46,7 @@ function wireIpc(store: Store): void {
   ipcMain.on('console:timer-set', (_e, sec: number) => store.timerSet(sec))
   ipcMain.on('console:set-theme', (_e, theme: UiTheme) => store.setTheme(theme))
   ipcMain.on('console:set-flipped', (_e, flipped: boolean) => store.setFlipped(flipped === true))
+  ipcMain.on('console:dismiss-resumed', () => store.dismissResumed())
   ipcMain.on('console:set-blank', (_e, kind: 'black' | 'white' | null) => store.setBlank(kind === 'black' || kind === 'white' ? kind : null))
   ipcMain.on('console:toolbar-size', (_e, width: number, height: number) => store.toolbarSize(Number(width), Number(height)))
   ipcMain.on('console:focus', () => store.focusConsole())

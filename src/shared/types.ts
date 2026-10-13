@@ -256,6 +256,8 @@ export interface ConsoleApi {
   setTheme(theme: UiTheme): void
   /** Turns the console left to right (and back). */
   setFlipped(flipped: boolean): void
+  /** Closes the "opened again at slide n" choice and stays where the deck is. */
+  dismissResumed(): void
   /** Black or white projectors (null = show the slides again). The same kind again also shows them again. */
   setBlank(kind: 'black' | 'white' | null): void
   /** The floating toolbar page reports its size. */

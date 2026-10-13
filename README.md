@@ -77,7 +77,7 @@ The **Guide** in the app has the same help in two parts: **1 · Use Presenter** 
 
 ## Turn pages
 
-- A deck you open again within 3 hours (for example after a restart while presenting) opens on the slide it showed last; a note says so, with **Go to slide 1**. Later it opens on slide 1.
+- A deck you open again within 3 hours (for example after a restart while presenting) opens on the slide it showed last. A two-button choice above the current slide asks what you want: **Stay at slide N** (blue) or **Go to slide 1**. Turning a page also keeps the slide; the choice goes away after 30 seconds. Later than 3 hours it opens on slide 1.
 
 - A clicker, the arrow keys, PageUp / PageDown and Space turn pages. Home and End go to the first and last page.
 - **The selected card turns.** If it is **Linked**, every linked card turns with it; if not, it turns alone.
@@ -186,6 +186,12 @@ The **⇄** button in the top bar turns the whole console left to right: the cur
 ## Text size
 
 **Text size** (Ctrl + / Ctrl − / Ctrl 0; ⌘ on a Mac) enlarges an HTML deck in steps of 5 % and is remembered per deck file. Hold **A−** or **A+** to change it fast. It is above the current slide for Projector 1 and in a card's **⋯** menu for the others. PPT and PDF show whole pages, so it does not apply to them.
+
+## Licence and privacy
+
+- Presenter is free: use it, copy it and share it. Its own code is under the MIT Licence ([LICENSE](LICENSE)), with no warranty.
+- It contains other free software (Electron and Chromium, LibreOffice, PDF.js, React …), each with its own licence. They are listed in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md); the licence files are inside the app folder. LibreOffice's source code is at https://www.libreoffice.org/download/source-code/.
+- Presenter's own code sends nothing: no account, no usage statistics, no update check. Your decks stay on your computer. (A deck you open may connect to the internet by itself, as in a browser.)
 
 ## If something goes wrong
 

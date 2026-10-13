@@ -783,6 +783,11 @@ export class Store {
     this.emit()
   }
 
+  /** The teacher chose to stay where the deck was opened again. */
+  dismissResumed(): void {
+    if (this.resumed !== null) this.setResumed(null)
+  }
+
   navigate(action: NavAction): void {
     if (this.resumed !== null) this.setResumed(null)
     const selected = this.outputs.get(this.selectedId)

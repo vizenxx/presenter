@@ -33,6 +33,7 @@ const api: ConsoleApi = {
   timerSet: (sec) => ipcRenderer.send('console:timer-set', sec),
   setTheme: (theme) => ipcRenderer.send('console:set-theme', theme),
   setFlipped: (flipped) => ipcRenderer.send('console:set-flipped', flipped),
+  dismissResumed: () => ipcRenderer.send('console:dismiss-resumed'),
   setBlank: (kind) => ipcRenderer.send('console:set-blank', kind),
   toolbarSize: (width, height) => ipcRenderer.send('console:toolbar-size', width, height),
   focusConsole: () => ipcRenderer.send('console:focus'),

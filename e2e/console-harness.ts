@@ -13,7 +13,7 @@ const OUT = path.join(ROOT, 'e2e', 'out')
 const STUB = path.join(OUT, 'harness', 'console-stub-preload.cjs')
 const AI_REQUEST = aiRequestText(fs.readFileSync(path.join(ROOT, 'docs', 'ai-integration.md'), 'utf8'))
 /** Every ConsoleApi method (contextBridge copies plain objects only, so no Proxy). */
-const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "focusConsole", "listWindows", "addWindowScreen", "setTheme", "setFlipped", "timerWarnings", "speakerAdjust", "timerAdjust", "timerSet", "speakerPeriods", "setBlank", "savePicture", "addWhiteboard", "rollerGroups", "rollerClearGroups", "mediaToggle"]
+const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "focusConsole", "listWindows", "addWindowScreen", "setTheme", "setFlipped", "dismissResumed", "timerWarnings", "speakerAdjust", "timerAdjust", "timerSet", "speakerPeriods", "setBlank", "savePicture", "addWhiteboard", "rollerGroups", "rollerClearGroups", "mediaToggle"]
 
 app.disableHardwareAcceleration()
 // Each screenshot closes its window; keep the app alive between them.
@@ -692,11 +692,44 @@ async function sidesAndPopups(): Promise<void> {
   console.log('ok pop-ups stay inside the window at 1024 x 620 (normal and turned); a turned console swaps the sides and the slide panel')
 }
 
+/** A deck opened again: the two-button choice sits above the slide, the buttons are equal and clearly different. */
+async function resumeChoice(): Promise<void> {
+  const state = sampleState(false)
+  state.resumedAt = 6
+  writeStub(state)
+  const win = new BrowserWindow({ show: false, width: 1280, height: 760, useContentSize: true, webPreferences: { preload: STUB, contextIsolation: true, sandbox: true, offscreen: true } })
+  await win.loadFile(path.join(ROOT, 'out', 'renderer', 'console.html'))
+  await wait(1000)
+  const js = <T>(code: string): Promise<T> => win.webContents.executeJavaScript(code) as Promise<T>
+  const info = await js<{ stay: number[]; first: number[]; group: number[]; slot: number; stayClass: string; firstClass: string } | null>(`(() => {
+    const g = document.querySelector('[role=group][aria-label^="This deck was open before"]'); if (!g) return null
+    const bs = [...g.querySelectorAll('button')]; const r = (e) => { const b = e.getBoundingClientRect(); return [b.left, b.top, b.width, b.height] }
+    const slot = [...document.querySelectorAll('section')].find((s) => s.textContent.includes('Current slide')).querySelector('.aspect-video, [class*=bg-page]')
+    return { stay: r(bs[0]), first: r(bs[1]), group: r(g), slot: slot ? slot.getBoundingClientRect().top : -1, stayClass: bs[0].className, firstClass: bs[1].className } })()`)
+  if (!info) throw new Error('the resume choice is not shown')
+  const text = await js<string>(`document.querySelector('[role=group][aria-label^="This deck was open before"]').innerText`)
+  if (!text.includes('Stay at slide 7') || !text.includes('Go to slide 1')) throw new Error(`the two choices are not named: ${JSON.stringify(text)}`)
+  if (Math.abs(info.stay[2] - info.first[2]) > 2 || Math.abs(info.stay[3] - info.first[3]) > 2) throw new Error(`the two buttons differ in size: ${info.stay} / ${info.first}`)
+  if (!(info.stay[0] < info.first[0])) throw new Error('Stay is on the left, Go to slide 1 on the right')
+  if (info.stay[2] < 120 || info.stay[3] < 36) throw new Error(`the buttons are too small: ${info.stay}`)
+  if (info.stayClass === info.firstClass || !info.stayClass.includes('bg-accent')) throw new Error('the two buttons must look different (blue Stay, plain Go to slide 1)')
+  if (!(info.group[1] < info.slot)) throw new Error('the choice is not above the slide')
+  await js(`[...document.querySelectorAll('button')].find((b) => b.textContent.includes('Stay at slide 7')).click()`)
+  await js(`[...document.querySelectorAll('button')].find((b) => b.textContent.includes('Go to slide 1')).click()`)
+  const calls = (await js<unknown[][]>('window.presenter.__calls()')).map((c) => c[0])
+  if (!calls.includes('dismissResumed') || !calls.includes('navigate')) throw new Error(`Stay should dismiss and Go to slide 1 should navigate: ${JSON.stringify(calls)}`)
+  fs.writeFileSync(path.join(OUT, 'console-resume.png'), (await win.webContents.capturePage()).toPNG())
+  console.log('ok deck opened again: a clear two-button choice (Stay at slide N | Go to slide 1) above the slide')
+  win.destroy()
+  await wait(300)
+}
+
 app.whenReady().then(async () => {
   let code = 0
   try {
     await inputs()
     await toolbarTimer()
+    await resumeChoice()
     await sidesAndPopups()
     await groupsShot()
     await consoleText()
