@@ -33,9 +33,9 @@ Presenter 是一个解压即用的文件夹。没有安装程序，也不需要�
 
 | 区域 | 作用 |
 |---|---|
-| 顶部栏 | **Open deck**、**Recent**、**Participants**、**Guide**、**☀ / ☾**（浅色或深色界面）、**Black screen**、**▶ Start projecting** |
+| 顶部栏 | **Open deck**、**Recent**、**Participants**、**Guide**、**☀ / ☾**（浅色或深色界面）、**⇄**（左右互换）、**Black screen**、**▶ Start projecting** |
 | 当前页（左） | Projector 1 正在放的内容。投影前直接显示课件；投影时实时显示观众看到的画面。上方是标注工具；下方是页码和标题 |
-| Slides 和 Notes | 当前页下面那一行的最左边有两个按钮：**Slides**（页面列表，点一页就跳过去）和 **Notes**（当前页的讲者备注）。按钮在控制台最左边打开面板，再按同一个按钮关闭 |
+| Slides 和 Notes | 当前页下面那一行的最左边有两个按钮：**Slides**（页面列表，点一页就跳过去）和 **Notes**（当前页的讲者备注）。按钮在控制台最左边（左右互换后在最右边）打开面板，再按同一个按钮关闭 |
 | Next slide（右） | 选中卡片的下一页。点它可以继续往后翻看 |
 | Shared timer | 下一页下面的竖卡：共享计时器，观众在投影上能看到。双击分或秒就能改。**铃铛**：它的提醒铃。**±**：给它加减时间 |
 | My timer | 旁边的卡：你自己的计时器，只有你看得到 |
@@ -154,7 +154,7 @@ Presenter 是一个解压即用的文件夹。没有安装程序，也不需要�
 **My timer**（只有你看得到）
 
 - **Count up**（正计时）、**Count down**（倒计时）或 **From–to**（按实际时间），用来把握讲课节奏。它不会响铃。
-- **From–to**：点 **时钟** 按钮设时段（Sessions）：每个时段选星期（Mon … Sun），再用 12 小时制设开始和结束时间（时 : 分，选 **AM** 或 **PM**）；最多 6 个，同一天可以有两个；列表先按星期、再按开始时间排序。今天的时段开始后，My timer 自动倒数到结束；结束后 30 分钟内显示 **Over time**；下一个时段开始前显示“Starts at 2:00 PM”；今天没有时段了显示“No session now”。这个模式没有 Start 按钮。**±** 只改今天的结束时间。Presenter 会记住这些时段。
+- **From–to**：点 **时钟** 按钮设时段（Sessions）：每个时段选星期（Mon … Sun），再用 12 小时制设开始和结束时间（时 : 分，选 **AM** 或 **PM**）；最多 6 个，同一天可以有两个；列表先按星期、再按开始时间排序。今天的时段开始后，My timer 自动倒数到结束；结束后 30 分钟内显示 **Over time**；下一个时段开始前显示“Starts at 2:00 PM”；今天没有时段了显示“No session now”。这个模式没有 Start 按钮。**±** 只改今天的结束时间。Presenter 会记住这些时段。它的时间和共享计时器一样可以直接改：双击分或秒（倒计时没开始前只能改分钟）。时钟时间（From–to）自己会走，只能用 **±** 调整。
 - 倒计时过了零点会继续走，红色显示 **Over time**。
 - 计时中，浮动工具条上也会显示它的时间。
 
@@ -198,7 +198,7 @@ Presenter 是一个解压即用的文件夹。没有安装程序，也不需要�
 
 - 源码：`src/`。设计文档：`docs/specs/`。实施计划：`docs/superpowers/plans/`。
 - 常用命令：`npm run build`（构建）、`npm test`（单元测试）、`npm run e2e`（端到端测试，17 步）。只有一块屏幕时，它会弹出窗口、发出声音；接着第二块屏幕时，它隐藏、静音运行，并跳过投影步骤。它从不截取屏幕画面。`PRESENTER_E2E_HIDDEN=1 npm run e2e` 在只有一块屏幕时也隐藏、静音运行。
-- 不开窗口的检查：`npm run check:viewer`（PPT/PDF）、`npm run check:ink`（标注：画笔、框选、橡皮擦、箭头、Shift 形状、文字）、`npm run check:frameworks`（Reveal.js、remark、impress.js、Marp、普通 slide 网页、协议示例）、`npm run check:console`（深色和浅色界面的控制台排版、菜单、开始画面、浮动工具条及其计时器、计时器输入格打字、🔔 和 ± 弹出框、按住 A+）、`npm run check:start`（隐藏静音启动，逐个启动和 8 个同时启动）。
+- 不开窗口的检查：`npm run check:viewer`（PPT/PDF）、`npm run check:ink`（标注：画笔、框选、橡皮擦、箭头、Shift 形状、文字）、`npm run check:frameworks`（Reveal.js、remark、impress.js、Marp、普通 slide 网页、协议示例）、`npm run check:console`（深色和浅色界面的控制台排版、菜单、开始画面、浮动工具条及其计时器、计时器输入格打字、🔔 和 ± 弹出框、弹出层留在窗口内、左右互换、按住 A+）、`npm run check:start`（隐藏静音启动，逐个启动和 8 个同时启动）。
 - 真实转换测试：`PRESENTER_CONVERT_IT=libreoffice npm test`（或 `powerpoint`；Mac 上用 `keynote`）。
 - App 自带的 LibreOffice：`node scripts/libreoffice.mjs prepare` 下载官方版本（核对 SHA-256），只保留转换幻灯片需要的部分，放进 `vendor/`（加 `--from "C:/Program Files/LibreOffice"` 则改用已安装的副本）；`node scripts/libreoffice.mjs check` 用它转换一份带点击动画的测试课件。LibreOffice 使用 Mozilla Public License 2.0，它的许可文件随 App 一起提供。
 - 压缩包：`npm run dist:win`（Windows）、`npm run dist:mac`（只能在 Mac 上运行）；先运行 `prepare`。没有 Mac 时，在 GitHub 上运行 **Build app zips** 工作流（Actions 页面，或 `gh workflow run build.yml`；只推送不会自动运行），它生成三个压缩包，并替换这个版本的 Releases 页（说明文字：`.github/release-notes.md`）；测试构建时取消勾选 **publish**。发新版本时先改 `package.json` 里的 `version`。图标源文件：`build/icon.svg`。

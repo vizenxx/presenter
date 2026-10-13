@@ -294,7 +294,7 @@ const en = {
     ['Play a video of a PPT slide', '▶ Video under the current slide, or click the ▶ on the video (in the console before projecting, or on the projector). It plays where it stands on the slide.'],
     ['Draw on a blank board', '＋ Add screen → Whiteboard (or Whiteboard on the start screen): 30 blank pages; put it on Projector 1 and draw. Each page keeps its marks.'],
     ['Keep a slide with its marks', 'The camera button above the slide saves it as a picture (PNG), in the folder of the deck at first.'],
-    ['Read notes or jump to a slide', 'The Slides and Notes buttons, at the left of the slide’s row under the slide: Slides opens the slide list (click a slide to go there), Notes shows the speaker notes of the slide in view. The panel comes in at the left edge; click the same button again to close. Or type the slide number and press Enter.'],
+    ['Read notes or jump to a slide', 'The Slides and Notes buttons, at the left of the slide’s row under the slide: Slides opens the slide list (click a slide to go there), Notes shows the speaker notes of the slide in view. The panel comes in at the left edge (the right edge when the sides are swapped); click the same button again to close. Or type the slide number and press Enter.'],
     ['Time an activity', 'Shared timer: click 1 min, 5 min … (starts at once), or double-click the minutes or the seconds of its time, type a number and press Enter, then click Start. While it runs it keeps running while you type. The bell button (next to its name) sets warning bells, each with its own time and number of beeps; the last 5 seconds beep once a second; at zero it rings until any key.'],
     ['Time my own talk', 'My timer (beside the shared timer): count up, count down, or From–to (sessions with weekdays and AM/PM times in the clock button; it starts by itself). Only you see it; it makes no sound.'],
     ['Give more or less time', '± on the timer: set an amount, then − or +. After the shared timer rang, + makes it run again.'],
@@ -304,10 +304,11 @@ const en = {
     ['Change what the audience sees', 'On a card, click Not shown ▾ and choose Projector 1. What was there waits and keeps its page. Clicking the card itself only selects it (to look through it quietly).'],
     ['Use a second projector or TV', 'On a card, Projector ▾ → New projector. It opens full screen on a free display (else as a window); close it from the same menu.'],
     ['Type text on a slide', 'Pick Text (T). Click the slide and type: one line. Or drag a box: the text wraps inside it and gets smaller to fit. Click a text to change it; drag a text to move it. Esc ends the typing. Eraser and Undo remove a text like any mark. Not on a program window.'],
-    ['Mark on a program window', 'When a window shown on a projector is in front, a small toolbar floats on top: marks (drawn right on the window), the shared timer, Roll, and My timer’s time while it runs. The audience never sees the toolbar; ◂ folds it.'],
+    ['Mark on a program window', 'When a window shown on a projector is in front, a small toolbar floats on top: marks (drawn right on the window), the two timer cards, Roll, Screens (show another content on Projector 1) and Console (back to this console). The audience never sees the toolbar; ◂ folds it.'],
     ['Show a program window (browser, video …)', '＋ Add screen → A window on this computer (minimized windows are listed too). Choose a projector for it with Projector ▾: the window then comes to the front.'],
     ['Make the text bigger', `Text size (5 % a step; hold A− or A+ to go fast), or ${KEYS.mod} + / ${KEYS.mod} − (HTML decks).`],
-    ['Use a light or dark look', '☀ / ☾ in the top bar. Presenter remembers it. The projector does not change.']
+    ['Use a light or dark look', '☀ / ☾ in the top bar. Presenter remembers it. The projector does not change.'],
+    ['Swap the left and right sides', '⇄ in the top bar turns the whole console left to right (the floating toolbar follows). Click it again to turn it back. Presenter remembers it.']
   ] as string[][],
   guidePrepareIntro: 'Most decks need no preparation. Find your kind of deck:',
   guideKind: 'My deck is …',
