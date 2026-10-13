@@ -9,7 +9,7 @@ import { MAIN_STRINGS } from '../shared/lang'
 import { mergeRecent } from '../shared/recentList'
 import * as T from '../shared/timer'
 import { stepZoom, zoomKey, type ZoomDirection } from '../shared/zoom'
-import type { AppState, DeckRef, DeckStatus, KeyIntent, NavAction, OutputId, OutputKind, PreviewRect, RollerPlay, SpeakerTimerView, SpeakerMode, TimerView, UiTheme, WindowSource } from '../shared/types'
+import type { AppState, DeckRef, DeckStatus, KeyIntent, NavAction, OutputId, OutputKind, PreviewRect, ReplaceSpec, RollerPlay, SpeakerTimerView, SpeakerMode, TimerView, UiTheme, WindowSource } from '../shared/types'
 import type { GuideFile } from '../shared/guide'
 import { ConsoleWindow } from './consoleWindow'
 import { saveGuideFile } from './guide'
@@ -323,6 +323,78 @@ export class Store {
     this.followPreview()
     o.destroy()
     this.emit()
+  }
+
+  /**
+   * Changes what a screen holds. Screen 1 is the main deck: a deck replaces it, and a whiteboard or
+   * a program window goes on Projector 1 as a new screen. Another deck card takes a deck or a
+   * whiteboard in place (same card, same projector); a program window card, or a window as the new
+   * content, becomes a new card that takes over the old card's projector.
+   */
+  async replaceScreen(id: OutputId, spec: ReplaceSpec): Promise<void> {
+    const o = this.outputs.get(id)
+    if (!o || o.kind === 'preview') return
+    if (id === 'projector') {
+      if (spec.kind === 'dialog') await this.openDialog()
+      else if (spec.kind === 'deck') await this.openMainDeck(spec.path)
+      else if (spec.kind === 'whiteboard') await this.addWhiteboard(true)
+      else this.addWindowScreen(spec.sourceId, spec.name, true)
+      return
+    }
+    const was = this.shownOn(o)
+    const before = new Set(this.outputs.keys())
+    if (spec.kind === 'window') {
+      this.addWindowScreen(spec.sourceId, spec.name, false)
+    } else {
+      const board = spec.kind === 'whiteboard'
+      let deck: DeckRef | null
+      if (board) deck = this.toDeck(whiteboardFile())
+      else if (spec.kind === 'dialog') deck = await this.pickDeck(this.strings().pickScreenDeck)
+      else deck = deckKind(spec.path) ? this.toDeck(spec.path) : null
+      if (!deck) return
+      const prepared = await this.prepare(deck)
+      if (!prepared || this.outputs.get(id) !== o) return
+      if (!board) this.remember(deck)
+      const start = board ? 0 : (resumePage(deck.path) ?? 0)
+      if (o.kind === 'window') {
+        // The same card: the new content loads into it.
+        this.applyInk(id, { t: 'clear' }, 'main')
+        this.inkPages.delete(id)
+        o.followsMain = false
+        if (board) o.linked = false
+        o.index = start
+        o.setZoomPercent(zoomFor(deck.path))
+        o.load(deck, prepared)
+        this.select(id)
+        this.followPreview()
+        this.emit()
+        return
+      }
+      const n = this.screenSeq++
+      const created = this.createOutput(`screen-${n}`, n, 'window', start)
+      created.followsMain = false
+      if (board) created.linked = false
+      created.setZoomPercent(zoomFor(deck.path))
+      created.load(deck, prepared)
+    }
+    // A new card in the old card's place: it takes over its projector and selection; the old card goes.
+    const added = [...this.outputs.keys()].find((k) => !before.has(k))
+    if (!added) return
+    if (was !== null) this.showOn(added, was)
+    this.select(added)
+    this.removeScreen(id)
+  }
+
+  /**
+   * The floating toolbar's Screens menu: this content goes on Projector 1 and the console selects
+   * it. A program window comes forward by itself (showOn); for a deck the console comes forward.
+   */
+  switchTo(id: OutputId): void {
+    const o = this.outputs.get(id)
+    if (!o || o.kind === 'preview' || !this.hasContent(o)) return
+    this.showOn(id, 1)
+    this.select(id)
+    if (o.kind !== 'capture') this.focusConsole()
   }
 
   projectorFullscreen(n: number): void {

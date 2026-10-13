@@ -22,7 +22,7 @@ export function App() {
   const [guide, setGuide] = useState(false)
   const closeGuide = useCallback(() => setGuide(false), [])
   // 'wait' = the window becomes a waiting content (＋ Add screen); 'show' = the start screen's first content, on Projector 1.
-  const [picker, setPicker] = useState<'wait' | 'show' | null>(null)
+  const [picker, setPicker] = useState<'wait' | 'show' | `replace:${string}` | null>(null)
   const closePicker = useCallback(() => setPicker(null), [])
   const jump = useConsoleKeys(state?.timer.alarming ?? false, state?.ink.tool ?? 'pointer', !!state?.blank, !!state && (state.projecting || state.projectors.length > 0), !!state?.zoomed)
   useFileDrop()
@@ -95,9 +95,9 @@ export function App() {
           </>
         )}
       </main>
-      <ScreensBar state={state} menu={menu} onMenu={setMenu} onPickWindow={() => setPicker('wait')} />
+      <ScreensBar state={state} menu={menu} onMenu={setMenu} onPickWindow={() => setPicker('wait')} onReplaceWindow={(id) => setPicker(`replace:${id}`)} />
       {guide && <GuideDialog onClose={closeGuide} />}
-      {picker && <WindowPicker show={picker === 'show'} onClose={closePicker} />}
+      {picker && <WindowPicker show={picker === 'show'} replaceId={picker.startsWith('replace:') ? picker.slice('replace:'.length) : null} onClose={closePicker} />}
     </div>
     </FlipContext.Provider>
   )

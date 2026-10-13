@@ -442,6 +442,16 @@ try {
   await call((_e, id) => globalThis.__presenter.removeScreen(id), board.id)
   console.log('ok 8d whiteboard')
 
+  // 8g. Replace what a screen holds: the card keeps its place and its projector; a whiteboard takes over in place.
+  await call(() => globalThis.__presenter.addScreen(true))
+  s = await waitFor('another screen to change', (s) => s.outputs.some((o) => o.id.startsWith('screen-') && o.deck))
+  const swap = s.outputs.find((o) => o.id.startsWith('screen-') && o.deck)
+  await call((_e, id) => globalThis.__presenter.replaceScreen(id, { kind: 'whiteboard' }), swap.id)
+  s = await waitFor('the screen holds the whiteboard', (s) => s.outputs.some((o) => o.id === swap.id && o.deck?.name === 'Whiteboard' && o.total === 30), 20000)
+  assert.equal(s.selectedId, swap.id, 'the changed screen is selected')
+  await call((_e, id) => globalThis.__presenter.removeScreen(id), swap.id)
+  console.log('ok 8g a screen takes another content in place')
+
   // 8e. Random groups: everyone once, sizes differ by at most one.
   await call(() => globalThis.__presenter.rollerGroups(3))
   s = await waitFor('groups made', (s) => Array.isArray(s.roller.groups) && s.roller.groups.length === 3)

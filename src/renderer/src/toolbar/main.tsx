@@ -177,7 +177,8 @@ function Toolbar() {
                           key={o.id}
                           onClick={() => {
                             setMenu(null)
-                            window.presenter.showOn(o.id, 1)
+                            // A program window comes forward; a deck brings the console forward.
+                            window.presenter.switchTo(o.id)
                           }}
                         >
                           {o.id === state.onAirId ? '✓ ' : ''}

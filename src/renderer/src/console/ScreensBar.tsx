@@ -1,4 +1,4 @@
-import type { AppState, OutputView } from '../../../shared/types'
+import type { AppState, OutputView, ReplaceSpec } from '../../../shared/types'
 import { screenLabel, useT } from './i18n'
 import { Menu, MenuItem, UiIcon, ZoomControl, useFlipped, type ConsoleMenu } from './ui'
 
@@ -90,12 +90,17 @@ function PageShort({ o }: { o: OutputView }) {
 }
 
 /** One content, kept small: name, page, where it is shown, Linked, one-page moves; the rest sits in its ⋯ menu. */
-function ScreenChip(props: { o: OutputView; state: AppState; menu: ConsoleMenu; onMenu: (m: ConsoleMenu) => void }) {
-  const { o, state, menu, onMenu } = props
+function ScreenChip(props: { o: OutputView; state: AppState; menu: ConsoleMenu; onMenu: (m: ConsoleMenu) => void; onReplaceWindow: (id: string) => void }) {
+  const { o, state, menu, onMenu, onReplaceWindow } = props
   const t = useT()
   const selected = o.id === state.selectedId
   const capture = o.kind === 'capture'
   const menuId: ConsoleMenu = `screen:${o.id}`
+  const nameId: ConsoleMenu = `name:${o.id}`
+  const replace = (spec: ReplaceSpec): void => {
+    onMenu(null)
+    window.presenter.replaceScreen(o.id, spec)
+  }
   const stop = (e: { stopPropagation: () => void }): void => e.stopPropagation()
   const tip = capture ? t.windowCardTitle : [screenLabel(t, o), o.deck?.name, o.shownOn === 1 && !state.projecting ? t.notProjecting : ''].filter(Boolean).join(' · ')
   return (
@@ -104,8 +109,48 @@ function ScreenChip(props: { o: OutputView; state: AppState; menu: ConsoleMenu; 
       title={tip}
       className={`relative flex h-10 shrink-0 cursor-pointer items-center gap-1 rounded-full pr-1.5 pl-3.5 ${selected ? 'bg-accent/15 ring-2 ring-accent' : 'bg-panel-2'}`}
     >
-      {capture && <UiIcon name="window" size={15} />}
-      <span className="max-w-44 truncate text-sm font-semibold whitespace-nowrap">{screenLabel(t, o)}</span>
+      {/* The name opens a list: another deck (a file, or one from Recent), a program window, a whiteboard. */}
+      <span className="relative" onClick={stop}>
+        <button
+          type="button"
+          title={t.screenNameTitle}
+          onClick={() => {
+            window.presenter.select(o.id)
+            onMenu(menu === nameId ? null : nameId)
+          }}
+          className={`flex h-7 items-center gap-1.5 rounded-full px-1.5 text-sm font-semibold whitespace-nowrap hover:bg-line ${menu === nameId ? 'bg-line' : ''}`}
+        >
+          {capture && <UiIcon name="window" size={15} />}
+          <span className="max-w-44 truncate">{screenLabel(t, o)}</span>
+          <span className="text-muted">▾</span>
+        </button>
+        {menu === nameId && (
+          <Menu up width="w-96" onClose={() => onMenu(null)}>
+            <p className="px-3 pt-1 pb-1 text-sm text-muted">{t.screenNameHeading}</p>
+            <MenuItem onClick={() => replace({ kind: 'dialog' })}>{t.screenOpenDeck}</MenuItem>
+            <MenuItem
+              onClick={() => {
+                onMenu(null)
+                onReplaceWindow(o.id)
+              }}
+            >
+              {t.screenOpenWindow}
+            </MenuItem>
+            <MenuItem onClick={() => replace({ kind: 'whiteboard' })}>{t.screenOpenBoard}</MenuItem>
+            {state.recent.length > 0 && (
+              <>
+                <div className="my-1 h-px bg-line" />
+                <p className="px-3 pt-1 pb-1 text-sm text-muted">{t.recent}</p>
+                {state.recent.slice(0, 8).map((d) => (
+                  <MenuItem key={d.path} title={d.path} onClick={() => replace({ kind: 'deck', path: d.path })}>
+                    {d.name}
+                  </MenuItem>
+                ))}
+              </>
+            )}
+          </Menu>
+        )}
+      </span>
       {!capture && (
         <span className="min-w-12 px-1 text-center text-sm text-muted tabular-nums">
           <PageShort o={o} />
@@ -148,7 +193,7 @@ function ScreenChip(props: { o: OutputView; state: AppState; menu: ConsoleMenu; 
 }
 
 /** Multi-screen management. The next preview is not listed: it is selected by clicking its pane. */
-export function ScreensBar({ state, menu, onMenu, onPickWindow }: { state: AppState; menu: ConsoleMenu; onMenu: (m: ConsoleMenu) => void; onPickWindow: () => void }) {
+export function ScreensBar({ state, menu, onMenu, onPickWindow, onReplaceWindow }: { state: AppState; menu: ConsoleMenu; onMenu: (m: ConsoleMenu) => void; onPickWindow: () => void; onReplaceWindow: (id: string) => void }) {
   const t = useT()
   const flipped = useFlipped()
   const close = (): void => onMenu(null)
@@ -161,7 +206,7 @@ export function ScreensBar({ state, menu, onMenu, onPickWindow }: { state: AppSt
         // Screen 1 gets a card once a deck is open; before that a program window can be the first content.
         .filter((o) => o.kind !== 'preview' && !(o.kind === 'projector' && !o.deck))
         .map((o) => (
-          <ScreenChip key={o.id} o={o} state={state} menu={menu} onMenu={onMenu} />
+          <ScreenChip key={o.id} o={o} state={state} menu={menu} onMenu={onMenu} onReplaceWindow={onReplaceWindow} />
         ))}
       <span className="relative">
         <button

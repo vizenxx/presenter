@@ -98,6 +98,7 @@ The **Guide** in the app has the same help in two parts: **1 · Use Presenter** 
 - A projector shows one content at a time. The content it showed before waits and **keeps its page**, so you can switch back and go on where you were.
 - The same menu has **full screen** and **close** for Projector 2, 3 …. Closing a projector lets its content wait.
 - **Clicking a card only selects it**: page keys, Next slide and Notes follow it, and the audience keeps seeing the same thing. Use this to look through a waiting deck quietly.
+- Click a card's **name** (it has a ▾) to change what it holds: **Open a deck…**, **A program window…**, **Whiteboard**, or a deck from **Recent**. The card keeps its place and its projector. On Screen 1 a deck replaces the main deck; a window or a whiteboard goes on Projector 1 as a new card.
 - A deck card's **⋯** menu has text size and **Remove**; a window card has **✕**.
 - A green dot on the Projector button means the audience sees that content now.
 
@@ -118,7 +119,7 @@ While a program window shown on a projector is in front, a small toolbar floats 
 - **Timer**: the shared timer. It shows the time left while it runs; click it to open the same two timer cards as in the console (the time is its own entry: double-click the minutes or seconds; **±**, the bells, the presets, My timer's modes). Their pop-ups open inside the toolbar.
 - **Roll**: picks a name; the name shows next to the button.
 - **Mine**: My timer's time, once you started it in the console.
-- **Screens ▾**: shows another content on Projector 1 (a deck, another program window, a whiteboard) without going to the console.
+- **Screens ▾**: shows another content on Projector 1 (a deck, another program window, a whiteboard) without going to the console. A program window comes to the front by itself; for a deck the console comes to the front (and selects that card).
 - **Console**: brings the Presenter console to the front. The tools come back when you click the program window again.
 - **◂** folds the toolbar; drag **⠿** to move it. The toolbar always stays inside its display.
 

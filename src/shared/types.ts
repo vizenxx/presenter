@@ -175,6 +175,9 @@ export interface RollerPlay {
 /** The console's look. */
 export type UiTheme = 'light' | 'dark'
 
+/** What a screen can hold instead: a deck (file dialog, or a known path), a whiteboard, or a program window. */
+export type ReplaceSpec = { kind: 'dialog' } | { kind: 'deck'; path: string } | { kind: 'whiteboard' } | { kind: 'window'; sourceId: string; name: string }
+
 export interface AppState {
   outputs: OutputView[]
   selectedId: OutputId
@@ -258,6 +261,10 @@ export interface ConsoleApi {
   setFlipped(flipped: boolean): void
   /** Closes the "opened again at slide n" choice and stays where the deck is. */
   dismissResumed(): void
+  /** Puts another content in a screen's place (the card keeps its projector). */
+  replaceScreen(id: OutputId, spec: ReplaceSpec): void
+  /** From the floating toolbar: show this content on Projector 1 (a deck brings the console forward). */
+  switchTo(id: OutputId): void
   /** Black or white projectors (null = show the slides again). The same kind again also shows them again. */
   setBlank(kind: 'black' | 'white' | null): void
   /** The floating toolbar page reports its size. */

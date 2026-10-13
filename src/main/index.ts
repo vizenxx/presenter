@@ -47,6 +47,15 @@ function wireIpc(store: Store): void {
   ipcMain.on('console:set-theme', (_e, theme: UiTheme) => store.setTheme(theme))
   ipcMain.on('console:set-flipped', (_e, flipped: boolean) => store.setFlipped(flipped === true))
   ipcMain.on('console:dismiss-resumed', () => store.dismissResumed())
+  ipcMain.on('console:switch-to', (_e, id: string) => store.switchTo(String(id)))
+  ipcMain.on('console:replace-screen', (_e, id: string, spec: unknown) => {
+    const s = (spec ?? {}) as { kind?: unknown; path?: unknown; sourceId?: unknown; name?: unknown }
+    const target = String(id)
+    if (s.kind === 'dialog') void store.replaceScreen(target, { kind: 'dialog' })
+    else if (s.kind === 'whiteboard') void store.replaceScreen(target, { kind: 'whiteboard' })
+    else if (s.kind === 'deck' && typeof s.path === 'string') void store.replaceScreen(target, { kind: 'deck', path: s.path })
+    else if (s.kind === 'window' && typeof s.sourceId === 'string' && /^window:/.test(s.sourceId)) void store.replaceScreen(target, { kind: 'window', sourceId: s.sourceId, name: String(s.name ?? '') })
+  })
   ipcMain.on('console:set-blank', (_e, kind: 'black' | 'white' | null) => store.setBlank(kind === 'black' || kind === 'white' ? kind : null))
   ipcMain.on('console:toolbar-size', (_e, width: number, height: number) => store.toolbarSize(Number(width), Number(height)))
   ipcMain.on('console:focus', () => store.focusConsole())

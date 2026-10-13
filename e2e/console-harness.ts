@@ -13,7 +13,7 @@ const OUT = path.join(ROOT, 'e2e', 'out')
 const STUB = path.join(OUT, 'harness', 'console-stub-preload.cjs')
 const AI_REQUEST = aiRequestText(fs.readFileSync(path.join(ROOT, 'docs', 'ai-integration.md'), 'utf8'))
 /** Every ConsoleApi method (contextBridge copies plain objects only, so no Proxy). */
-const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "focusConsole", "listWindows", "addWindowScreen", "setTheme", "setFlipped", "dismissResumed", "timerWarnings", "speakerAdjust", "timerAdjust", "timerSet", "speakerPeriods", "setBlank", "savePicture", "addWhiteboard", "rollerGroups", "rollerClearGroups", "mediaToggle"]
+const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "focusConsole", "listWindows", "addWindowScreen", "setTheme", "setFlipped", "dismissResumed", "replaceScreen", "switchTo", "timerWarnings", "speakerAdjust", "timerAdjust", "timerSet", "speakerPeriods", "setBlank", "savePicture", "addWhiteboard", "rollerGroups", "rollerClearGroups", "mediaToggle"]
 
 app.disableHardwareAcceleration()
 // Each screenshot closes its window; keep the app alive between them.
@@ -146,7 +146,7 @@ async function shot(projecting: boolean, open: Open = null, page = 'console', th
     await wait(300)
   }
   if (open === 'media') {
-    const labels = await win.webContents.executeJavaScript(`[...document.querySelectorAll('button')].map((b) => b.textContent.trim()).filter((t) => /Video|Sound/.test(t))`)
+    const labels = await win.webContents.executeJavaScript(`[...document.querySelectorAll('button')].map((b) => b.textContent.trim()).filter((t) => /^(Video|Sound)( [0-9]+)?$/.test(t))`)
     if (labels.join('|') !== 'Video 1|Sound 2') throw new Error(`media buttons: ${JSON.stringify(labels)}`)
     await win.webContents.executeJavaScript(`[...document.querySelectorAll('button')].find((b) => b.textContent.includes('Sound 2')).click()`)
     const calls = await win.webContents.executeJavaScript('window.presenter.__calls()')
@@ -610,8 +610,8 @@ async function toolbarTimer(): Promise<void> {
   await wait(200)
   const picked = await js<boolean>(`(() => { const i = [...document.querySelectorAll('button')].find((x) => x.className.includes('group') && x.textContent.includes('Screen 2')); if (!i) return false; i.click(); return true })()`)
   if (!picked) throw new Error('the toolbar screen menu lists no Screen 2')
-  const shows = (await js<unknown[][]>('window.presenter.__calls()')).filter((c) => c[0] === 'showOn').map((c) => `${c[1]}:${c[2]}`)
-  if (shows.join(',') !== 'screen-2:1') throw new Error(`the toolbar should show Screen 2 on Projector 1: ${JSON.stringify(shows)}`)
+  const shows = (await js<unknown[][]>('window.presenter.__calls()')).filter((c) => c[0] === 'switchTo').map((c) => `${c[1]}`)
+  if (shows.join(',') !== 'screen-2') throw new Error(`the toolbar should switch to Screen 2: ${JSON.stringify(shows)}`)
   // The way back: one button asks for the console.
   await js(`[...document.querySelectorAll('button')].find((x) => x.title.startsWith('Back to the Presenter console')).click()`)
   if (!(await js<unknown[][]>('window.presenter.__calls()')).some((c) => c[0] === 'focusConsole')) throw new Error('the toolbar has no way back to the console')
@@ -692,6 +692,34 @@ async function sidesAndPopups(): Promise<void> {
   console.log('ok pop-ups stay inside the window at 1024 x 620 (normal and turned); a turned console swaps the sides and the slide panel')
 }
 
+/** The name of a screen opens a list: another deck, a program window, a whiteboard, or a deck from Recent. */
+async function screenNameMenu(): Promise<void> {
+  const state = sampleState(false)
+  writeStub(state)
+  const win = new BrowserWindow({ show: false, width: 1280, height: 760, useContentSize: true, webPreferences: { preload: STUB, contextIsolation: true, sandbox: true, offscreen: true } })
+  await win.loadFile(path.join(ROOT, 'out', 'renderer', 'console.html'))
+  await wait(1000)
+  const js = <T>(code: string): Promise<T> => win.webContents.executeJavaScript(code) as Promise<T>
+  const opened = await js<boolean>(`(() => { const b = [...document.querySelectorAll('footer button')].find((x) => x.title.startsWith('Change what this screen holds') && x.textContent.includes('Screen 2')); if (b) b.click(); return !!b })()`)
+  if (!opened) throw new Error('the screen name is not a button with a list')
+  await wait(300)
+  const items = await js<string[]>(`[...document.querySelectorAll('button.group')].map((b) => b.textContent.trim())`)
+  for (const want of ['Open a deck…', 'A program window…', 'Whiteboard']) if (!items.some((i) => i.startsWith(want))) throw new Error(`the screen list has no "${want}": ${JSON.stringify(items)}`)
+  if (items.length < 4) throw new Error(`the screen list should also list Recent decks: ${JSON.stringify(items)}`)
+  const rect = await js<number[]>(`(() => { const m = document.querySelector('div.absolute.z-20').getBoundingClientRect(); return [m.left, m.top, m.right, m.bottom, innerWidth, innerHeight] })()`)
+  if (rect[0] < 0 || rect[1] < 0 || rect[2] > rect[4] || rect[3] > rect[5]) throw new Error(`the screen list leaves the window: ${rect}`)
+  await js(`[...document.querySelectorAll('button.group')].find((b) => b.textContent.trim() === 'Whiteboard').click()`)
+  await js(`(() => { const b = [...document.querySelectorAll('footer button')].find((x) => x.title.startsWith('Change what this screen holds') && x.textContent.includes('Screen 2')); b.click() })()`)
+  await wait(200)
+  await js(`[...document.querySelectorAll('button.group')].find((b) => b.title && b.title.length > 0).click()`)
+  const calls = (await js<unknown[][]>('window.presenter.__calls()')).filter((c) => c[0] === 'replaceScreen')
+  const kinds = calls.map((c) => `${c[1]}:${(c[2] as { kind: string }).kind}`)
+  if (kinds.join(',') !== 'screen-2:whiteboard,screen-2:deck') throw new Error(`replaceScreen calls: ${JSON.stringify(kinds)}`)
+  console.log('ok a screen name opens a list: deck, program window, whiteboard, Recent; each replaces that screen')
+  win.destroy()
+  await wait(300)
+}
+
 /** A deck opened again: the two-button choice sits above the slide, the buttons are equal and clearly different. */
 async function resumeChoice(): Promise<void> {
   const state = sampleState(false)
@@ -730,6 +758,7 @@ app.whenReady().then(async () => {
     await inputs()
     await toolbarTimer()
     await resumeChoice()
+    await screenNameMenu()
     await sidesAndPopups()
     await groupsShot()
     await consoleText()
