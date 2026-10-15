@@ -12,6 +12,8 @@ interface SurfaceSettings extends InkSettings {
   projecting: boolean
   /** Only the screen on the projector shows and takes marks. */
   active: boolean
+  /** The ink pad only: false while the program window is not in front (the pad then lets every click through). */
+  catching?: boolean
 }
 
 const PALETTE_IDLE_MS = 2500
@@ -107,7 +109,7 @@ export function mountInkSurface(): void {
   const apply = (): void => {
     host.style.display = settings.active ? 'block' : 'none'
     // Text is typed on the slide only; the ink pad over a program window leaves the clicks to the window.
-    const drawing = settings.tool !== 'pointer' && !(isPad && settings.tool === 'text')
+    const drawing = settings.tool !== 'pointer' && !(isPad && settings.tool === 'text') && settings.catching !== false
     canvas.style.pointerEvents = drawing ? 'auto' : 'none'
     // The pad over a program window is a see-through window; Windows lets the mouse pass through
     // pixels that are fully transparent, so the program under it would get the clicks. While a

@@ -115,7 +115,7 @@ The **Guide** in the app has the same help in two parts: **1 · Use Presenter** 
 
 ### Floating tools
 
-While a program window shown on a projector is in front, a small toolbar floats at the top of the screen:
+While a program window is shown on a projector, a small toolbar floats at the top of the screen, and it stays with that window wherever you are (in the window, in the console, in another program):
 
 - The mark tools. With a drawing tool you draw right on the window; the marks show on the projector over the window's picture. With the pointer, you use the window as usual.
 - While you draw on a window, the toolbar takes the keyboard: **Ctrl+Z** (⌘Z) undoes a mark, **Esc** returns to the pointer and gives the keyboard back to the window.
@@ -123,10 +123,10 @@ While a program window shown on a projector is in front, a small toolbar floats 
 - **Roll**: picks a name; the name shows next to the button.
 - **Mine**: My timer's time, once you started it in the console.
 - **Screens ▾**: shows another content on Projector 1 (a deck, another program window, a whiteboard) without going to the console. A program window comes to the front by itself; for a deck the console comes to the front (and selects that card).
-- **Console**: brings the Presenter console to the front. The tools come back when you click the program window again.
+- **Console**: brings the Presenter console to the front. The tools stay; the window card's icon brings the window back to the front.
 - **◂** folds the toolbar; drag **⠿** to move it. The toolbar always stays inside its display.
 
-The audience never sees the toolbar. It hides when you switch to the console or another program.
+The audience never sees the toolbar. It goes when the window is no longer shown on a projector or is minimized. You draw while the window (or the toolbar) is in front; with another program in front, the marks stay but the clicks go to that program.
 
 ## Marks
 

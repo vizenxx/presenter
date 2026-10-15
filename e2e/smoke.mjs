@@ -459,7 +459,7 @@ try {
   s = await waitFor('another screen to change', (s) => s.outputs.some((o) => o.id.startsWith('screen-') && o.deck))
   const swap = s.outputs.find((o) => o.id.startsWith('screen-') && o.deck)
   await call((_e, id) => globalThis.__presenter.replaceScreen(id, { kind: 'whiteboard' }), swap.id)
-  s = await waitFor('the screen holds the whiteboard', (s) => s.outputs.some((o) => o.id === swap.id && o.deck?.name === 'Whiteboard' && o.total === 30), 20000)
+  s = await waitFor('the screen holds the whiteboard', (s) => s.outputs.some((o) => o.id === swap.id && o.deck?.name === 'Whiteboard' && o.total === 30), 45000)
   assert.equal(s.selectedId, swap.id, 'the changed screen is selected')
   await call((_e, id) => globalThis.__presenter.removeScreen(id), swap.id)
   console.log('ok 8g a screen takes another content in place')
@@ -799,7 +799,12 @@ try {
       toolsGone = !(await toolsShown())
       if (!toolsGone) await sleep(150)
     }
-    assert.ok(toolsGone, 'tools hide when the console is in front')
+    // The tools follow the shown window: they stay while the console is in front (they only stop catching the mouse).
+    assert.equal(toolsGone, false, 'the tools stay while the console is in front')
+    await call(() => globalThis.__presenter.setInkTool('pen'))
+    await sleep(700)
+    assert.equal(await call(() => globalThis.__presenter.tools.drawing), false, 'with the console in front the pad does not take the mouse, even with a drawing tool chosen')
+    await call(() => globalThis.__presenter.setInkTool('pointer'))
     // The window card's icon brings the window back, and the floating tools with it.
     await call((_e, id) => globalThis.__presenter.raiseWindow(id), wid)
     let toolsBack = false

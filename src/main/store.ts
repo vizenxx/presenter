@@ -91,6 +91,8 @@ export class Store {
   private flipped = false
   private mediaScanTick = 0
   private stackTick = 0
+  /** The followed program window, or the floating toolbar, is the window in front (the pad may take the mouse). */
+  private windowInFront = false
   private warnings: T.TimerWarning[] = T.DEFAULT_WARNINGS.map((w) => ({ ...w }))
   /** The main deck opened again on the page it showed last (0-based); null after the next page move. */
   private resumed: number | null = null
@@ -1294,8 +1296,8 @@ export class Store {
   private sendPadSettings(): void {
     if (!this.tools || this.tools.pad.isDestroyed()) return
     const active = this.activeWindowId !== null
-    this.tools.pad.webContents.send('ink:settings', { ...this.inkSettings, projecting: false, active })
-    this.tools.setDrawing(active && this.inkSettings.tool !== 'pointer')
+    this.tools.pad.webContents.send('ink:settings', { ...this.inkSettings, projecting: false, active, catching: this.windowInFront })
+    this.tools.setDrawing(active && this.windowInFront && this.inkSettings.tool !== 'pointer')
   }
 
   private scene(id: OutputId): InkScene {
@@ -1338,11 +1340,23 @@ export class Store {
         this.setActiveWindow(null, null)
         return
       }
-      let active = shown.find((o) => windowHandle(o.capture?.sourceId ?? '') === states.fg) ?? null
-      if (!active && this.activeWindowId && this.tools.handles().includes(states.fg)) active = shown.find((o) => o.id === this.activeWindowId) ?? null
-      const place = active ? states.w.find((w) => w.h === windowHandle(active?.capture?.sourceId ?? '')) : undefined
-      if (!active || !place || place.m) this.setActiveWindow(null, null)
-      else this.setActiveWindow(active.id, { x: place.x, y: place.y, width: place.w, height: place.hh })
+      // The tools follow the window that is shown on a projector (Projector 1 first), wherever the
+      // teacher is: in that window, in the console, in another program. They go only when it is not
+      // shown any more or is minimized.
+      const follow = shown.find((o) => this.shownOn(o) === 1) ?? shown[0] ?? null
+      const handle = follow ? windowHandle(follow.capture?.sourceId ?? '') : null
+      const place = follow ? states.w.find((w) => w.h === handle) : undefined
+      if (!follow || !place || place.m) {
+        this.windowInFront = false
+        this.setActiveWindow(null, null)
+      } else {
+        // Drawing is taken only while that window (or the toolbar) is in front, so the console and other programs keep their clicks.
+        const front = states.fg === handle || this.tools.handles().includes(states.fg)
+        const frontChanged = front !== this.windowInFront
+        this.windowInFront = front
+        this.setActiveWindow(follow.id, { x: place.x, y: place.y, width: place.w, height: place.hh })
+        if (frontChanged) this.sendPadSettings()
+      }
     } finally {
       this.tracking = false
     }
