@@ -709,15 +709,22 @@ try {
     // Z-order (top to bottom): the floating toolbar, then the ink pad right under it, then the program window.
     // When the toolbar is seen in front of the window, the pad is too, and drawing reaches it.
     await sleep(1800)
-    {
-      const [bar, pad] = await call(() => globalThis.__presenter.tools.handles())
-      const win = await call(() => Number(globalThis.__e2eWin.getNativeWindowHandle().readBigUInt64LE(0)))
+    // z-order position (0 = the topmost window of the system) of the given windows
+    const zOrder = (handles) => {
       const script =
         "Add-Type -TypeDefinition 'using System;using System.Runtime.InteropServices;public static class Z{[DllImport(\"user32.dll\")]public static extern IntPtr GetTopWindow(IntPtr h);[DllImport(\"user32.dll\")]public static extern IntPtr GetWindow(IntPtr h,uint c);}';" +
-        `$want=@(${bar},${pad},${win});$i=0;$out=@{};$h=[Z]::GetTopWindow([IntPtr]::Zero);while($h -ne [IntPtr]::Zero){if($want -contains $h.ToInt64()){$out[$h.ToInt64().ToString()]=$i};$i++;$h=[Z]::GetWindow($h,2)};$out|ConvertTo-Json -Compress`
-      const order = JSON.parse(execFileSync('powershell', ['-NoProfile', '-Command', script]).toString())
+        `$want=@(${handles.join(',')});$i=0;$out=@{};$h=[Z]::GetTopWindow([IntPtr]::Zero);while($h -ne [IntPtr]::Zero){if($want -contains $h.ToInt64()){$out[$h.ToInt64().ToString()]=$i};$i++;$h=[Z]::GetWindow($h,2)};$out|ConvertTo-Json -Compress`
+      return JSON.parse(execFileSync('powershell', ['-NoProfile', '-Command', script]).toString())
+    }
+    const nativeHandle = (code) => call(code)
+    {
+      const [bar, pad] = await call(() => globalThis.__presenter.tools.handles())
+      const win = await nativeHandle(() => Number(globalThis.__e2eWin.getNativeWindowHandle().readBigUInt64LE(0)))
+      const order = zOrder([bar, pad, win])
       assert.ok(order[bar] < order[pad], `the toolbar is above the ink pad (${JSON.stringify(order)})`)
       assert.ok(order[pad] < order[win], `the ink pad is above the program window (${JSON.stringify(order)})`)
+      // Directly above the window: nothing but our own two windows lies between them.
+      assert.ok(order[win] - order[bar] <= 2, `the toolbar and the pad lie directly above the window, not above everything (${JSON.stringify(order)})`)
     }
     await call(() => globalThis.__presenter.setInkTool('pen'))
     // While a drawing tool is chosen the pad holds a nearly invisible layer, so the program under it does not get the mouse.
@@ -797,6 +804,14 @@ try {
       if (!consoleFront) await sleep(150)
     }
     assert.ok(consoleFront, 'the Console button brings the console to the front')
+    // A window in front of the program window covers the tools too: they are not above everything.
+    await sleep(900)
+    {
+      const [bar, pad] = await call(() => globalThis.__presenter.tools.handles())
+      const consoleHandle = await call(() => Number(globalThis.__presenter.consoleWin.win.getNativeWindowHandle().readBigUInt64LE(0)))
+      const order = zOrder([bar, pad, consoleHandle])
+      assert.ok(order[consoleHandle] < order[bar], `with the console in front, the toolbar is behind it (${JSON.stringify(order)})`)
+    }
     let toolsGone = false
     for (let i = 0; i < 25 && !toolsGone; i++) {
       toolsGone = !(await toolsShown())

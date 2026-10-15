@@ -91,7 +91,6 @@ export class Store {
   private theme: UiTheme | null = null
   private flipped = false
   private mediaScanTick = 0
-  private stackTick = 0
   /** The followed program window, or the floating toolbar, is the window in front (the pad may take the mouse). */
   private windowInFront = false
   private warnings: T.TimerWarning[] = T.DEFAULT_WARNINGS.map((w) => ({ ...w }))
@@ -1375,22 +1374,21 @@ export class Store {
     }
   }
 
-  /** The ink pad lies right under the floating toolbar, both over every program window (see WindowsHelper.stackTools). */
+  /** The ink pad and the floating toolbar lie directly above the followed window (see WindowsHelper.stackTools). */
   private stackTools(): void {
-    if (!this.tools || HEADLESS || !this.tools.isShown()) return
+    if (!this.tools || HEADLESS || !this.tools.isShown() || !this.activeWindowId) return
+    const source = this.outputs.get(this.activeWindowId)?.capture?.sourceId
+    const target = source ? windowHandle(source) : null
     const [bar, pad] = this.tools.handles()
-    if (bar !== undefined && pad !== undefined) this.windows.stackTools(pad, bar)
+    if (target !== null && bar !== undefined && pad !== undefined) this.windows.stackTools(target, pad, bar)
   }
 
   private setActiveWindow(id: OutputId | null, rect: Rectangle | null): void {
     const changed = id !== this.activeWindowId
     this.activeWindowId = id
     this.tools.place(id ? rect : null, id)
-    // Every time the tools come up (and about once a second after), they are put in order over the program windows.
-    if (id && (changed || ++this.stackTick >= 4)) {
-      this.stackTick = 0
-      this.stackTools()
-    }
+    // Every tick the tools are put directly above the followed window (it may have come to the front, or have been covered).
+    if (id) this.stackTools()
     if (!changed) return
     this.sendPadSettings()
     if (!this.tools.pad.isDestroyed()) this.tools.pad.webContents.send('ink:snapshot', id ? this.scene(id).strokes : [])

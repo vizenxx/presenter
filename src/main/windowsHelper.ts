@@ -143,13 +143,20 @@ public static class PresenterWin {
     }
   }
   [DllImport("user32.dll")] static extern bool SetWindowPos(IntPtr h, IntPtr after, int x, int y, int cx, int cy, uint flags);
-  // Both windows to the top of the always-on-top band without taking the keyboard: first the pad, then the
-  // toolbar, so the toolbar lies right above the pad, and both above every program window.
-  public static void Stack(long pad, long bar) {
-    IntPtr topmost = new IntPtr(-1);
+  // The pad and the toolbar directly above the followed window, the toolbar above the pad, and nothing
+  // else changes: a window that covers the followed window covers them too, and when the followed window
+  // comes to the front they come with it. Nothing is activated. A followed window that is itself
+  // always on top gets them in the always-on-top band.
+  public static void StackAbove(long target, long pad, long bar) {
     const uint flags = 0x0001 | 0x0002 | 0x0010; // no size, no move, no activate
-    SetWindowPos(new IntPtr(pad), topmost, 0, 0, 0, 0, flags);
-    SetWindowPos(new IntPtr(bar), topmost, 0, 0, 0, 0, flags);
+    IntPtr t = new IntPtr(target), p = new IntPtr(pad), b = new IntPtr(bar);
+    bool topmost = (GetWindowLong(t, -20) & 0x8) != 0;
+    IntPtr floor = topmost ? new IntPtr(-1) : IntPtr.Zero; // HWND_TOPMOST or HWND_TOP
+    IntPtr above = GetWindow(t, 3); // the window directly above the target (GW_HWNDPREV)
+    while (above != IntPtr.Zero && (above == p || above == b)) above = GetWindow(above, 3);
+    SetWindowPos(p, above != IntPtr.Zero ? above : floor, 0, 0, 0, 0, flags);
+    IntPtr overPad = GetWindow(p, 3);
+    if (overPad != b) SetWindowPos(b, overPad != IntPtr.Zero ? overPad : floor, 0, 0, 0, 0, flags);
   }
   public static void Release(long value) {
     IntPtr h = new IntPtr(value);
@@ -234,13 +241,13 @@ export class WindowsHelper {
   }
 
   /**
-   * Windows: the ink pad and the floating toolbar (in that order) go to the top of the always-on-top
-   * band, so the pad always lies right under the toolbar and over every program window: when the
-   * toolbar is seen in front of a window, the pad is too, and drawing reaches it. (macOS keeps them
-   * apart by window levels.)
+   * Windows: the ink pad and the floating toolbar lie directly above the followed program window (the
+   * toolbar right above the pad), not above everything: another window in front of the program window
+   * covers the toolbar too. When the toolbar is seen, the pad is in front of the window as well, so
+   * drawing reaches it. (macOS keeps them apart by window levels.)
    */
-  stackTools(padHandle: number, barHandle: number): void {
-    if (process.platform === 'win32') this.send(`[PresenterWin]::Stack(${padHandle}, ${barHandle})`)
+  stackTools(targetHandle: number, padHandle: number, barHandle: number): void {
+    if (process.platform === 'win32') this.send(`[PresenterWin]::StackAbove(${targetHandle}, ${padHandle}, ${barHandle})`)
   }
 
   private isMac(): boolean {

@@ -44,10 +44,13 @@ export class WindowTools {
       focusable: false,
       hasShadow: false,
       backgroundColor: '#00000000',
-      alwaysOnTop: true,
+      // Windows: not always on top. The pad and the toolbar sit directly above the window they follow
+      // (WindowsHelper.stackAbove), so they are covered when that window is, and move in front when it does.
+      // macOS keeps window levels.
+      alwaysOnTop: IS_MAC,
       webPreferences: { preload: paths.deckPreload, contextIsolation: true, sandbox: true, backgroundThrottling: false }
     })
-    this.pad.setAlwaysOnTop(true, 'floating')
+    if (IS_MAC) this.pad.setAlwaysOnTop(true, 'floating')
     this.pad.setContentProtection(true)
     // macOS: also over programs in full screen (their own Space).
     if (IS_MAC) this.pad.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
@@ -64,10 +67,10 @@ export class WindowTools {
       resizable: false,
       skipTaskbar: true,
       hasShadow: false,
-      alwaysOnTop: true,
+      alwaysOnTop: IS_MAC,
       webPreferences: { preload: paths.consolePreload, contextIsolation: true, sandbox: true, backgroundThrottling: false }
     })
-    this.toolbar.setAlwaysOnTop(true, 'screen-saver')
+    if (IS_MAC) this.toolbar.setAlwaysOnTop(true, 'screen-saver')
     this.toolbar.setContentProtection(true)
     if (IS_MAC) this.toolbar.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
     paths.loadToolbar(this.toolbar)

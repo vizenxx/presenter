@@ -126,7 +126,7 @@ While a program window is shown on a projector, a small toolbar floats at the to
 - **Console**: brings the Presenter console to the front and ends drawing (the tool goes back to the pointer, so nothing is drawn by accident while you use the console). The tools stay; the window card's icon brings the window back to the front.
 - **◂** folds the toolbar; drag **⠿** to move it. The toolbar always stays inside its display, goes with the window when the window moves, and comes to the visible part of the new window when another window is shown on Projector 1.
 
-The audience never sees the toolbar. It goes when the window is no longer shown on a projector or is minimized. You draw while the window (or the toolbar) is in front; with another program in front, the marks stay but the clicks go to that program.
+The toolbar lies directly above that window only (not above everything): a window in front of it covers the toolbar too, and the toolbar comes to the front with the window. The audience never sees the toolbar. It goes when the window is no longer shown on a projector or is minimized. You draw while the window (or the toolbar) is in front; with another program in front, the marks stay but the clicks go to that program.
 
 ## Marks
 
