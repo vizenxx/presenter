@@ -233,8 +233,16 @@ try {
   await markOnce('key-2')
   await keyTo('toolbar', 'Z', ['control'])
   await waitUntil('Ctrl+Z on the floating toolbar undoes', async () => (await marks()) === 0)
-  await keyTo('toolbar', 'Escape')
-  await waitFor('Esc on the floating toolbar leaves the arrow', (s) => s.ink.tool === 'pointer')
+  // (One full run missed this first Esc and the next run passed: a key sent while the toolbar page settles can be lost, so it is sent again.)
+  let leftArrow = false
+  for (let i = 0; i < 3 && !leftArrow; i++) {
+    await keyTo('toolbar', 'Escape')
+    leftArrow = await waitFor('Esc on the floating toolbar leaves the arrow', (s) => s.ink.tool === 'pointer', 3000).then(
+      () => true,
+      () => false
+    )
+  }
+  assert.ok(leftArrow, 'Esc on the floating toolbar leaves the arrow')
   console.log('ok 7d Ctrl+Z and Esc on a slide and on the floating toolbar')
 
   // 7h. Marks stay with their slide: leave the page and come back, and they are there again.
