@@ -455,6 +455,7 @@ export class Store {
   private raiseKeepingTools(sourceId: string): void {
     const followed = this.activeWindowId ? this.outputs.get(this.activeWindowId)?.capture?.sourceId : undefined
     const [bar, pad] = this.tools && this.tools.isShown() ? this.tools.handles() : []
+    toolsLog(`raise the program window${followed === sourceId ? ' (and the tools above it, in one step)' : ''}`)
     if (followed === sourceId && bar !== undefined && pad !== undefined && !HEADLESS) this.windows.raiseAbove(sourceId, pad, bar)
     else this.windows.raise(sourceId)
   }

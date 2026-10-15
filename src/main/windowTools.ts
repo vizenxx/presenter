@@ -1,6 +1,7 @@
 import { BrowserWindow, screen, type Rectangle } from 'electron'
 import { keepInside } from '../shared/place'
 import { HEADLESS } from './headless'
+import { toolsLog } from './toolsLog'
 import { IS_MAC } from './platform'
 
 export interface WindowToolsPaths {
@@ -74,6 +75,23 @@ export class WindowTools {
     this.toolbar.setContentProtection(true)
     if (IS_MAC) this.toolbar.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
     paths.loadToolbar(this.toolbar)
+    // What the two windows do (tools-log.txt): a toolbar that flashes shows up here as hide/show, blur/focus,
+    // resize, move or a page load, with the time of each.
+    for (const [name, win] of [['toolbar', this.toolbar], ['pad', this.pad]] as const) {
+      for (const event of ['show', 'hide', 'focus', 'blur', 'resize', 'move', 'minimize', 'restore'] as const) {
+        let last = 0
+        win.on(event as 'show', () => {
+          // move and resize can come in dozens: one line per 300 ms is enough.
+          const now = Date.now()
+          if ((event === 'move' || event === 'resize') && now - last < 300) return
+          last = now
+          toolsLog(`${name}: ${event}`)
+        })
+      }
+      win.webContents.on('did-start-loading', () => toolsLog(`${name} page: starts loading`))
+      win.webContents.on('did-finish-load', () => toolsLog(`${name} page: loaded`))
+      win.webContents.on('render-process-gone', (_e, details) => toolsLog(`${name} page: process gone (${details.reason})`))
+    }
     // Dragged to or past the edge: it comes back inside the display it is on (never lost off screen).
     this.toolbar.on('moved', () => {
       this.keepToolbarInside()
