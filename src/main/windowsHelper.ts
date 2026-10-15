@@ -136,6 +136,15 @@ public static class PresenterWin {
       filled.Add(value);
     }
   }
+  [DllImport("user32.dll")] static extern bool SetWindowPos(IntPtr h, IntPtr after, int x, int y, int cx, int cy, uint flags);
+  // Both windows to the top of the always-on-top band without taking the keyboard: first the pad, then the
+  // toolbar, so the toolbar lies right above the pad, and both above every program window.
+  public static void Stack(long pad, long bar) {
+    IntPtr topmost = new IntPtr(-1);
+    const uint flags = 0x0001 | 0x0002 | 0x0010; // no size, no move, no activate
+    SetWindowPos(new IntPtr(pad), topmost, 0, 0, 0, 0, flags);
+    SetWindowPos(new IntPtr(bar), topmost, 0, 0, 0, 0, flags);
+  }
   public static void Release(long value) {
     IntPtr h = new IntPtr(value);
     if (filled.Remove(value) && IsZoomed(h)) ShowWindow(h, 9);
@@ -216,6 +225,16 @@ export class WindowsHelper {
   release(sourceId: string): void {
     const handle = windowHandle(sourceId)
     if (handle !== null && process.platform === 'win32') this.send(`[PresenterWin]::Release(${handle})`)
+  }
+
+  /**
+   * Windows: the ink pad and the floating toolbar (in that order) go to the top of the always-on-top
+   * band, so the pad always lies right under the toolbar and over every program window: when the
+   * toolbar is seen in front of a window, the pad is too, and drawing reaches it. (macOS keeps them
+   * apart by window levels.)
+   */
+  stackTools(padHandle: number, barHandle: number): void {
+    if (process.platform === 'win32') this.send(`[PresenterWin]::Stack(${padHandle}, ${barHandle})`)
   }
 
   private isMac(): boolean {

@@ -90,6 +90,7 @@ export class Store {
   private theme: UiTheme | null = null
   private flipped = false
   private mediaScanTick = 0
+  private stackTick = 0
   private warnings: T.TimerWarning[] = T.DEFAULT_WARNINGS.map((w) => ({ ...w }))
   /** The main deck opened again on the page it showed last (0-based); null after the next page move. */
   private resumed: number | null = null
@@ -724,6 +725,8 @@ export class Store {
     const leaving = tool === 'pointer' && this.inkSettings.tool !== 'pointer'
     this.inkSettings = { ...this.inkSettings, tool }
     this.sendInkSettings()
+    // Choosing a tool on the toolbar: the pad is put right under it, over the program window, before anything is drawn.
+    this.stackTools()
     if (leaving) this.returnKeysToWindow()
     this.emit()
   }
@@ -1345,10 +1348,22 @@ export class Store {
     }
   }
 
+  /** The ink pad lies right under the floating toolbar, both over every program window (see WindowsHelper.stackTools). */
+  private stackTools(): void {
+    if (!this.tools || HEADLESS || !this.tools.isShown()) return
+    const [bar, pad] = this.tools.handles()
+    if (bar !== undefined && pad !== undefined) this.windows.stackTools(pad, bar)
+  }
+
   private setActiveWindow(id: OutputId | null, rect: Rectangle | null): void {
     const changed = id !== this.activeWindowId
     this.activeWindowId = id
     this.tools.place(id ? rect : null)
+    // Every time the tools come up (and about once a second after), they are put in order over the program windows.
+    if (id && (changed || ++this.stackTick >= 4)) {
+      this.stackTick = 0
+      this.stackTools()
+    }
     if (!changed) return
     this.sendPadSettings()
     if (!this.tools.pad.isDestroyed()) this.tools.pad.webContents.send('ink:snapshot', id ? this.scene(id).strokes : [])

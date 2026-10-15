@@ -706,6 +706,19 @@ try {
     assert.ok(Math.abs(fit[0]) <= 12 && Math.abs(fit[1]) <= 12 && Math.abs(fit[2]) <= 24 && Math.abs(fit[3]) <= 24, `ink pad lies on the window (${fit})`)
     s = await state()
     assert.equal(s.toolsFor, wid, 'the tools serve this window')
+    // Z-order (top to bottom): the floating toolbar, then the ink pad right under it, then the program window.
+    // When the toolbar is seen in front of the window, the pad is too, and drawing reaches it.
+    await sleep(1800)
+    {
+      const [bar, pad] = await call(() => globalThis.__presenter.tools.handles())
+      const win = await call(() => Number(globalThis.__e2eWin.getNativeWindowHandle().readBigUInt64LE(0)))
+      const script =
+        "Add-Type -TypeDefinition 'using System;using System.Runtime.InteropServices;public static class Z{[DllImport(\"user32.dll\")]public static extern IntPtr GetTopWindow(IntPtr h);[DllImport(\"user32.dll\")]public static extern IntPtr GetWindow(IntPtr h,uint c);}';" +
+        `$want=@(${bar},${pad},${win});$i=0;$out=@{};$h=[Z]::GetTopWindow([IntPtr]::Zero);while($h -ne [IntPtr]::Zero){if($want -contains $h.ToInt64()){$out[$h.ToInt64().ToString()]=$i};$i++;$h=[Z]::GetWindow($h,2)};$out|ConvertTo-Json -Compress`
+      const order = JSON.parse(execFileSync('powershell', ['-NoProfile', '-Command', script]).toString())
+      assert.ok(order[bar] < order[pad], `the toolbar is above the ink pad (${JSON.stringify(order)})`)
+      assert.ok(order[pad] < order[win], `the ink pad is above the program window (${JSON.stringify(order)})`)
+    }
     await call(() => globalThis.__presenter.setInkTool('pen'))
     // While a drawing tool is chosen the pad holds a nearly invisible layer, so the program under it does not get the mouse.
     await sleep(400)
