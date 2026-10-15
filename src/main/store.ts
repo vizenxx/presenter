@@ -193,6 +193,7 @@ export class Store {
     })
     setInterval(() => this.tick(), TICK_MS)
     setInterval(() => void this.trackWindows(), TRACK_MS)
+    if (process.platform === 'win32' && !HEADLESS) setInterval(() => void this.sampleMouse(), 150)
     setInterval(() => void this.captureMirror(), MIRROR_MS)
   }
 
@@ -751,7 +752,11 @@ export class Store {
   private returnKeysToWindow(): void {
     const o = this.activeWindowId ? this.outputs.get(this.activeWindowId) : undefined
     const bar = this.tools.toolbar
-    if (o?.capture && !bar.isDestroyed() && bar.isFocused()) this.windows.raise(o.capture.sourceId)
+    if (o?.capture && !bar.isDestroyed() && bar.isFocused()) {
+      this.windows.raise(o.capture.sourceId)
+      // The window comes to the front; the pad and the toolbar go right above it again at once (no gap, no flash).
+      this.stackTools()
+    }
   }
 
   /** Picking a colour also picks the pen when no drawing tool is active. */
@@ -1402,6 +1407,36 @@ export class Store {
     }
   }
 
+  private lastMouseDown = false
+  private samplingMouse = false
+
+  /**
+   * While a drawing tool is chosen, each mouse press is written to tools-log.txt with the window the
+   * system says it landed on: the ink pad, the toolbar, the followed window, or something else. If a
+   * tool "does not draw", this shows where the press went.
+   */
+  private async sampleMouse(): Promise<void> {
+    if (this.samplingMouse || !this.tools || !this.tools.isShown() || this.inkSettings.tool === 'pointer') {
+      this.lastMouseDown = false
+      return
+    }
+    this.samplingMouse = true
+    try {
+      const c = await this.windows.cursorState()
+      if (!c) return
+      if (c.down && !this.lastMouseDown) {
+        const [bar, pad] = this.tools.handles()
+        const source = this.activeWindowId ? this.outputs.get(this.activeWindowId)?.capture?.sourceId : undefined
+        const target = source ? windowHandle(source) : null
+        const role = c.root === pad ? 'THE INK PAD' : c.root === bar ? 'the toolbar' : c.root === target ? 'THE PROGRAM WINDOW (the pad was not hit)' : `another window "${c.title}" (${c.root})`
+        toolsLog(`mouse pressed at ${c.x},${c.y} on ${role}; tool=${this.inkSettings.tool} drawing=${this.tools.isDrawing()} front=${this.windowInFront}`)
+      }
+      this.lastMouseDown = c.down
+    } finally {
+      this.samplingMouse = false
+    }
+  }
+
   /** The ink pad and the floating toolbar lie directly above the followed window (see WindowsHelper.stackTools). */
   private stackTools(): void {
     if (!this.tools || HEADLESS || !this.tools.isShown() || !this.activeWindowId) return
@@ -1452,6 +1487,7 @@ export class Store {
   }
 
   private tick(): void {
+    if (this.quitting) return
     this.updateKeepAwake()
     // An HTML deck's own videos: looked for about once a second, on the content the audience sees.
     if (++this.mediaScanTick >= 5) {
@@ -1773,7 +1809,7 @@ export class Store {
   }
 
   private emit(): void {
-    if (this.emitQueued) return
+    if (this.emitQueued || this.quitting) return
     this.emitQueued = true
     setTimeout(() => {
       this.emitQueued = false
@@ -1782,12 +1818,21 @@ export class Store {
   }
 
   private emitNow(): void {
-    const wc = this.consoleWin?.win.webContents
-    if (!wc || wc.isDestroyed()) return
-    const state = this.getState()
+    // The windows may be gone already (the console was closed, or the app is quitting): a timer that
+    // fires then must not touch them (asking a destroyed window for its page throws).
+    const win = this.consoleWin?.win
+    if (this.quitting || !win || win.isDestroyed()) return
+    const wc = win.webContents
+    if (wc.isDestroyed()) return
+    let state: AppState
+    try {
+      state = this.getState()
+    } catch {
+      return
+    }
     wc.send('state', state)
-    const bar = this.tools?.toolbar.webContents
-    if (bar && !bar.isDestroyed()) bar.send('state', state)
+    const bar = this.tools?.toolbar
+    if (bar && !bar.isDestroyed() && !bar.webContents.isDestroyed()) bar.webContents.send('state', state)
   }
 
   private quit(): void {

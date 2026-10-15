@@ -187,6 +187,22 @@ public static class PresenterWin {
     }
     return "{\\"pad\\":" + pad + ",\\"ex\\":" + ex + ",\\"clickThrough\\":" + ((ex & 0x20) != 0 ? "true" : "false") + ",\\"healed\\":" + (healed ? "true" : "false") + ",\\"visible\\":" + (IsWindowVisible(p) ? "true" : "false") + ",\\"hit\\":" + hit.ToInt64() + ",\\"zPad\\":" + zp + ",\\"zTarget\\":" + zt + ",\\"rect\\":[" + r.Left + "," + r.Top + "," + r.Right + "," + r.Bottom + "]}";
   }
+  [DllImport("user32.dll")] static extern bool GetCursorPos(out PT p);
+  [DllImport("user32.dll")] static extern short GetAsyncKeyState(int vk);
+  // Where the mouse is, which top-level window is under it, and whether the left button is down.
+  public static string Cursor() {
+    PT p;
+    GetCursorPos(out p);
+    IntPtr hit = WindowFromPoint(p);
+    IntPtr root = hit == IntPtr.Zero ? IntPtr.Zero : GetAncestor(hit, 2);
+    string title = "";
+    if (root != IntPtr.Zero) {
+      int n = GetWindowTextLength(root);
+      if (n > 0) { var sb = new StringBuilder(n + 1); GetWindowText(root, sb, n + 1); title = sb.ToString(); }
+    }
+    bool down = (GetAsyncKeyState(0x01) & 0x8000) != 0;
+    return "{\\"x\\":" + p.X + ",\\"y\\":" + p.Y + ",\\"down\\":" + (down ? "true" : "false") + ",\\"root\\":" + root.ToInt64() + ",\\"title\\":\\"" + Esc(title) + "\\"}";
+  }
   public static void Release(long value) {
     IntPtr h = new IntPtr(value);
     if (filled.Remove(value) && IsZoomed(h)) ShowWindow(h, 9);
@@ -283,6 +299,12 @@ export class WindowsHelper {
   padState(padHandle: number, targetHandle: number, heal: boolean): Promise<Record<string, unknown> | null> {
     if (process.platform !== 'win32') return Promise.resolve(null)
     return this.ask(`[PresenterWin]::PadState(${padHandle}, ${targetHandle}, $${heal ? 'true' : 'false'})`, null).then((a) => (a && typeof a === 'object' && !Array.isArray(a) ? (a as Record<string, unknown>) : null))
+  }
+
+  /** Windows: where the mouse is and which window is under it (for tools-log.txt). */
+  cursorState(): Promise<{ x: number; y: number; down: boolean; root: number; title: string } | null> {
+    if (process.platform !== 'win32') return Promise.resolve(null)
+    return this.ask('[PresenterWin]::Cursor()', null).then((a) => (a && typeof a === 'object' && !Array.isArray(a) ? (a as { x: number; y: number; down: boolean; root: number; title: string }) : null))
   }
 
   private isMac(): boolean {

@@ -16,6 +16,10 @@ registerDeckScheme()
 // Tests run with their own data folder so they never touch the presenter's recent files or zoom memory.
 if (process.env['PRESENTER_USER_DATA']) app.setPath('userData', process.env['PRESENTER_USER_DATA'])
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required')
+// A window that another window covers (the ink pad under a program window that has just come to the front)
+// must stay alive: without this, Chromium treats a covered window as hidden and drops its mouse input
+// until it is uncovered and re-evaluated.
+app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion')
 
 const preload = (name: string): string => path.join(__dirname, `../preload/${name}.js`)
 
