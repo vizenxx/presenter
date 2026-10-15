@@ -445,7 +445,18 @@ export class Store {
   /** The card's window icon: that program window comes to the front again (its floating tools come back with it). */
   raiseWindow(id: OutputId): void {
     const o = this.outputs.get(id)
-    if (o?.capture) this.windows.raise(o.capture.sourceId)
+    if (o?.capture) this.raiseKeepingTools(o.capture.sourceId)
+  }
+
+  /**
+   * Brings a program window to the front. When it is the followed window, the pad and the toolbar are put
+   * right above it in the same step, so they never disappear behind it for a moment (that was a flash).
+   */
+  private raiseKeepingTools(sourceId: string): void {
+    const followed = this.activeWindowId ? this.outputs.get(this.activeWindowId)?.capture?.sourceId : undefined
+    const [bar, pad] = this.tools && this.tools.isShown() ? this.tools.handles() : []
+    if (followed === sourceId && bar !== undefined && pad !== undefined && !HEADLESS) this.windows.raiseAbove(sourceId, pad, bar)
+    else this.windows.raise(sourceId)
   }
 
   /**
@@ -752,11 +763,7 @@ export class Store {
   private returnKeysToWindow(): void {
     const o = this.activeWindowId ? this.outputs.get(this.activeWindowId) : undefined
     const bar = this.tools.toolbar
-    if (o?.capture && !bar.isDestroyed() && bar.isFocused()) {
-      this.windows.raise(o.capture.sourceId)
-      // The window comes to the front; the pad and the toolbar go right above it again at once (no gap, no flash).
-      this.stackTools()
-    }
+    if (o?.capture && !bar.isDestroyed() && bar.isFocused()) this.raiseKeepingTools(o.capture.sourceId)
   }
 
   /** Picking a colour also picks the pen when no drawing tool is active. */

@@ -158,6 +158,12 @@ public static class PresenterWin {
     IntPtr overPad = GetWindow(p, 3);
     if (overPad != b) SetWindowPos(b, overPad != IntPtr.Zero ? overPad : floor, 0, 0, 0, 0, flags);
   }
+  // Brings the program window to the front and puts the pad and the toolbar right above it again, in one
+  // call, so there is no moment (no frame) in which the window covers them: no flash.
+  public static void RaiseAbove(long target, long pad, long bar) {
+    Raise(target);
+    StackAbove(target, pad, bar);
+  }
   [StructLayout(LayoutKind.Sequential)] struct PT { public int X, Y; }
   [DllImport("user32.dll")] static extern bool GetWindowRect(IntPtr h, out RECT r);
   [DllImport("user32.dll")] static extern IntPtr WindowFromPoint(PT p);
@@ -293,6 +299,13 @@ export class WindowsHelper {
    */
   stackTools(targetHandle: number, padHandle: number, barHandle: number): void {
     if (process.platform === 'win32') this.send(`[PresenterWin]::StackAbove(${targetHandle}, ${padHandle}, ${barHandle})`)
+  }
+
+  /** Windows: the window comes to the front and the pad and toolbar stay right above it, with no moment in between (no flash). */
+  raiseAbove(sourceId: string, padHandle: number, barHandle: number): void {
+    const handle = windowHandle(sourceId)
+    if (handle === null || process.platform !== 'win32') return
+    this.send(`[PresenterWin]::RaiseAbove(${handle}, ${padHandle}, ${barHandle})`)
   }
 
   /** Windows: the ink pad as the system sees it (see PadState in the helper script); with heal, a stuck click-through style is cleared. */
