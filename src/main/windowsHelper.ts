@@ -158,6 +158,35 @@ public static class PresenterWin {
     IntPtr overPad = GetWindow(p, 3);
     if (overPad != b) SetWindowPos(b, overPad != IntPtr.Zero ? overPad : floor, 0, 0, 0, 0, flags);
   }
+  [StructLayout(LayoutKind.Sequential)] struct PT { public int X, Y; }
+  [DllImport("user32.dll")] static extern bool GetWindowRect(IntPtr h, out RECT r);
+  [DllImport("user32.dll")] static extern IntPtr WindowFromPoint(PT p);
+  [DllImport("user32.dll")] static extern IntPtr GetTopWindow(IntPtr h);
+  [DllImport("user32.dll")] static extern int SetWindowLong(IntPtr h, int index, int value);
+  // What the system really does with the ink pad: its extended style, whether it is above the program window,
+  // and who would get a click at its middle. With heal, a click-through style left on the pad is cleared.
+  public static string PadState(long pad, long target, bool heal) {
+    IntPtr p = new IntPtr(pad), t = new IntPtr(target);
+    int ex = GetWindowLong(p, -20);
+    bool healed = false;
+    if (heal && (ex & 0x20) != 0) {
+      SetWindowLong(p, -20, ex & ~0x20);
+      SetWindowPos(p, IntPtr.Zero, 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0004 | 0x0010 | 0x0020); // frame changed, nothing else
+      ex = GetWindowLong(p, -20);
+      healed = true;
+    }
+    RECT r;
+    GetWindowRect(p, out r);
+    PT mid; mid.X = (r.Left + r.Right) / 2; mid.Y = (r.Top + r.Bottom) / 2;
+    IntPtr hit = WindowFromPoint(mid);
+    int zp = -1, zt = -1, i = 0;
+    for (IntPtr h = GetTopWindow(IntPtr.Zero); h != IntPtr.Zero; h = GetWindow(h, 2)) {
+      if (h == p) zp = i;
+      if (h == t) zt = i;
+      i++;
+    }
+    return "{\\"pad\\":" + pad + ",\\"ex\\":" + ex + ",\\"clickThrough\\":" + ((ex & 0x20) != 0 ? "true" : "false") + ",\\"healed\\":" + (healed ? "true" : "false") + ",\\"visible\\":" + (IsWindowVisible(p) ? "true" : "false") + ",\\"hit\\":" + hit.ToInt64() + ",\\"zPad\\":" + zp + ",\\"zTarget\\":" + zt + ",\\"rect\\":[" + r.Left + "," + r.Top + "," + r.Right + "," + r.Bottom + "]}";
+  }
   public static void Release(long value) {
     IntPtr h = new IntPtr(value);
     if (filled.Remove(value) && IsZoomed(h)) ShowWindow(h, 9);
@@ -248,6 +277,12 @@ export class WindowsHelper {
    */
   stackTools(targetHandle: number, padHandle: number, barHandle: number): void {
     if (process.platform === 'win32') this.send(`[PresenterWin]::StackAbove(${targetHandle}, ${padHandle}, ${barHandle})`)
+  }
+
+  /** Windows: the ink pad as the system sees it (see PadState in the helper script); with heal, a stuck click-through style is cleared. */
+  padState(padHandle: number, targetHandle: number, heal: boolean): Promise<Record<string, unknown> | null> {
+    if (process.platform !== 'win32') return Promise.resolve(null)
+    return this.ask(`[PresenterWin]::PadState(${padHandle}, ${targetHandle}, $${heal ? 'true' : 'false'})`, null).then((a) => (a && typeof a === 'object' && !Array.isArray(a) ? (a as Record<string, unknown>) : null))
   }
 
   private isMac(): boolean {

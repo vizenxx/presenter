@@ -1306,8 +1306,11 @@ export class Store {
     const active = this.activeWindowId !== null
     this.tools.pad.webContents.send('ink:settings', { ...this.inkSettings, projecting: false, active, catching: this.windowInFront })
     const drawing = active && this.windowInFront && this.inkSettings.tool !== 'pointer'
-    if (drawing !== this.tools.isDrawing()) toolsLog(`pad ${drawing ? 'takes' : 'lets go of'} the mouse (tool=${this.inkSettings.tool} active=${active} front=${this.windowInFront})`)
+    const flipped = drawing !== this.tools.isDrawing()
+    if (flipped) toolsLog(`pad ${drawing ? 'takes' : 'lets go of'} the mouse (tool=${this.inkSettings.tool} active=${active} front=${this.windowInFront})`)
     this.tools.setDrawing(drawing)
+    // The pad is taking the mouse: look at what the system really does with it (and clear a stuck click-through style).
+    if (drawing && flipped) this.checkPad()
   }
 
   private scene(id: OutputId): InkScene {
@@ -1371,6 +1374,31 @@ export class Store {
       }
     } finally {
       this.tracking = false
+    }
+  }
+
+  /**
+   * After the pad took the mouse: the system's view of it (click-through style, above the window or not,
+   * who gets a click at its middle) goes to tools-log.txt, and a click-through style left on it is cleared.
+   * Checked at once and again later; this is how a drawing tool that does not draw is caught and healed.
+   */
+  private checkPad(): void {
+    if (!this.tools || HEADLESS || !this.activeWindowId) return
+    const source = this.outputs.get(this.activeWindowId)?.capture?.sourceId
+    const target = source ? windowHandle(source) : null
+    const [bar, pad] = this.tools.handles()
+    void bar
+    if (target === null || pad === undefined) return
+    for (const [delay, label] of [[60, 'at once'], [700, 'after 0.7 s']] as const) {
+      setTimeout(() => {
+        if (!this.tools.isDrawing()) return
+        this.stackTools()
+        void this.windows.padState(pad, target, true).then((state) => {
+          if (!state) return
+          const bad = state['clickThrough'] === true || state['healed'] === true || (typeof state['zPad'] === 'number' && typeof state['zTarget'] === 'number' && state['zPad'] > state['zTarget'])
+          toolsLog(`pad check ${label}${bad ? ' (PROBLEM)' : ''}: ${JSON.stringify(state)} window-handle=${target}`)
+        })
+      }, delay)
     }
   }
 

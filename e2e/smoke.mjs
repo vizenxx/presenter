@@ -734,6 +734,14 @@ try {
       'rgba(0, 0, 0, 0.01)',
       'the ink pad catches the mouse (a nearly invisible layer) while a drawing tool is chosen'
     )
+    // The pad as the system sees it, once it took the mouse (tools-log.txt): above the window, not click-through.
+    await sleep(1200)
+    {
+      const lines = fs.readFileSync(path.join(USER_DATA, 'tools-log.txt'), 'utf8').split(String.fromCharCode(10))
+      const checks = lines.filter((l) => l.includes('pad check'))
+      assert.ok(checks.length > 0, 'the log has the pad check')
+      assert.ok(!checks.some((l) => l.includes('PROBLEM')), `the pad check found a problem:${String.fromCharCode(10)}${checks.join(String.fromCharCode(10))}`)
+    }
     await call(() => globalThis.__presenter.inkOp({ t: 'begin', stroke: { id: 'w1', tool: 'pen', color: '#ef4444', points: [0.1, 0.1, 0.5, 0.5] } }, 'pad'))
     assert.equal(await call((_e, id) => globalThis.__presenter.scene(id).strokes.length, wid), 1, 'the mark belongs to the window content')
     assert.equal(await call(() => globalThis.__presenter.scene('projector').strokes.length), 0, 'the deck has no marks')
