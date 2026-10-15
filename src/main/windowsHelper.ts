@@ -161,7 +161,16 @@ public static class PresenterWin {
   // Brings the program window to the front and puts the pad and the toolbar right above it again, in one
   // call, so there is no moment (no frame) in which the window covers them: no flash.
   public static void RaiseAbove(long target, long pad, long bar) {
+    const uint flags = 0x0001 | 0x0002 | 0x0010; // no size, no move, no activate
+    IntPtr p = new IntPtr(pad), b = new IntPtr(bar);
+    // Raise() waits for the program to take its activation (tens of milliseconds): in that time the window
+    // is already above the pad and the toolbar, which is what flashed. So the two are made always-on-top
+    // for the length of the raise (nothing can cover them), then they go back to lie right above the window.
+    SetWindowPos(p, new IntPtr(-1), 0, 0, 0, 0, flags);
+    SetWindowPos(b, new IntPtr(-1), 0, 0, 0, 0, flags);
     Raise(target);
+    SetWindowPos(p, new IntPtr(-2), 0, 0, 0, 0, flags); // HWND_NOTOPMOST: the top of the normal windows
+    SetWindowPos(b, new IntPtr(-2), 0, 0, 0, 0, flags);
     StackAbove(target, pad, bar);
   }
   [StructLayout(LayoutKind.Sequential)] struct PT { public int X, Y; }
