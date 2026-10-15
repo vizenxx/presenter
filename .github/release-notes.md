@@ -1,3 +1,14 @@
+## What's new in 0.4.1
+
+- **Floating tools follow the window you project.** The toolbar and the ink pad lie directly above the program window shown on a projector, and go with it when it moves or when another window is shown on Projector 1. A window in front of it covers the tools too; you draw while that window (or the toolbar) is in front. **Console** now also ends drawing, so nothing is drawn by accident in the console.
+- **Drawing on a program window is reliable.** Fixed: a drawing tool chosen again after the pointer did not draw, and the toolbar flashed when the pointer was chosen. The program window you project now fills your laptop screen (Windows), so the projector gets all its pixels; it goes back to its size when it leaves the projector.
+- **Videos without clicking on the projector.** A video, an embedded YouTube player or a "click to play" cover in an HTML deck gets **▶ Video** and **Full screen** in the console. While projecting, a click on the console's live copy of the slide is a click on the slide. YouTube players now play inside decks.
+- **Change what a screen holds.** Click a card's name: **Open a deck…**, **A program window…**, **Whiteboard**, or a deck from **Recent**. **＋ Add screen** lists Recent decks too. The window card has an icon that brings that window back to the front. The very first content goes on Projector 1 at once; replacing Screen 1 with a program window really replaces it.
+- **Arrow**: its head grows with the arrow, between a floor of three line widths and a cap, so long arrows no longer get a large head.
+- **Opened again**: the choice between **Stay at slide N** and **Go to slide 1** is two clear buttons above the slide.
+- **Licence and privacy**: Presenter is under the MIT Licence; third-party licences are listed in THIRD-PARTY-NOTICES.md; Presenter's own code sends nothing.
+- If a drawing tool ever does not draw, `tools-log.txt` (next to `startup-log.txt`) shows what happened.
+
 ## What's new in 0.4.0
 
 - **A console built around how you present.** **Slides** and **Notes** are two buttons at the left of the current slide's row; their panel comes in from the left, and the same button closes it. **Participants** is back in the top bar and opens as a pop-up (**Pick one** or **Teams**).
