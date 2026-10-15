@@ -31,6 +31,7 @@ import { whiteboardFile } from './whiteboard'
 import { loadTheme, saveTheme, themeBackground } from './themeMemory'
 import { loadFlipped, saveFlipped } from './layoutMemory'
 import { HEADLESS } from './headless'
+import { toolsLog } from './toolsLog'
 import { loadWarnings, saveWarnings } from './timerMemory'
 import { loadMyTimer, saveMyTimer } from './myTimerMemory'
 import { loadFolder, saveFolder } from './folderMemory'
@@ -724,15 +725,16 @@ export class Store {
 
   // ---------- marks (ink) ----------
 
-  setInkTool(tool: InkTool): void {
+  setInkTool(tool: InkTool, returnKeys = true): void {
     if (!INK_TOOLS.includes(tool)) return
     if (this.inkSettings.tool === 'laser' && tool !== 'laser') this.inkOp({ t: 'laser-off' }, 'main')
     const leaving = tool === 'pointer' && this.inkSettings.tool !== 'pointer'
     this.inkSettings = { ...this.inkSettings, tool }
+    toolsLog(`tool=${tool} window=${this.activeWindowId ?? '-'} shown=${this.tools?.isShown() ?? false} front=${this.windowInFront} drawing=${this.tools?.isDrawing() ?? false}`)
     this.sendInkSettings()
     // Choosing a tool on the toolbar: the pad is put right under it, over the program window, before anything is drawn.
     this.stackTools()
-    if (leaving) this.returnKeysToWindow()
+    if (leaving && returnKeys) this.returnKeysToWindow()
     this.emit()
   }
 
@@ -741,6 +743,7 @@ export class Store {
    * reach the marks and not the program under the pad.
    */
   padPointer(): void {
+    toolsLog(`pad received a press (tool=${this.inkSettings.tool} front=${this.windowInFront})`)
     const bar = this.tools.toolbar
     if (this.inkSettings.tool !== 'pointer' && this.activeWindowId && !bar.isDestroyed() && !bar.isFocused()) bar.focus()
   }
@@ -801,6 +804,9 @@ export class Store {
   focusConsole(): void {
     const win = this.consoleWin?.win
     if (!win || win.isDestroyed() || HEADLESS) return
+    // Back to the console ends drawing: the tool goes back to the pointer, so nothing is drawn by accident
+    // (on the console's live copy, or on the window) while the console is used. The keys stay with the console.
+    if (this.inkSettings.tool !== 'pointer') this.setInkTool('pointer', false)
     if (win.isMinimized()) win.restore()
     win.show()
     win.moveTop()
@@ -1300,7 +1306,9 @@ export class Store {
     if (!this.tools || this.tools.pad.isDestroyed()) return
     const active = this.activeWindowId !== null
     this.tools.pad.webContents.send('ink:settings', { ...this.inkSettings, projecting: false, active, catching: this.windowInFront })
-    this.tools.setDrawing(active && this.windowInFront && this.inkSettings.tool !== 'pointer')
+    const drawing = active && this.windowInFront && this.inkSettings.tool !== 'pointer'
+    if (drawing !== this.tools.isDrawing()) toolsLog(`pad ${drawing ? 'takes' : 'lets go of'} the mouse (tool=${this.inkSettings.tool} active=${active} front=${this.windowInFront})`)
+    this.tools.setDrawing(drawing)
   }
 
   private scene(id: OutputId): InkScene {
@@ -1354,8 +1362,10 @@ export class Store {
         this.setActiveWindow(null, null)
       } else {
         // Drawing is taken only while that window (or the toolbar) is in front, so the console and other programs keep their clicks.
-        const front = states.fg === handle || this.tools.handles().includes(states.fg)
+        const own = this.tools.handles()
+        const front = states.fg === handle || (states.ro !== undefined && states.ro === handle) || own.includes(states.fg)
         const frontChanged = front !== this.windowInFront
+        if (frontChanged) toolsLog(`front=${front} window=${follow.id} handle=${handle} fg=${states.fg} root-owner=${states.ro ?? '-'} own=${own.includes(states.fg)} tool=${this.inkSettings.tool}`)
         this.windowInFront = front
         this.setActiveWindow(follow.id, { x: place.x, y: place.y, width: place.w, height: place.hh })
         if (frontChanged) this.sendPadSettings()

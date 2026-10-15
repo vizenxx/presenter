@@ -153,6 +153,10 @@ export class WindowTools {
     }
   }
 
+  isDrawing(): boolean {
+    return this.drawing
+  }
+
   /** Drawing tools make the pad take the mouse; the pointer lets clicks through to the window. */
   setDrawing(drawing: boolean): void {
     if (this.pad.isDestroyed()) return

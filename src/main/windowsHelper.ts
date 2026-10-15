@@ -34,6 +34,8 @@ export interface WindowState {
 /** The window in front and the asked windows' places. */
 export interface WindowStates {
   fg: number
+  /** The root owner of the window in front (a pop-up or dialog of a program window gives that window). */
+  ro?: number
   w: WindowState[]
 }
 
@@ -56,6 +58,7 @@ public static class PresenterWin {
   [DllImport("user32.dll")] static extern bool IsWindowVisible(IntPtr h);
   [DllImport("user32.dll")] static extern bool IsIconic(IntPtr h);
   [DllImport("user32.dll")] static extern bool IsZoomed(IntPtr h);
+  [DllImport("user32.dll")] static extern IntPtr GetAncestor(IntPtr h, uint flags);
   [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int GetWindowText(IntPtr h, StringBuilder s, int n);
   [DllImport("user32.dll")] static extern int GetWindowTextLength(IntPtr h);
   [DllImport("user32.dll")] static extern IntPtr GetWindow(IntPtr h, uint cmd);
@@ -124,7 +127,10 @@ public static class PresenterWin {
       if (DwmGetWindowAttribute(h, 9, out r, Marshal.SizeOf(typeof(RECT))) != 0) continue;
       items.Add("{\\"h\\":" + v + ",\\"x\\":" + r.Left + ",\\"y\\":" + r.Top + ",\\"w\\":" + (r.Right - r.Left) + ",\\"hh\\":" + (r.Bottom - r.Top) + ",\\"m\\":" + (IsIconic(h) ? "true" : "false") + "}");
     }
-    return "{\\"fg\\":" + GetForegroundWindow().ToInt64() + ",\\"w\\":[" + string.Join(",", items) + "]}";
+    IntPtr front = GetForegroundWindow();
+    // The window in front may be a dialog or pop-up that belongs to the program window: its root owner is that window.
+    IntPtr owner = front == IntPtr.Zero ? IntPtr.Zero : GetAncestor(front, 3);
+    return "{\\"fg\\":" + front.ToInt64() + ",\\"ro\\":" + owner.ToInt64() + ",\\"w\\":[" + string.Join(",", items) + "]}";
   }
   // Windows this helper maximized itself: only those are put back.
   static readonly HashSet<long> filled = new HashSet<long>();

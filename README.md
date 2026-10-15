@@ -123,7 +123,7 @@ While a program window is shown on a projector, a small toolbar floats at the to
 - **Roll**: picks a name; the name shows next to the button.
 - **Mine**: My timer's time, once you started it in the console.
 - **Screens ▾**: shows another content on Projector 1 (a deck, another program window, a whiteboard) without going to the console. A program window comes to the front by itself; for a deck the console comes to the front (and selects that card).
-- **Console**: brings the Presenter console to the front. The tools stay; the window card's icon brings the window back to the front.
+- **Console**: brings the Presenter console to the front and ends drawing (the tool goes back to the pointer, so nothing is drawn by accident while you use the console). The tools stay; the window card's icon brings the window back to the front.
 - **◂** folds the toolbar; drag **⠿** to move it. The toolbar always stays inside its display, goes with the window when the window moves, and comes to the visible part of the new window when another window is shown on Projector 1.
 
 The audience never sees the toolbar. It goes when the window is no longer shown on a projector or is minimized. You draw while the window (or the toolbar) is in front; with another program in front, the marks stay but the clicks go to that program.
@@ -199,6 +199,7 @@ The **⇄** button in the top bar turns the whole console left to right: the cur
 
 ## If something goes wrong
 
+- **A drawing tool does not draw on a program window** (it comes and goes, and is hard to catch): send the file `tools-log.txt` from the app data folder (next to `startup-log.txt`). It records which window was in front and when the ink pad took or let go of the mouse.
 - **A window is not in the list**: open the program first (it may be minimized). Presenter's own windows are not listed.
 - **A PPT does not open**: save it as PDF and open the PDF. Please send the file (or a copy without private content) to the maintainer.
 - **A video on a slide shows "cannot play here"**: it is WMV, AVI or another old format. Save it as MP4 and insert it again.

@@ -787,7 +787,10 @@ try {
     await call(() => globalThis.__presenter.rollerHide())
     await call(() => globalThis.__presenter.rollerReset())
     // The way back: the Console button brings the console to the front (the tools hide behind it).
+    // Back to the console ends drawing: a chosen tool goes back to the pointer, so nothing is drawn by accident there.
+    await call(() => globalThis.__presenter.setInkTool('arrow'))
     assert.equal(await clickBar('Console'), true, 'the toolbar has a Console button')
+    await waitFor('the Console button ends drawing (the tool is the pointer again)', (s) => s.ink.tool === 'pointer', 5000)
     let consoleFront = false
     for (let i = 0; i < 25 && !consoleFront; i++) {
       consoleFront = await call(() => globalThis.__presenter.consoleWin.win.isFocused())
