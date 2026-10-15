@@ -114,13 +114,17 @@ export class WindowTools {
       this.shown = true
       this.pad.showInactive()
       this.toolbar.showInactive()
+      // A pad shown again gets its click-through style from the state once more (see setDrawing).
+      this.pad.setIgnoreMouseEvents(!this.drawing)
     }
   }
 
   /** Drawing tools make the pad take the mouse; the pointer lets clicks through to the window. */
   setDrawing(drawing: boolean): void {
-    if (this.drawing === drawing || this.pad.isDestroyed()) return
+    if (this.pad.isDestroyed()) return
     this.drawing = drawing
+    // Applied every time (not only when it changes): after the pad was hidden and shown again the system's
+    // click-through style must follow the state, never the other way round.
     this.pad.setIgnoreMouseEvents(!drawing)
   }
 
