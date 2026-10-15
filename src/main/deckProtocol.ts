@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { byteRange } from '../shared/byteRange'
-import { EMBED_URLS, embedReferer } from '../shared/embedReferer'
+import { EMBED_URLS, embedReferer, isEmbeddedFrame } from '../shared/embedReferer'
 import { resolveDeckRequest } from './deckPaths'
 
 export const DECK_SCHEME = 'deck'
@@ -51,10 +51,10 @@ export function setViewerRoot(folder: string): void {
 
 export function installDeckProtocol(ses: Session): void {
   if (ses.protocol.isProtocolHandled(DECK_SCHEME)) return
-  // A YouTube video embedded in a deck plays in the slide (it loads only when the deck asks for it).
+  // A web page embedded in a deck (a YouTube player, a map …) is told who embeds it, as a browser would.
   ses.webRequest.onBeforeSendHeaders({ urls: EMBED_URLS }, (details, callback) => {
     const headers = details.requestHeaders
-    const referer = embedReferer(headers.Referer)
+    const referer = isEmbeddedFrame(details.resourceType) ? embedReferer(headers.Referer) : null
     if (referer) headers.Referer = referer
     callback({ requestHeaders: headers })
   })
