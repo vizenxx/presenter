@@ -227,6 +227,17 @@ export function ScreensBar({ state, menu, onMenu, onPickWindow, onReplaceWindow 
             <MenuItem onClick={() => { close(); window.presenter.addScreen(false) }}>{t.otherDeckWindow}</MenuItem>
             <MenuItem onClick={() => { close(); onPickWindow() }}>{t.windowScreen}</MenuItem>
             <MenuItem onClick={() => { close(); window.presenter.addWhiteboard(false) }}>{t.whiteboardScreen}</MenuItem>
+            {state.recent.length > 0 && (
+              <>
+                <div className="my-1 h-px bg-line" />
+                <p className="px-3 pt-1 pb-1 text-sm text-muted">{t.recent}</p>
+                {state.recent.slice(0, 8).map((d) => (
+                  <MenuItem key={d.path} title={d.path} onClick={() => { close(); window.presenter.addScreen(false, d.path) }}>
+                    {d.name}
+                  </MenuItem>
+                ))}
+              </>
+            )}
           </Menu>
         )}
       </span>

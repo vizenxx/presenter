@@ -90,7 +90,7 @@ The **Guide** in the app has the same help in two parts: **1 · Use Presenter** 
 ## Contents and projectors
 
 - Each card in the bottom bar is one **content**: a deck or a program window. It remembers its own page.
-- **＋ Add screen** adds a content: the same deck, another deck, **A window on this computer**, or a **Whiteboard** (30 blank white pages; put it on Projector 1 and draw with the marking tools; each page keeps its marks; also on the start screen). A new content **waits**; nothing opens.
+- **＋ Add screen** adds a content: the same deck, another deck (or one from **Recent**), **A window on this computer**, or a **Whiteboard** (30 blank white pages; put it on Projector 1 and draw with the marking tools; each page keeps its marks; also on the start screen). A new content **waits**; nothing opens.
 - The card's **Projector ▾** button decides where the audience sees it:
   - **Projector 1**: the main projector.
   - **Projector 2, 3 …**: projectors you opened.
@@ -124,7 +124,7 @@ While a program window is shown on a projector, a small toolbar floats at the to
 - **Mine**: My timer's time, once you started it in the console.
 - **Screens ▾**: shows another content on Projector 1 (a deck, another program window, a whiteboard) without going to the console. A program window comes to the front by itself; for a deck the console comes to the front (and selects that card).
 - **Console**: brings the Presenter console to the front. The tools stay; the window card's icon brings the window back to the front.
-- **◂** folds the toolbar; drag **⠿** to move it. The toolbar always stays inside its display.
+- **◂** folds the toolbar; drag **⠿** to move it. The toolbar always stays inside its display, goes with the window when the window moves, and comes to the visible part of the new window when another window is shown on Projector 1.
 
 The audience never sees the toolbar. It goes when the window is no longer shown on a projector or is minimized. You draw while the window (or the toolbar) is in front; with another program in front, the marks stay but the clicks go to that program.
 

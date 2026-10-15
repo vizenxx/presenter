@@ -28,6 +28,10 @@ export class WindowTools {
   private shown = false
   private drawing = false
   private placed = false
+  /** The window being followed, where it was last, and where the toolbar stands on it. */
+  private windowKey = ''
+  private lastBounds: Rectangle | null = null
+  private offset: { dx: number; dy: number } | null = null
 
   constructor(paths: WindowToolsPaths) {
     this.pad = new BrowserWindow({
@@ -68,7 +72,17 @@ export class WindowTools {
     if (IS_MAC) this.toolbar.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
     paths.loadToolbar(this.toolbar)
     // Dragged to or past the edge: it comes back inside the display it is on (never lost off screen).
-    this.toolbar.on('moved', () => this.keepToolbarInside())
+    this.toolbar.on('moved', () => {
+      this.keepToolbarInside()
+      if (this.lastBounds) this.rememberOffset(this.lastBounds)
+    })
+  }
+
+  /** Where the toolbar stands on the followed window, so it can go with the window when that moves. */
+  private rememberOffset(window: Rectangle): void {
+    if (this.toolbar.isDestroyed()) return
+    const b = this.toolbar.getBounds()
+    this.offset = { dx: b.x - window.x, dy: b.y - window.y }
   }
 
   /** Puts the toolbar wholly inside the work area of the display it is mostly on. */
@@ -89,8 +103,12 @@ export class WindowTools {
     return this.shown
   }
 
-  /** Show over the window (Windows: physical pixels; macOS: points, as the system reports them), or hide (null). */
-  place(physical: Rectangle | null): void {
+  /**
+   * Show over the window (Windows: physical pixels; macOS: points, as the system reports them), or hide (null).
+   * windowKey says which window it is: when it changes, the toolbar comes to the visible part of the new
+   * window; while it stays, the toolbar goes with the window when the window moves.
+   */
+  place(physical: Rectangle | null, windowKey: string | null = null): void {
     if (HEADLESS || this.toolbar.isDestroyed() || this.pad.isDestroyed()) return
     if (!physical) {
       if (!this.shown) return
@@ -102,14 +120,30 @@ export class WindowTools {
     const bounds = IS_MAC ? physical : screen.screenToDipRect(null, physical)
     const now = this.pad.getBounds()
     if (now.x !== bounds.x || now.y !== bounds.y || now.width !== bounds.width || now.height !== bounds.height) this.pad.setBounds(bounds)
-    if (!this.placed) {
-      // First time: the toolbar starts at the top middle of the window's display; then it stays where the teacher drags it.
+    const key = windowKey ?? ''
+    if (!this.placed || key !== this.windowKey) {
+      // First time, or another window is followed: the toolbar comes to the top middle of the part of that
+      // window that can be seen (the window cut to its display); from there it stays where the teacher drags it.
       const area = screen.getDisplayMatching(bounds).workArea
+      const left = Math.max(bounds.x, area.x)
+      const top = Math.max(bounds.y, area.y)
+      const right = Math.min(bounds.x + bounds.width, area.x + area.width)
+      const bottom = Math.min(bounds.y + bounds.height, area.y + area.height)
+      const visible = right > left && bottom > top ? { x: left, y: top, width: right - left, height: bottom - top } : area
       const size = this.toolbar.getBounds()
-      this.toolbar.setPosition(Math.round(area.x + (area.width - size.width) / 2), area.y + 8)
+      const x = Math.round(visible.x + (visible.width - size.width) / 2)
+      const y = visible.y + 8
+      this.toolbar.setPosition(x, y)
       this.placed = true
+      this.windowKey = key
+      this.keepToolbarInside()
+      this.rememberOffset(bounds)
+    } else if (this.lastBounds && this.offset && (bounds.x !== this.lastBounds.x || bounds.y !== this.lastBounds.y)) {
+      // The window moved: the toolbar goes with it, keeping its place on the window.
+      this.toolbar.setPosition(bounds.x + this.offset.dx, bounds.y + this.offset.dy)
       this.keepToolbarInside()
     }
+    this.lastBounds = bounds
     if (!this.shown) {
       this.shown = true
       this.pad.showInactive()

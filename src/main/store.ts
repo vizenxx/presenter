@@ -275,9 +275,12 @@ export class Store {
     }
   }
 
-  async addScreen(sameDeck: boolean): Promise<void> {
-    const deck = sameDeck ? this.mainDeck : await this.pickDeck(this.strings().pickScreenDeck)
+  /** A new content: the same deck, another deck from the file dialog, or (path) a known deck, e.g. one from Recent. */
+  async addScreen(sameDeck: boolean, path?: string): Promise<void> {
+    if (path !== undefined && !deckKind(path)) return
+    const deck = path !== undefined ? this.toDeck(path) : sameDeck ? this.mainDeck : await this.pickDeck(this.strings().pickScreenDeck)
     if (!deck) return
+    if (path !== undefined) sameDeck = false
     const prepared = sameDeck ? this.mainPrepared : await this.prepare(deck)
     if (!prepared) return
     if (!sameDeck) this.remember(deck)
@@ -1372,7 +1375,7 @@ export class Store {
   private setActiveWindow(id: OutputId | null, rect: Rectangle | null): void {
     const changed = id !== this.activeWindowId
     this.activeWindowId = id
-    this.tools.place(id ? rect : null)
+    this.tools.place(id ? rect : null, id)
     // Every time the tools come up (and about once a second after), they are put in order over the program windows.
     if (id && (changed || ++this.stackTick >= 4)) {
       this.stackTick = 0

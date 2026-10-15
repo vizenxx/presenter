@@ -695,6 +695,27 @@ async function sidesAndPopups(): Promise<void> {
   console.log('ok pop-ups stay inside the window at 1024 x 620 (normal and turned); a turned console swaps the sides and the slide panel')
 }
 
+/** Add screen lists the recent decks too; one of them becomes a new screen. */
+async function addScreenRecent(): Promise<void> {
+  const state = sampleState(false)
+  writeStub(state)
+  const win = new BrowserWindow({ show: false, width: 1280, height: 760, useContentSize: true, webPreferences: { preload: STUB, contextIsolation: true, sandbox: true, offscreen: true } })
+  await win.loadFile(path.join(ROOT, 'out', 'renderer', 'console.html'))
+  await wait(1000)
+  const js = <T>(code: string): Promise<T> => win.webContents.executeJavaScript(code) as Promise<T>
+  const opened = await js<boolean>(`(() => { const b = [...document.querySelectorAll('footer button')].find((x) => x.textContent.includes('Add screen')); if (b) b.click(); return !!b })()`)
+  if (!opened) throw new Error('no Add screen button')
+  await wait(300)
+  const items = await js<string[]>(`[...document.querySelectorAll('button.group')].map((b) => b.title || b.textContent.trim())`)
+  if (!items.some((i) => i.includes('UXD202 Lecture n1'))) throw new Error(`Add screen has no Recent deck: ${JSON.stringify(items)}`)
+  await js(`[...document.querySelectorAll('button.group')].find((b) => b.title && b.title.length > 0).click()`)
+  const calls = (await js<unknown[][]>('window.presenter.__calls()')).filter((c) => c[0] === 'addScreen')
+  if (calls.length !== 1 || calls[0][1] !== false || typeof calls[0][2] !== 'string') throw new Error(`addScreen calls: ${JSON.stringify(calls)}`)
+  console.log('ok Add screen lists Recent; a recent deck becomes a new screen')
+  win.destroy()
+  await wait(300)
+}
+
 /** The name of a screen opens a list: another deck, a program window, a whiteboard, or a deck from Recent. */
 async function screenNameMenu(): Promise<void> {
   const state = sampleState(false)
@@ -788,6 +809,7 @@ app.whenReady().then(async () => {
     await resumeChoice()
     await mirrorClick()
     await screenNameMenu()
+    await addScreenRecent()
     await sidesAndPopups()
     await groupsShot()
     await consoleText()

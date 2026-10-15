@@ -290,7 +290,7 @@ export interface ConsoleApi {
   select(id: OutputId): void
   setLinked(id: OutputId, linked: boolean): void
   nudge(id: OutputId, delta: number): void
-  addScreen(sameDeck: boolean): void
+  addScreen(sameDeck: boolean, path?: string): void
   /** A whiteboard (blank pages to draw on); show = straight onto Projector 1. */
   addWhiteboard(show?: boolean): void
   /** Play or pause a video or sound of the slide on Projector 1. */
