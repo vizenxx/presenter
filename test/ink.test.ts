@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { hitStroke, inkKeyAction, InkScene, MAX_ZOOM, snapLine, squareCorner, zoomTransform, type InkStroke } from '../src/shared/ink'
+import { arrowHead, hitStroke, inkKeyAction, InkScene, MAX_ZOOM, snapLine, squareCorner, zoomTransform, type InkStroke } from '../src/shared/ink'
 
 const pen = (id: string, points: number[]): InkStroke => ({ id, tool: 'pen', color: '#ef4444', points })
 
@@ -142,5 +142,29 @@ describe('the zoom tool', () => {
   it('is picked with Z', () => {
     expect(inkKeyAction('z', {}, false, 'pen')).toEqual({ type: 'tool', tool: 'zoom' })
     expect(inkKeyAction('z', { control: true }, false, 'pen')).toEqual({ type: 'undo' })
+  })
+})
+
+describe('arrowHead', () => {
+  // A 720-pixel-high slide; the arrow line is 0.006 of the height = 4.32 px.
+  const line = 0.006 * 720
+  it('grows with the arrow between its limits', () => {
+    const short = arrowHead(80, line, 720)
+    const medium = arrowHead(140, line, 720)
+    const long = arrowHead(300, line, 720)
+    expect(short).toBeLessThan(medium)
+    expect(medium).toBeLessThanOrEqual(long)
+  })
+  it('never gets thinner than three line widths, so a thick line keeps a visible head', () => {
+    expect(arrowHead(100, line, 720)).toBeGreaterThanOrEqual(line * 3)
+    expect(arrowHead(100, 10, 720)).toBeGreaterThanOrEqual(30)
+  })
+  it('stops growing at a share of the slide height', () => {
+    expect(arrowHead(2000, line, 720)).toBeCloseTo(0.026 * 720, 5)
+    expect(arrowHead(600, line, 720)).toBe(arrowHead(2000, line, 720))
+  })
+  it('is smaller than the old fixed head on a normal arrow, and never more than 45 % of a tiny arrow', () => {
+    expect(arrowHead(300, line, 720)).toBeLessThan(0.035 * 720)
+    expect(arrowHead(10, line, 720)).toBeLessThanOrEqual(4.5)
   })
 })

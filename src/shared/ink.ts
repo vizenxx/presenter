@@ -72,7 +72,10 @@ export interface InkSettings {
 export const STROKE_WIDTH: Record<StrokeTool, number> = { pen: 0.005, highlighter: 0.026, rect: 0.0045, arrow: 0.006, text: 0 }
 const LASER_RADIUS = 0.009
 /** Arrow head: the two lines of the V, as a fraction of the slide height, and their angle to the shaft. */
-const ARROW_HEAD = 0.035
+/** The head grows with the arrow: a share of its length, never thinner than the line allows and never above a share of the slide height. */
+const ARROW_HEAD_RATIO = 0.12
+const ARROW_HEAD_MAX = 0.026
+const ARROW_HEAD_MIN_WIDTHS = 3
 const ARROW_SPREAD = Math.PI / 6
 
 // ---------- Shift: straight lines, squares, 45° steps ----------
@@ -246,6 +249,17 @@ export function drawInk(ctx: CanvasRenderingContext2D, width: number, height: nu
   if (scene.laser) drawLaser(ctx, width, height, scene.laser)
 }
 
+/**
+ * Length of an arrow's head, in pixels. It follows the arrow's length (12 %), but never gets
+ * smaller than three line widths (a thick line keeps a visible head), never larger than 2.6 % of
+ * the slide height (a long arrow does not get a huge head), and never more than 45 % of a short arrow.
+ */
+export function arrowHead(length: number, lineWidth: number, height: number): number {
+  const min = lineWidth * ARROW_HEAD_MIN_WIDTHS
+  const max = Math.max(min, ARROW_HEAD_MAX * height)
+  return Math.min(length * 0.45, Math.min(max, Math.max(min, length * ARROW_HEAD_RATIO)))
+}
+
 function drawStroke(ctx: CanvasRenderingContext2D, w: number, h: number, s: InkStroke): void {
   const p = s.points
   if (p.length < 2) return
@@ -268,7 +282,7 @@ function drawStroke(ctx: CanvasRenderingContext2D, w: number, h: number, s: InkS
     if (p.length >= 4) {
       const [x0, y0, x1, y1] = [p[0] * w, p[1] * h, p[2] * w, p[3] * h]
       const length = Math.hypot(x1 - x0, y1 - y0)
-      const head = Math.min(length * 0.5, ARROW_HEAD * h)
+      const head = arrowHead(length, ctx.lineWidth, h)
       const angle = Math.atan2(y1 - y0, x1 - x0)
       ctx.moveTo(x0, y0)
       ctx.lineTo(x1, y1)
