@@ -13,7 +13,7 @@ const OUT = path.join(ROOT, 'e2e', 'out')
 const STUB = path.join(OUT, 'harness', 'console-stub-preload.cjs')
 const AI_REQUEST = aiRequestText(fs.readFileSync(path.join(ROOT, 'docs', 'ai-integration.md'), 'utf8'))
 /** Every ConsoleApi method (contextBridge copies plain objects only, so no Proxy). */
-const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "focusConsole", "listWindows", "addWindowScreen", "setTheme", "setFlipped", "dismissResumed", "replaceScreen", "switchTo", "raiseWindow", "timerWarnings", "speakerAdjust", "timerAdjust", "timerSet", "speakerPeriods", "setBlank", "savePicture", "addWhiteboard", "rollerGroups", "rollerClearGroups", "mediaToggle"]
+const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "focusConsole", "listWindows", "addWindowScreen", "setTheme", "setFlipped", "dismissResumed", "replaceScreen", "switchTo", "raiseWindow", "projectorClick", "mediaFullscreen", "timerWarnings", "speakerAdjust", "timerAdjust", "timerSet", "speakerPeriods", "setBlank", "savePicture", "addWhiteboard", "rollerGroups", "rollerClearGroups", "mediaToggle"]
 
 app.disableHardwareAcceleration()
 // Each screenshot closes its window; keep the app alive between them.
@@ -151,6 +151,9 @@ async function shot(projecting: boolean, open: Open = null, page = 'console', th
     await win.webContents.executeJavaScript(`[...document.querySelectorAll('button')].find((b) => b.textContent.includes('Sound 2')).click()`)
     const calls = await win.webContents.executeJavaScript('window.presenter.__calls()')
     if (!calls.some((c: unknown[]) => c[0] === 'mediaToggle' && c[1] === 1)) throw new Error('▶ Sound 2 did not ask to play the sound')
+    await win.webContents.executeJavaScript(`[...document.querySelectorAll('button')].find((b) => b.textContent.includes('Full screen')).click()`)
+    const after = await win.webContents.executeJavaScript('window.presenter.__calls()')
+    if (!after.some((c: unknown[]) => c[0] === 'mediaFullscreen')) throw new Error('Full screen did not ask for full screen')
     const stepsText = await win.webContents.executeJavaScript(`document.body.innerText.includes('1/3 clicks')`)
     if (!stepsText) throw new Error('the slide line does not show 1/3 clicks')
   }
@@ -725,6 +728,26 @@ async function screenNameMenu(): Promise<void> {
   await wait(300)
 }
 
+/** While projecting, a click on the console's live copy (pointer tool) is a click on the slide on the projector. */
+async function mirrorClick(): Promise<void> {
+  const state = sampleState(true)
+  state.ink = { ...state.ink, tool: 'pointer' }
+  writeStub(state)
+  const win = new BrowserWindow({ show: false, width: 1280, height: 760, useContentSize: true, webPreferences: { preload: STUB, contextIsolation: true, sandbox: true, offscreen: true } })
+  await win.loadFile(path.join(ROOT, 'out', 'renderer', 'console.html'))
+  await wait(1200)
+  const js = <T>(code: string): Promise<T> => win.webContents.executeJavaScript(code) as Promise<T>
+  const ok = await js<boolean>(`(() => { const c = [...document.querySelectorAll('canvas')].find((x) => x.title.startsWith('Click to select the projector')); if (!c) return false; const r = c.getBoundingClientRect(); c.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: r.left + r.width * 0.25, clientY: r.top + r.height * 0.75 })); return true })()`)
+  if (!ok) throw new Error('the live copy of the projector has no clickable canvas')
+  const clicks = (await js<unknown[][]>('window.presenter.__calls()')).filter((c) => c[0] === 'projectorClick')
+  if (clicks.length !== 1) throw new Error(`projectorClick calls: ${JSON.stringify(clicks)}`)
+  const [nx, ny] = [Number(clicks[0][1]), Number(clicks[0][2])]
+  if (Math.abs(nx - 0.25) > 0.03 || Math.abs(ny - 0.75) > 0.03) throw new Error(`the click should map to 0.25 / 0.75 of the slide: ${nx} / ${ny}`)
+  console.log('ok a click on the live copy reaches the slide on the projector')
+  win.destroy()
+  await wait(300)
+}
+
 /** A deck opened again: the two-button choice sits above the slide, the buttons are equal and clearly different. */
 async function resumeChoice(): Promise<void> {
   const state = sampleState(false)
@@ -763,6 +786,7 @@ app.whenReady().then(async () => {
     await inputs()
     await toolbarTimer()
     await resumeChoice()
+    await mirrorClick()
     await screenNameMenu()
     await sidesAndPopups()
     await groupsShot()

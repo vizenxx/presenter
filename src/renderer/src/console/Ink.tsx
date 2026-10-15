@@ -200,8 +200,12 @@ export function MirrorView({ aspect, ink, fallback }: { aspect: number; ink: Ink
       <canvas
         ref={canvas}
         title={drawing ? undefined : t.selectProjector}
-        onClick={() => {
-          if (!drawing) window.presenter.select('projector')
+        onClick={(e) => {
+          if (drawing) return
+          window.presenter.select('projector')
+          // The live copy is operable: the same click reaches the slide on the projector (a video's ▶, a button of the deck).
+          const box = e.currentTarget.parentElement?.getBoundingClientRect()
+          if (box && box.width > 0 && box.height > 0) window.presenter.projectorClick((e.clientX - box.left) / box.width, (e.clientY - box.top) / box.height)
         }}
         className="absolute inset-0 h-full w-full"
         style={{ cursor: CURSORS[ink.tool], touchAction: 'none' }}

@@ -57,6 +57,26 @@ export interface OutputOptions {
 /** Wait this long for a UXD202 answer before falling back to arrow keys. */
 const DETECT_MS = 3000
 /** A GOTO may take this long; mismatching reports inside the window are echoes, not user moves. */
+/**
+ * Finds what can play in a deck's own page, in document order: a <video>, an embedded player
+ * (YouTube, Vimeo), and a "click to play" cover (a button saying so, a <lite-youtube>, or anything
+ * the deck marks with data-presenter-video). Runs inside the page; returns only plain facts.
+ */
+const FIND_MEDIA = `(() => {
+  const seen = (el) => { const r = el.getBoundingClientRect(); const s = getComputedStyle(el); return r.width > 60 && r.height > 40 && s.visibility !== 'hidden' && s.display !== 'none' && !el.closest('[hidden], [aria-hidden=true]') && (innerWidth === 0 || (r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth)) }
+  const out = []
+  for (const el of document.querySelectorAll('video, iframe, lite-youtube, [data-presenter-video], button, [role=button]')) {
+    if (!seen(el)) continue
+    const tag = el.tagName.toLowerCase()
+    if (tag === 'video') out.push({ el, type: 'video', playing: !el.paused && !el.ended })
+    else if (tag === 'iframe') {
+      if (/youtube|youtu\.be|vimeo/i.test(el.src || '')) out.push({ el, type: 'frame', playing: false })
+    } else if (tag === 'lite-youtube' || el.hasAttribute('data-presenter-video') || /click to play|play video/i.test(el.textContent || '')) {
+      if (!out.some((m) => m.el.contains(el) || el.contains(m.el))) out.push({ el, type: 'cover', playing: false })
+    }
+  }
+  return out
+})`
 const PENDING_MS = 1500
 /** Injected keys reach before-input-event within this window. */
 const BYPASS_MS = 1000
@@ -99,6 +119,9 @@ export class Output {
   capture: { sourceId: string; name: string } | null = null
   /** Teacher-chosen page zoom in percent (字号). */
   zoomPercent = 100
+  /** Media found in an HTML deck's own page (no protocol needed); the console's ▶ Video and Full screen buttons use it. */
+  pageMedia: { kinds: Array<'video' | 'audio'>; playing: number | null } | null = null
+  private scanning = false
   /** The deck shows the countdown itself (UXD202 navbar); otherwise the projector overlay does. */
   ownTimer = true
   /** Fit factor from the place the view is shown (a small console pane shrinks a full-size deck). */
@@ -221,6 +244,7 @@ export class Output {
     this.keysAt = 0
     this.pendingTarget = null
     this.media = null
+    this.pageMedia = null
     this.steps = null
     // The next-slide preview shows each slide with all its click steps played.
     void this.view.webContents.loadURL(this.kind === 'preview' ? `${url}&preview=1` : url)
@@ -242,6 +266,80 @@ export class Output {
     this.index = 0
     void this.view.webContents.loadURL('about:blank')
     this.emit({ type: 'changed' })
+  }
+
+  /** Looks for media in an HTML deck's own page (called about once a second while it is on the projector). */
+  async scanPageMedia(): Promise<void> {
+    const wc = this.view.webContents
+    if (this.scanning || wc.isDestroyed() || !this.deck || deckKind(this.deck.path) !== 'html' || this.adapter === 'loading') return
+    this.scanning = true
+    try {
+      const found = (await wc.executeJavaScript(`(${FIND_MEDIA})().map((m) => ({ type: m.type, playing: m.playing }))`)) as Array<{ type: string; playing: boolean }>
+      const next = found.length === 0 ? null : { kinds: found.map(() => 'video' as const), playing: found.findIndex((m) => m.playing) >= 0 ? found.findIndex((m) => m.playing) : null }
+      if (JSON.stringify(next) !== JSON.stringify(this.pageMedia)) {
+        this.pageMedia = next
+        this.emit({ type: 'changed' })
+      }
+    } catch {
+      // The page is loading or closed: ask again later.
+    } finally {
+      this.scanning = false
+    }
+  }
+
+  /** Plays or pauses the index-th media of the page; a player or a cover gets a real click in its middle. */
+  private async pressPageMedia(index: number): Promise<void> {
+    const wc = this.view.webContents
+    if (wc.isDestroyed()) return
+    try {
+      const at = (await wc.executeJavaScript(
+        `(() => { const m = (${FIND_MEDIA})()[${Math.floor(index)}]; if (!m) return null; if (m.type === 'video') { if (m.el.paused) void m.el.play(); else m.el.pause(); return null } const r = m.el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 } })()`,
+        true
+      )) as { x: number; y: number } | null
+      if (at) await this.clickAt(at.x, at.y)
+    } catch {
+      // Closed or reloaded meanwhile.
+    }
+  }
+
+  /**
+   * The video fills the screen it is shown on (or leaves full screen when it already does). A
+   * cover is clicked first, so the player loads; then the player goes full screen.
+   */
+  async mediaFullscreen(): Promise<void> {
+    const wc = this.view.webContents
+    if (wc.isDestroyed()) return
+    const run = `(() => {
+      if (document.fullscreenElement) { void document.exitFullscreen(); return null }
+      const list = (${FIND_MEDIA})(); const m = list.find((x) => x.playing) || list.find((x) => x.type !== 'cover') || list[0]
+      if (!m) return null
+      if (m.type === 'cover') { const r = m.el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 } }
+      void m.el.requestFullscreen(); return null
+    })()`
+    try {
+      const at = (await wc.executeJavaScript(run, true)) as { x: number; y: number } | null
+      if (!at) return
+      await this.clickAt(at.x, at.y)
+      // The cover became the player: now it goes full screen.
+      await new Promise((resolve) => setTimeout(resolve, 900))
+      await wc.executeJavaScript(run, true)
+    } catch {
+      // Closed or reloaded meanwhile.
+    }
+  }
+
+  /** A real mouse click at a place of the page (CSS pixels of the viewport), over the DevTools protocol. */
+  private async clickAt(x: number, y: number): Promise<void> {
+    const wc = this.view.webContents
+    if (wc.isDestroyed()) return
+    try {
+      if (!wc.debugger.isAttached()) wc.debugger.attach('1.3')
+      await wc.debugger.sendCommand('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y })
+      await wc.debugger.sendCommand('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', clickCount: 1, buttons: 1 })
+      await wc.debugger.sendCommand('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', clickCount: 1, buttons: 0 })
+    } catch {
+      // Closed or reloaded meanwhile.
+    }
   }
 
   /** Move to a logical index and drive the deck there. */
@@ -299,7 +397,7 @@ export class Output {
       zoomPercent: this.zoomPercent,
       deckKind: this.deck ? deckKind(this.deck.path) : null,
       captureName: this.capture?.name ?? null,
-      media: this.media,
+      media: this.media ?? this.pageMedia,
       steps: this.steps,
       shownOn: null
     }
@@ -353,12 +451,27 @@ export class Output {
 
   /** Play or pause a video or sound of the shown slide (built-in viewer). */
   toggleMedia(index: number): void {
-    this.send({ type: 'MEDIA', action: 'toggle', index })
+    // The built-in viewers (and decks that report their own media) answer to the command; an HTML deck's own page is pressed directly.
+    if (this.media) this.send({ type: 'MEDIA', action: 'toggle', index })
+    else void this.pressPageMedia(index)
   }
 
   private send(cmd: Record<string, unknown>): void {
     const wc = this.view.webContents
     if (!wc.isDestroyed()) wc.send('deck:cmd', cmd)
+  }
+
+  /**
+   * A real mouse click at a place of the shown page (nx, ny: 0 to 1 from the top left), over the
+   * DevTools protocol (works without window focus). The console's live copy of the projector uses
+   * it, so a video's ▶ or a button of the deck can be pressed from the laptop.
+   */
+  async click(nx: number, ny: number): Promise<void> {
+    const wc = this.view.webContents
+    if (wc.isDestroyed()) return
+    const b = this.view.getBounds()
+    const zoom = wc.getZoomFactor() || 1
+    await this.clickAt((Math.min(1, Math.max(0, nx)) * b.width) / zoom, (Math.min(1, Math.max(0, ny)) * b.height) / zoom)
   }
 
   /** Trusted arrow keys over the DevTools protocol; works without window focus. */

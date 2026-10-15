@@ -89,6 +89,7 @@ export class Store {
   private speaker: SpeakerTimerView = { mode: 'up', minutes: 45, startedAt: null, heldMs: 0, periods: T.cleanPeriods(T.DEFAULT_PERIODS), clockExtra: null }
   private theme: UiTheme | null = null
   private flipped = false
+  private mediaScanTick = 0
   private warnings: T.TimerWarning[] = T.DEFAULT_WARNINGS.map((w) => ({ ...w }))
   /** The main deck opened again on the page it showed last (0-based); null after the next page move. */
   private resumed: number | null = null
@@ -418,6 +419,20 @@ export class Store {
     this.setResumed(null)
     this.followPreview(true)
     this.emit()
+  }
+
+  /** A click on the console's live copy of the projector reaches the slide there (0 to 1 from the top left). */
+  projectorClick(nx: number, ny: number): void {
+    if (!this.projecting || !Number.isFinite(nx) || !Number.isFinite(ny)) return
+    const o = this.onAir()
+    if (!o || o.capture) return
+    void o.click(nx, ny)
+  }
+
+  /** The video on Projector 1 goes full screen there (again: back to normal). */
+  mediaFullscreen(): void {
+    const o = this.onAir()
+    if (o && !o.capture) void o.mediaFullscreen()
   }
 
   /** The card's window icon: that program window comes to the front again (its floating tools come back with it). */
@@ -1370,6 +1385,12 @@ export class Store {
 
   private tick(): void {
     this.updateKeepAwake()
+    // An HTML deck's own videos: looked for about once a second, on the content the audience sees.
+    if (++this.mediaScanTick >= 5) {
+      this.mediaScanTick = 0
+      const onAir = this.onAir()
+      if (onAir && !onAir.capture) void onAir.scanPageMedia()
+    }
     const wasAlarming = this.timer.alarming
     this.timer = T.tick(this.timer, Date.now())
     if (this.timer.alarming && !wasAlarming) this.alarmSince = Date.now()

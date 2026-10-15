@@ -67,7 +67,8 @@ Presenter 是一个解压即用的文件夹。没有安装程序，也不需要�
   - 常见效果（出现、淡入、擦除、缩放……）和很多切换效果都会播放。有些效果会简化：例如“飞入”的文字直接出现，不会移动。
   - 幻灯片由 LibreOffice 绘制，字体、图表或 SmartArt 可能和 PowerPoint 略有不同。新课件请在演示前先检查一遍。
   - 动画格式做不出来时，幻灯片按静态页显示（每页显示最终画面），由同一个 LibreOffice 或 PowerPoint、Keynote 生成。
-- PPTX 里的视频和声音在幻灯片上的原位播放。点控制台幻灯片标题旁的 **▶ Video**，或者点视频上的 ▶（投影上，或投影开始前的控制台画面上）。翻页时自动停止。不需要另装程序。
+- PPTX 里的视频和声音在幻灯片上的原位播放。点控制台幻灯片标题旁的 **▶ Video**（再点 **Full screen** 让视频铺满投影），或者点视频上的 ▶。翻页时自动停止。不需要另装程序。
+- HTML 课件里的视频（`<video>`、嵌入的 YouTube 或 Vimeo 播放器、“Click to play”封面）在控制台里也有同样的 **▶ Video** 和 **Full screen** 按钮。投影时，用鼠标指针工具点控制台里的实时画面，就等于点投影上的那一页，完全不用去投影屏上操作。
   - 能播放：MP4、M4V、MOV（H.264）、WebM、MP3、M4A、WAV、OGG。WMV 和 AVI 不能播放：视频上会显示提示；请另存为 MP4 后重新插入。
   - 链接（没有嵌入）的视频：文件还在 PPTX 指向的位置时才能播放。
   - 旧的 .ppt 文件：先另存为 .pptx，视频才能播放。
@@ -207,7 +208,7 @@ Presenter 是一个解压即用的文件夹。没有安装程序，也不需要�
 
 - 源码：`src/`。设计文档：`docs/specs/`。实施计划：`docs/superpowers/plans/`。
 - 常用命令：`npm run build`（构建）、`npm test`（单元测试）、`npm run e2e`（端到端测试，17 步）。只有一块屏幕时，它会弹出窗口、发出声音；接着第二块屏幕时，它隐藏、静音运行，并跳过投影步骤。它从不截取屏幕画面。`PRESENTER_E2E_HIDDEN=1 npm run e2e` 在只有一块屏幕时也隐藏、静音运行。
-- 不开窗口的检查：`npm run check:viewer`（PPT/PDF）、`npm run check:ink`（标注：画笔、框选、橡皮擦、箭头、Shift 形状、文字）、`npm run check:frameworks`（Reveal.js、remark、impress.js、Marp、普通 slide 网页、协议示例）、`npm run check:console`（深色和浅色界面的控制台排版、菜单、开始画面、浮动工具条及其计时器、计时器输入格打字、🔔 和 ± 弹出框、弹出层留在窗口内、左右互换、按住 A+）、`npm run check:start`（隐藏静音启动，逐个启动和 8 个同时启动）。
+- 不开窗口的检查：`npm run check:viewer`（PPT/PDF）、`npm run check:ink`（标注：画笔、框选、橡皮擦、箭头、Shift 形状、文字）、`npm run check:frameworks`（Reveal.js、remark、impress.js、Marp、普通 slide 网页、协议示例）、`npm run check:media`（HTML 课件页面里的视频和“Click to play”封面：能找到、能从控制台按下、能全屏），`npm run check:console`（深色和浅色界面的控制台排版、菜单、开始画面、浮动工具条及其计时器、计时器输入格打字、🔔 和 ± 弹出框、弹出层留在窗口内、左右互换、按住 A+）、`npm run check:start`（隐藏静音启动，逐个启动和 8 个同时启动）。
 - 真实转换测试：`PRESENTER_CONVERT_IT=libreoffice npm test`（或 `powerpoint`；Mac 上用 `keynote`）。
 - App 自带的 LibreOffice：`node scripts/libreoffice.mjs prepare` 下载官方版本（核对 SHA-256），只保留转换幻灯片需要的部分，放进 `vendor/`（加 `--from "C:/Program Files/LibreOffice"` 则改用已安装的副本）；`node scripts/libreoffice.mjs check` 用它转换一份带点击动画的测试课件。LibreOffice 使用 Mozilla Public License 2.0，它的许可文件随 App 一起提供。
 - 压缩包：`npm run dist:win`（Windows）、`npm run dist:mac`（只能在 Mac 上运行）；先运行 `prepare`。没有 Mac 时，在 GitHub 上运行 **Build app zips** 工作流（Actions 页面，或 `gh workflow run build.yml`；只推送不会自动运行），它生成三个压缩包，并替换这个版本的 Releases 页（说明文字：`.github/release-notes.md`）；测试构建时取消勾选 **publish**。发新版本时先改 `package.json` 里的 `version`。图标源文件：`build/icon.svg`。

@@ -143,6 +143,11 @@ export function CurrentPane(props: {
                 </Btn>
               )
             })}
+            <Btn title={t.mediaFullTitle} onClick={() => window.presenter.mediaFullscreen()}>
+              <IconLabel icon="expand" size={14}>
+                {t.mediaFull}
+              </IconLabel>
+            </Btn>
           </span>
         )}
         <Milestones state={state} index={projector.shownIndex} />

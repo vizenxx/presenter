@@ -265,6 +265,10 @@ export interface ConsoleApi {
   replaceScreen(id: OutputId, spec: ReplaceSpec): void
   /** A window card's icon: that program window comes to the front. */
   raiseWindow(id: OutputId): void
+  /** A click on the console's live copy of the projector, as a place of the slide (0 to 1 from the top left). */
+  projectorClick(nx: number, ny: number): void
+  /** The video on Projector 1 goes full screen (again: back to normal). */
+  mediaFullscreen(): void
   /** From the floating toolbar: show this content on Projector 1 (a deck brings the console forward). */
   switchTo(id: OutputId): void
   /** Black or white projectors (null = show the slides again). The same kind again also shows them again. */

@@ -14,6 +14,7 @@
     "e2e": "electron-vite build && node e2e/smoke.mjs",
     "check:viewer": "esbuild e2e/viewer-harness.ts --bundle --platform=node --format=cjs --external:electron --outfile=e2e/out/harness/viewer-harness.cjs --log-level=warning && electron e2e/out/harness/viewer-harness.cjs",
     "check:ink": "esbuild e2e/ink-harness.ts --bundle --platform=node --format=cjs --external:electron --outfile=e2e/out/harness/ink-harness.cjs --log-level=warning && electron e2e/out/harness/ink-harness.cjs",
+    "check:media": "node e2e/build-with-raw.mjs e2e/media-harness.ts e2e/out/harness/media-harness.cjs && electron e2e/out/harness/media-harness.cjs",
     "check:console": "esbuild e2e/console-harness.ts --bundle --platform=node --format=cjs --external:electron --outfile=e2e/out/harness/console-harness.cjs --log-level=warning && electron e2e/out/harness/console-harness.cjs",
     "check:frameworks": "esbuild e2e/frameworks-harness.ts --bundle --platform=node --format=cjs --external:electron --outfile=e2e/out/harness/frameworks-harness.cjs --log-level=warning && electron e2e/out/harness/frameworks-harness.cjs",
     "dist:win": "node scripts/libreoffice.mjs check && electron-vite build && electron-builder --win",
