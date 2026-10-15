@@ -84,9 +84,11 @@ const CASES: Case[] = [
 ]
 
 /** Real decks on this computer (read only); skipped when a file is not there. */
+// The Week 8 deck's name has changed before (Week-08-<Slide>-Unit 3 …), so it is found by its pattern.
+const W8_FILE = (fs.existsSync(UXD_W8) ? fs.readdirSync(UXD_W8) : []).find((f) => /^Week-08-.*Unit 3.*\.html$/.test(f)) ?? 'Week-08-Unit 3 Interaction Design and Prototyping.html'
 const REAL: Case[] = [
   { name: 'BNLI Day 1 (own channel)', folder: BNLI, file: 'Day1_Slides.html', total: 34, firstTitle: '', minutes: [3, 9] },
-  { name: 'UXD202 Week 8 (UXD202 protocol)', folder: UXD_W8, file: 'Week-08-Unit 3 Interaction Design and Prototyping.html', total: 0, firstTitle: '', native: true }
+  { name: 'UXD202 Week 8 (UXD202 protocol)', folder: UXD_W8, file: W8_FILE, total: 0, firstTitle: '', native: true }
 ].filter((c) => fs.existsSync(path.join(c.folder, c.file)))
 
 app.whenReady().then(async () => {

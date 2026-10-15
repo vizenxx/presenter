@@ -9,7 +9,11 @@ import { _electron as electron } from 'playwright-core'
 const here = path.dirname(fileURLToPath(import.meta.url))
 const root = path.resolve(here, '..')
 // Real decks next to this project on the maintainer's computer (read only); override with DECK / PPTX.
-const UXD_DECK = process.env.DECK ?? path.resolve(root, '../2026-Autumn/UXD202/Final Slides/Week-08-Unit 3 Interaction Design and Prototyping.html')
+// The Week 8 deck (named Week-08-<Slide>-Unit 3 …; the name has changed before, so it is found by its pattern).
+const FINAL_SLIDES = path.resolve(root, '../2026-Autumn/UXD202/Final Slides')
+const UXD_DECK =
+  process.env.DECK ??
+  path.join(FINAL_SLIDES, (fs.existsSync(FINAL_SLIDES) ? fs.readdirSync(FINAL_SLIDES) : []).find((f) => /^Week-08-.*Unit 3.*\.html$/.test(f)) ?? 'Week-08-Unit 3 Interaction Design and Prototyping.html')
 const PLAIN_DECK = path.join(here, 'fixtures', 'plain-deck.html')
 const OUT = path.join(here, 'out')
 fs.mkdirSync(OUT, { recursive: true })

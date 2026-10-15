@@ -132,8 +132,12 @@ function wireIpc(store: Store): void {
   ipcMain.on('console:roller-clear-groups', () => store.rollerClearGroups())
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   startupLog('app ready')
+  // Test runs only: the test driver attaches to the first window while it is being created, and
+  // Chromium then can leave that window's page paused for good. A short wait lets the driver
+  // attach first; the window then appears with the driver already watching.
+  if (process.env['PRESENTER_TEST'] === '1') await new Promise((resolve) => setTimeout(resolve, 1500))
   // macOS needs an app menu for ⌘Q, ⌘C, ⌘V in text fields. No Undo item: ⌘Z undoes a mark.
   Menu.setApplicationMenu(
     IS_MAC
