@@ -109,6 +109,11 @@ export function mountInkSurface(): void {
     // Text is typed on the slide only; the ink pad over a program window leaves the clicks to the window.
     const drawing = settings.tool !== 'pointer' && !(isPad && settings.tool === 'text')
     canvas.style.pointerEvents = drawing ? 'auto' : 'none'
+    // The pad over a program window is a see-through window; Windows lets the mouse pass through
+    // pixels that are fully transparent, so the program under it would get the clicks. While a
+    // drawing tool is chosen the pad paints a nearly invisible layer (1 % black), which every
+    // pixel of it then catches.
+    if (isPad) document.documentElement.style.background = drawing && settings.active ? 'rgba(0, 0, 0, 0.01)' : 'transparent'
     canvas.style.cursor = CURSORS[settings.tool]
     for (const b of root.querySelectorAll<HTMLButtonElement>('[data-tool]')) b.classList.toggle('on', b.dataset['tool'] === settings.tool)
     for (const b of root.querySelectorAll<HTMLButtonElement>('[data-color]')) b.classList.toggle('on', b.dataset['color'] === settings.color)

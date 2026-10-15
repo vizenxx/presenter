@@ -707,6 +707,13 @@ try {
     s = await state()
     assert.equal(s.toolsFor, wid, 'the tools serve this window')
     await call(() => globalThis.__presenter.setInkTool('pen'))
+    // While a drawing tool is chosen the pad holds a nearly invisible layer, so the program under it does not get the mouse.
+    await sleep(400)
+    assert.equal(
+      await call(() => globalThis.__presenter.tools.pad.webContents.executeJavaScript('getComputedStyle(document.documentElement).backgroundColor')),
+      'rgba(0, 0, 0, 0.01)',
+      'the ink pad catches the mouse (a nearly invisible layer) while a drawing tool is chosen'
+    )
     await call(() => globalThis.__presenter.inkOp({ t: 'begin', stroke: { id: 'w1', tool: 'pen', color: '#ef4444', points: [0.1, 0.1, 0.5, 0.5] } }, 'pad'))
     assert.equal(await call((_e, id) => globalThis.__presenter.scene(id).strokes.length, wid), 1, 'the mark belongs to the window content')
     assert.equal(await call(() => globalThis.__presenter.scene('projector').strokes.length), 0, 'the deck has no marks')
