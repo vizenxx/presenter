@@ -1,3 +1,9 @@
+## What's new in 0.4.2
+
+- **Page keys never move the selection by themselves.** With the current slide selected, a page key could hand the selection to the next slide (a deck page can take the keyboard after a page turn). Keys now always go to the section you selected. **Tab** switches between the current slide and the next slide; **Alt+1** chooses the current slide, **Alt+2** the next slide.
+- **A click on the console's live copy of the slide only selects it**, unless it lands on a video, a player or a "click to play" cover (then it plays it). Before, every click reached the projected slide and could wake a hover card or a menu there.
+- **The Guide is brought up to date**: PPT/PPTX rows now say that click animations and videos play; new rows for resuming a deck, zoom, videos in HTML decks, the section keys, and the floating toolbar and window behaviour on Windows.
+
 ## What's new in 0.4.1
 
 - **Floating tools follow the window you project.** The toolbar and the ink pad lie directly above the program window shown on a projector, and go with it when it moves or when another window is shown on Projector 1. A window in front of it covers the tools too; you draw while that window (or the toolbar) is in front. **Console** now also ends drawing, so nothing is drawn by accident in the console.
