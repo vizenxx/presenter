@@ -50,7 +50,8 @@ async function main(): Promise<void> {
     `<!doctype html><html><head><meta charset="utf-8"><title>media</title><style>.slide{display:none;width:100vw;height:100vh}.slide.active{display:block}</style></head><body>
 <div class="slide active"><h1>Media</h1>
 <video id="v" loop muted src="silence.wav" style="width:360px;height:200px;background:#000"></video>
-<button type="button" style="width:360px;height:200px" onclick="document.title='played'">Click to play · needs an internet connection</button></div>
+<button type="button" style="width:360px;height:200px" onmouseenter="window.__in=true" onmouseleave="window.__in=false" onclick="document.title='played'">Click to play · needs an internet connection</button>
+<div id="bare" style="position:absolute;right:20px;top:20px;width:200px;height:120px;background:#ccc" onmouseenter="window.__hover=true" onclick="window.__bareClicks=(window.__bareClicks||0)+1">bare page</div></div>
 <div class="slide"><h1>Two</h1></div></body></html>`
   )
 
@@ -85,6 +86,27 @@ async function main(): Promise<void> {
   console.log('ok the console finds the video and the "click to play" cover of an HTML deck page')
 
   const wc = output.view.webContents
+  // A click on the console's live copy (Output.click, fractions of the slide): on bare page it must not reach
+  // the slide (no click, no hover); on the cover it must, and the pointer leaves the page again afterwards.
+  const at = async (selector: string): Promise<{ x: number; y: number }> =>
+    (await wc.executeJavaScript(`(() => { const r = document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect(); return { x: (r.left + r.width / 2) / innerWidth, y: (r.top + r.height / 2) / innerHeight } })()`)) as { x: number; y: number }
+  const bare = await at('#bare')
+  await output.click(bare.x, bare.y)
+  await wait(300)
+  const touched = (await wc.executeJavaScript('(window.__bareClicks || 0) + (window.__hover ? 1 : 0)')) as number
+  if (touched !== 0) throw new Error('a click on the live copy over bare page must not reach the slide')
+  console.log('ok a click on the live copy over bare page only selects (the slide does not react)')
+  const cover = await at('button')
+  await output.click(cover.x, cover.y)
+  let clicked = false
+  for (let i = 0; i < 25 && !clicked; i++) {
+    await wait(200)
+    clicked = (await wc.executeJavaScript('document.title')) === 'played'
+  }
+  if (!clicked) throw new Error('a click on the live copy over the cover must reach the cover')
+  const stillIn = (await wc.executeJavaScript('!!window.__in')) as boolean
+  console.log(stillIn ? 'note: the pointer stayed over the cover after the click (check by hand)' : 'ok a click on the live copy over the cover reaches it, and the pointer leaves the page')
+  await wc.executeJavaScript('document.title = "media"')
   // The cover (second): a real click in its middle, like a click on the projector.
   output.toggleMedia(1)
   let played = false

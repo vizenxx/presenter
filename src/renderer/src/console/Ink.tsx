@@ -203,7 +203,7 @@ export function MirrorView({ aspect, ink, fallback }: { aspect: number; ink: Ink
         onClick={(e) => {
           if (drawing) return
           window.presenter.select('projector')
-          // The live copy is operable: the same click reaches the slide on the projector (a video's ▶, a button of the deck).
+          // The same click reaches the slide on the projector only when it lands on a video, a player or a "click to play" cover (the main process decides); elsewhere it only selects.
           const box = e.currentTarget.parentElement?.getBoundingClientRect()
           if (box && box.width > 0 && box.height > 0) window.presenter.projectorClick((e.clientX - box.left) / box.width, (e.clientY - box.top) / box.height)
         }}

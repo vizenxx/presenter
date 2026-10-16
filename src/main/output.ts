@@ -1,6 +1,6 @@
 import { WebContentsView, session, shell } from 'electron'
 import { inkKeyAction, type InkTool } from '../shared/ink'
-import { blankKey, commandKey, keyIntent, type BlankKind, type CommandKey } from '../shared/keys'
+import { blankKey, commandKey, keyIntent, sectionKey, type BlankKind, type CommandKey } from '../shared/keys'
 import { clampIndex } from '../shared/nav'
 import { zoomKey, type ZoomDirection } from '../shared/zoom'
 import type { AdapterKind, DeckRef, KeyIntent, Milestone, OutputKind, OutputView, SlideMeta, SlideSteps } from '../shared/types'
@@ -39,6 +39,7 @@ export type OutputEvent =
   | { type: 'ink-undo' }
   | { type: 'blank'; kind: BlankKind }
   | { type: 'zoom'; direction: ZoomDirection }
+  | { type: 'section'; which: 'toggle' | 'current' | 'next' }
   | { type: 'anykey' }
   | { type: 'state'; msg: DeckStateMsg; userMoved: boolean }
   | { type: 'loaded' }
@@ -184,6 +185,13 @@ export class Output {
       if (command === 'project' || (command === 'stop-project' && this.escapeStops)) {
         event.preventDefault()
         if (input.type === 'keyDown') this.emit({ type: 'command', command })
+        return
+      }
+      // Tab switches the console section that has the page keys; Alt+1 / Alt+2 choose it (not on a projector's window).
+      const which = this.escapeStops ? null : sectionKey(input.key, input)
+      if (which) {
+        event.preventDefault()
+        if (input.type === 'keyDown') this.emit({ type: 'section', which })
         return
       }
       const intent = keyIntent(input.key, input)
@@ -337,6 +345,8 @@ export class Output {
       await wc.debugger.sendCommand('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y })
       await wc.debugger.sendCommand('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', clickCount: 1, buttons: 1 })
       await wc.debugger.sendCommand('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', clickCount: 1, buttons: 0 })
+      // The pointer leaves the page again: a hover card that the click woke does not stay on the projector.
+      await wc.debugger.sendCommand('Input.dispatchMouseEvent', { type: 'mouseMoved', x: -1, y: -1 })
     } catch {
       // Closed or reloaded meanwhile.
     }
@@ -462,16 +472,28 @@ export class Output {
   }
 
   /**
-   * A real mouse click at a place of the shown page (nx, ny: 0 to 1 from the top left), over the
-   * DevTools protocol (works without window focus). The console's live copy of the projector uses
-   * it, so a video's ▶ or a button of the deck can be pressed from the laptop.
+   * A click on the console's live copy of the projector, at a place of the shown page (nx, ny: 0 to 1
+   * from the top left). It reaches the page only when it lands on a video, a player or a "click to
+   * play" cover (what the ▶ buttons press), as a real mouse click over the DevTools protocol (works
+   * without window focus). Any other click only selects the pane: it must not wake a hover card, a
+   * menu or a link on the slide the audience is looking at.
    */
   async click(nx: number, ny: number): Promise<void> {
     const wc = this.view.webContents
     if (wc.isDestroyed()) return
     const b = this.view.getBounds()
     const zoom = wc.getZoomFactor() || 1
-    await this.clickAt((Math.min(1, Math.max(0, nx)) * b.width) / zoom, (Math.min(1, Math.max(0, ny)) * b.height) / zoom)
+    const x = (Math.min(1, Math.max(0, nx)) * b.width) / zoom
+    const y = (Math.min(1, Math.max(0, ny)) * b.height) / zoom
+    try {
+      const onMedia = (await wc.executeJavaScript(
+        `(() => { const x = ${x}, y = ${y}; return (${FIND_MEDIA})().some((m) => { const r = m.el.getBoundingClientRect(); return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom }) })()`,
+        true
+      )) as boolean
+      if (onMedia) await this.clickAt(x, y)
+    } catch {
+      // Closed or reloaded meanwhile.
+    }
   }
 
   /** Trusted arrow keys over the DevTools protocol; works without window focus. */
