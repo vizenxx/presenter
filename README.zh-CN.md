@@ -33,7 +33,7 @@ Presenter 是一个解压即用的文件夹。没有安装程序，也不需要�
 
 | 区域 | 作用 |
 |---|---|
-| 顶部栏 | **Open deck**、**Recent**、**Participants**、**Guide**、**☀ / ☾**（浅色或深色界面）、**⇄**（左右互换）、**Black screen**、**▶ Start projecting** |
+| 顶部栏 | 版本号（名字旁的 **v0.4.2**，点它可看更新和 GitHub 页面）、**Open deck**、**Recent**、**Participants**、**Guide**、**☀ / ☾**（浅色或深色界面）、**⇄**（左右互换）、**Black screen**、**▶ Start projecting** |
 | 当前页（左） | Projector 1 正在放的内容。投影前直接显示课件；投影时实时显示观众看到的画面。上方是标注工具；下方是页码和标题 |
 | Slides 和 Notes | 当前页下面那一行的最左边有两个按钮：**Slides**（页面列表，点一页就跳过去）和 **Notes**（当前页的讲者备注）。按钮在控制台最左边（左右互换后在最右边）打开面板，再按同一个按钮关闭 |
 | Next slide（右） | 选中卡片的下一页。点它可以继续往后翻看 |
@@ -191,11 +191,20 @@ Presenter 是一个解压即用的文件夹。没有安装程序，也不需要�
 
 **Text size**（Ctrl + / Ctrl − / Ctrl 0；Mac 用 ⌘）放大或缩小 HTML 课件，每次 5%，并按课件文件记住。按住 **A−** 或 **A+** 不放会快速加减。Projector 1 的字号在当前页上方，其他课件在卡片的 **⋯** 菜单里。PPT 和 PDF 按整页显示，字号对它们不适用。
 
+## 版本和更新
+
+版本号在顶部栏的名字旁边。点它会打开一个小弹窗（平时是收起的）：
+
+- **Check for updates**：向 GitHub 询问最新版本的编号。有新版本时，弹窗里会出现 **Download**（适合你这台电脑的 zip）和 **What's new**，版本号旁也会出现蓝点。
+- **GitHub page**、**All versions**、**Report a problem**：在浏览器里打开项目在 GitHub 上的页面。
+- **Check when Presenter starts**（默认关闭）：启动几秒后自动查一次。
+- Presenter 不会自己安装任何东西：下载 zip，解压，用新的文件夹。
+
 ## 许可和隐私
 
 - Presenter 免费：可以使用、复制和分享。它自己的代码用 MIT 许可（[LICENSE](LICENSE)），不提供任何担保。
 - 它包含其他人的免费软件（Electron 和 Chromium、LibreOffice、PDF.js、React……），各自有自己的许可。清单在 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)，许可文件也在程序文件夹里。LibreOffice 的源代码在 https://www.libreoffice.org/download/source-code/。
-- Presenter 自己的代码不会发送任何东西：没有账号、没有使用统计、没有检查更新。你的课件留在你的电脑里。（你打开的课件本身可能像在浏览器里一样自己联网。）
+- Presenter 自己的代码不会发送任何关于你的东西：没有账号、没有使用统计。只有你点 **Check for updates**（或打开了默认关闭的 **Check when Presenter starts**）时才会联网：它向 GitHub 询问最新版本的编号，不发送别的内容。你的课件留在你的电脑里。（你打开的课件本身可能像在浏览器里一样自己联网。）
 
 ## 常见问题
 

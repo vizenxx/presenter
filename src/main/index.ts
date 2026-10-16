@@ -66,6 +66,11 @@ function wireIpc(store: Store): void {
   ipcMain.on('console:set-blank', (_e, kind: 'black' | 'white' | null) => store.setBlank(kind === 'black' || kind === 'white' ? kind : null))
   ipcMain.on('console:toolbar-size', (_e, width: number, height: number) => store.toolbarSize(Number(width), Number(height)))
   ipcMain.on('console:focus', () => store.focusConsole())
+  ipcMain.on('console:check-update', () => store.updater.check())
+  ipcMain.on('console:set-auto-update', (_e, auto: boolean) => store.updater.setAuto(auto === true))
+  ipcMain.on('console:open-link', (_e, kind: unknown) => {
+    if (kind === 'github' || kind === 'releases' || kind === 'issues' || kind === 'latest' || kind === 'download') store.updater.open(kind)
+  })
   ipcMain.on('console:section', (_e, which: unknown) => {
     if (which === 'toggle' || which === 'current' || which === 'next') store.selectSection(which)
   })

@@ -13,7 +13,7 @@ const OUT = path.join(ROOT, 'e2e', 'out')
 const STUB = path.join(OUT, 'harness', 'console-stub-preload.cjs')
 const AI_REQUEST = aiRequestText(fs.readFileSync(path.join(ROOT, 'docs', 'ai-integration.md'), 'utf8'))
 /** Every ConsoleApi method (contextBridge copies plain objects only, so no Proxy). */
-const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "focusConsole", "listWindows", "addWindowScreen", "setTheme", "setFlipped", "dismissResumed", "replaceScreen", "switchTo", "raiseWindow", "projectorClick", "mediaFullscreen", "selectSection", "timerWarnings", "speakerAdjust", "timerAdjust", "timerSet", "speakerPeriods", "setBlank", "savePicture", "addWhiteboard", "rollerGroups", "rollerClearGroups", "mediaToggle"]
+const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "focusConsole", "listWindows", "addWindowScreen", "setTheme", "setFlipped", "dismissResumed", "replaceScreen", "switchTo", "raiseWindow", "projectorClick", "mediaFullscreen", "selectSection", "checkUpdate", "setAutoUpdate", "openLink", "timerWarnings", "speakerAdjust", "timerAdjust", "timerSet", "speakerPeriods", "setBlank", "savePicture", "addWhiteboard", "rollerGroups", "rollerClearGroups", "mediaToggle"]
 
 app.disableHardwareAcceleration()
 // Each screenshot closes its window; keep the app alive between them.
@@ -53,6 +53,8 @@ function sampleState(projecting: boolean, crowd = false, theme: UiTheme = 'dark'
     deckStatus: { state: 'ready' },
     ink: { tool: 'pen', color: '#ef4444' },
     zoomed: false,
+    version: '0.4.2',
+    update: { status: 'idle', latest: null, newer: false, downloadMb: 0, checkedAt: null, error: null, auto: false },
     theme,
     flipped: false,
     blank: null,
@@ -801,12 +803,46 @@ async function resumeChoice(): Promise<void> {
   await wait(300)
 }
 
+/** The version label: collapsed in the header; its pop-up has the check, the download and the GitHub links. */
+async function aboutMenu(): Promise<void> {
+  const state = sampleState(false)
+  state.update = { status: 'ok', latest: '0.4.3', newer: true, downloadMb: 254, checkedAt: Date.now(), error: null, auto: false }
+  writeStub(state)
+  const win = new BrowserWindow({ show: false, width: 1280, height: 760, useContentSize: true, webPreferences: { preload: STUB, contextIsolation: true, sandbox: true, offscreen: true } })
+  await win.loadFile(path.join(ROOT, 'out', 'renderer', 'console.html'))
+  await wait(1000)
+  const js = <T>(code: string): Promise<T> => win.webContents.executeJavaScript(code) as Promise<T>
+  const label = await js<string>(`(() => { const b = [...document.querySelectorAll('header button')].find((x) => x.textContent.trim() === 'v0.4.2'); return b ? b.textContent.trim() : '' })()`)
+  if (label !== 'v0.4.2') throw new Error(`the header should show the version: ${JSON.stringify(label)} in ${JSON.stringify(await js<string>('document.querySelector("header").innerText'))}`)
+  if (await js<boolean>(`document.body.innerText.includes('Check for updates')`)) throw new Error('the update section must be collapsed until the version is clicked')
+  await js(`[...document.querySelectorAll('header button')].find((x) => x.textContent.trim() === 'v0.4.2').click()`)
+  await wait(300)
+  const text = await js<string>(`document.body.innerText`)
+  for (const want of ['A newer version is out: 0.4.3.', 'Check for updates', 'Download (254 MB)', 'GitHub page', 'All versions', 'Report a problem', 'Check when Presenter starts']) {
+    if (!text.includes(want)) throw new Error(`the About pop-up should say ${JSON.stringify(want)}`)
+  }
+  await js(`[...document.querySelectorAll('button')].find((x) => x.textContent.trim() === 'Check for updates').click()`)
+  await js(`[...document.querySelectorAll('button')].find((x) => x.textContent.startsWith('Download')).click()`)
+  await js(`[...document.querySelectorAll('button')].find((x) => x.textContent.startsWith('GitHub page')).click()`)
+  await js(`document.querySelector('input[type=checkbox]').click()`)
+  const calls = await js<unknown[][]>('window.presenter.__calls()')
+  const names = calls.map((c) => c.join(':'))
+  for (const want of ['checkUpdate', 'openLink:download', 'openLink:github', 'setAutoUpdate:true']) {
+    if (!names.includes(want)) throw new Error(`expected the call ${want}: ${JSON.stringify(names)}`)
+  }
+  fs.writeFileSync(path.join(OUT, 'console-about.png'), (await win.webContents.capturePage()).toPNG())
+  console.log('ok version label: collapsed; its pop-up checks for updates, downloads, opens GitHub, and turns the check at start on')
+  win.destroy()
+  await wait(300)
+}
+
 app.whenReady().then(async () => {
   let code = 0
   try {
     await inputs()
     await toolbarTimer()
     await resumeChoice()
+    await aboutMenu()
     await mirrorClick()
     await screenNameMenu()
     await addScreenRecent()

@@ -2,6 +2,7 @@
 
 - **Page keys never move the selection by themselves.** With the current slide selected, a page key could hand the selection to the next slide (a deck page can take the keyboard after a page turn). Keys now always go to the section you selected. **Tab** switches between the current slide and the next slide; **Alt+1** chooses the current slide, **Alt+2** the next slide.
 - **A click on the console's live copy of the slide only selects it**, unless it lands on a video, a player or a "click to play" cover (then it plays it). Before, every click reached the projected slide and could wake a hover card or a menu there.
+- **Version and updates.** The version number sits next to the name in the top bar; click it for a small pop-up (closed otherwise): **Check for updates** (asks GitHub for the newest version number; a newer one shows **Download** for your computer and **What's new**), links to the GitHub page, all versions and **Report a problem**, and **Check when Presenter starts** (off by default). Presenter connects to the internet only for this check and sends nothing else.
 - **The Guide is brought up to date**: PPT/PPTX rows now say that click animations and videos play; new rows for resuming a deck, zoom, videos in HTML decks, the section keys, and the floating toolbar and window behaviour on Windows.
 
 ## What's new in 0.4.1

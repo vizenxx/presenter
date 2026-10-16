@@ -29,6 +29,7 @@ import { rememberZoom, zoomFor } from './zoomMemory'
 import { rememberPages, resumePage } from './pageMemory'
 import { whiteboardFile } from './whiteboard'
 import { loadTheme, saveTheme, themeBackground } from './themeMemory'
+import { Updater } from './updates'
 import { loadFlipped, saveFlipped } from './layoutMemory'
 import { HEADLESS } from './headless'
 import { toolsLog } from './toolsLog'
@@ -128,6 +129,9 @@ export class Store {
   private roller!: RollerController
   private projectorRoller!: RollerOverlay
 
+  /** The check for a newer version (GitHub); only runs when asked, or at start when the teacher turned that on. */
+  readonly updater = new Updater(() => this.emit())
+
   constructor(private readonly paths: StorePaths) {}
 
   start(): void {
@@ -194,6 +198,8 @@ export class Store {
     setInterval(() => this.tick(), TICK_MS)
     setInterval(() => void this.trackWindows(), TRACK_MS)
     if (process.platform === 'win32' && !HEADLESS) setInterval(() => void this.sampleMouse(), 150)
+    // Only when the teacher turned it on: a quiet look at the newest version a few seconds after the start.
+    if (!HEADLESS && this.updater.get().auto) setTimeout(() => void this.updater.check(), 8000)
     setInterval(() => void this.captureMirror(), MIRROR_MS)
   }
 
@@ -1168,6 +1174,8 @@ export class Store {
       deckStatus: this.deckStatus,
       ink: this.inkSettings,
       zoomed: !!this.inkTargetId() && !!this.scene(this.inkTargetId() as OutputId).zoom,
+      version: app.getVersion(),
+      update: this.updater.get(),
       theme: this.theme,
       flipped: this.flipped,
       blank: this.blank,

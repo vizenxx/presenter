@@ -178,7 +178,27 @@ export type UiTheme = 'light' | 'dark'
 /** What a screen can hold instead: a deck (file dialog, or a known path), a whiteboard, or a program window. */
 export type ReplaceSpec = { kind: 'dialog' } | { kind: 'deck'; path: string } | { kind: 'whiteboard' } | { kind: 'window'; sourceId: string; name: string }
 
+/** Which fixed GitHub page (or the zip for this computer) the About pop-up opens. */
+export type LinkKind = 'github' | 'releases' | 'issues' | 'latest' | 'download'
+
+/** What the check for a newer version found. Nothing is asked unless the teacher clicks Check (or turned the check at start on). */
+export interface UpdateView {
+  status: 'idle' | 'checking' | 'ok' | 'error'
+  /** The newest released version, e.g. "0.4.3"; null before a check. */
+  latest: string | null
+  newer: boolean
+  /** Size of the zip for this computer in MB (0 = unknown). */
+  downloadMb: number
+  checkedAt: number | null
+  error: string | null
+  /** Check when Presenter starts (off by default). */
+  auto: boolean
+}
+
 export interface AppState {
+  /** The version of this Presenter. */
+  version: string
+  update: UpdateView
   outputs: OutputView[]
   selectedId: OutputId
   mainDeck: DeckRef | null
@@ -259,6 +279,9 @@ export interface ConsoleApi {
   setTheme(theme: UiTheme): void
   /** Turns the console left to right (and back). */
   setFlipped(flipped: boolean): void
+  checkUpdate(): void
+  setAutoUpdate(auto: boolean): void
+  openLink(kind: LinkKind): void
   /** Closes the "opened again at slide n" choice and stays where the deck is. */
   dismissResumed(): void
   /** Puts another content in a screen's place (the card keeps its projector). */

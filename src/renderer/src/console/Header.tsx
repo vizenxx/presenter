@@ -65,6 +65,69 @@ function FlipSwitch({ flipped }: { flipped: boolean }) {
   )
 }
 
+/** Version, the check for a newer version and the GitHub links. A small label; the pop-up opens only when it is clicked. */
+function About({ state, menu, onMenu }: { state: AppState; menu: ConsoleMenu; onMenu: (m: ConsoleMenu) => void }) {
+  const t = useT()
+  const u = state.update
+  const open = menu === 'about'
+  const line =
+    u.status === 'checking' ? t.aboutChecking : u.status === 'error' ? t.aboutError(u.error ?? '') : u.status === 'ok' && u.latest ? (u.newer ? t.aboutNewer(u.latest) : t.aboutUpToDate(state.version)) : t.aboutIdle
+  return (
+    <span className="relative">
+      <button
+        type="button"
+        title={u.newer && u.latest ? t.aboutNewer(u.latest) : t.aboutTitle}
+        onClick={() => onMenu(open ? null : 'about')}
+        className={`flex items-center gap-1.5 rounded-full px-2 py-1 text-sm tabular-nums hover:bg-line ${open ? 'bg-line text-ink' : 'text-muted'}`}
+      >
+        v{state.version}
+        {u.newer && <span className="h-2 w-2 rounded-full bg-accent" aria-label={t.aboutNewer(u.latest ?? '')} />}
+      </button>
+      {open && (
+        <Menu width="w-[23rem]" onClose={() => onMenu(null)}>
+          <div className="flex flex-col gap-3 p-3 text-sm">
+            <div>
+              <p className="text-base font-semibold">{t.aboutVersion(state.version)}</p>
+              <p className={u.newer ? 'font-semibold text-link' : u.status === 'error' ? 'text-alarm' : 'text-muted'} role="status">
+                {line}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Btn onClick={() => window.presenter.checkUpdate()} disabled={u.status === 'checking'}>
+                {t.aboutCheck}
+              </Btn>
+              {u.newer && (
+                <Btn tone="primary" onClick={() => window.presenter.openLink('download')}>
+                  {t.aboutDownload(u.downloadMb)}
+                </Btn>
+              )}
+              {u.newer && <Btn onClick={() => window.presenter.openLink('latest')}>{t.aboutWhatsNew}</Btn>}
+            </div>
+            <div className="flex flex-wrap gap-x-4 gap-y-1">
+              {(
+                [
+                  ['github', t.aboutGithub],
+                  ['releases', t.aboutReleases],
+                  ['issues', t.aboutIssues]
+                ] as const
+              ).map(([kind, label]) => (
+                <button key={kind} type="button" onClick={() => window.presenter.openLink(kind)} className="text-tint hover:underline">
+                  {label} ↗
+                </button>
+              ))}
+            </div>
+            <label className="flex cursor-pointer items-start gap-2">
+              <input type="checkbox" checked={u.auto} onChange={(e) => window.presenter.setAutoUpdate(e.target.checked)} className="mt-0.5 h-4 w-4 accent-link" />
+              <span>{t.aboutAuto}</span>
+            </label>
+            <p className="text-muted">{t.aboutPrivacy}</p>
+          </div>
+        </Menu>
+      )}
+    </span>
+  )
+}
+
 /** Something to show: the screen on air has a deck, or is a window screen. */
 function canProject(state: AppState): boolean {
   const onAir = state.outputs.find((o) => o.id === state.onAirId)
@@ -87,6 +150,7 @@ export function Header(props: {
   return (
     <header className={`flex items-center gap-3 border-b border-line/70 bg-panel px-4 py-2.5 ${flipped ? 'flex-row-reverse' : ''}`}>
       <span className="text-[17px] font-semibold tracking-tight">Presenter</span>
+      <About state={state} menu={menu} onMenu={onMenu} />
       <span className="max-w-[22rem] truncate text-sm" title={state.mainDeck?.path}>
         {state.mainDeck?.name ?? t.noDeck}
       </span>

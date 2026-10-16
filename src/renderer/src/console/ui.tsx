@@ -127,7 +127,7 @@ export function NumberField(props: { value: number; min: number; max: number; on
 }
 
 /** Menus that can be open in the console; native deck views step aside while one is. */
-export type ConsoleMenu = 'recent' | 'add' | 'bells' | 'times' | 'adjust-class' | 'adjust-mine' | 'slides' | 'participants' | 'screens' | `name:${string}` | `screen:${string}` | `show:${string}` | null
+export type ConsoleMenu = 'recent' | 'add' | 'bells' | 'times' | 'adjust-class' | 'adjust-mine' | 'slides' | 'participants' | 'screens' | 'about' | `name:${string}` | `screen:${string}` | `show:${string}` | null
 
 /** True when the console is turned left to right: menus then open towards the other side. */
 export const FlipContext = createContext(false)

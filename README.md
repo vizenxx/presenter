@@ -33,7 +33,7 @@ Presenter is a folder you unzip; there is no installer and no administrator pass
 
 | Area | What it does |
 |---|---|
-| Top bar | **Open deck**, **Recent**, **Participants**, **Guide**, **☀ / ☾** (light or dark look), **⇄** (swap the left and right sides), **Black screen**, **▶ Start projecting** |
+| Top bar | The version (**v0.4.2**, next to the name: click it for updates and the GitHub page), **Open deck**, **Recent**, **Participants**, **Guide**, **☀ / ☾** (light or dark look), **⇄** (swap the left and right sides), **Black screen**, **▶ Start projecting** |
 | Current slide (left) | What Projector 1 shows. Before projecting it is the deck itself; while projecting it is a live copy of what the audience sees. The mark tools are above it; the slide number and the title are under it. |
 | Slides and Notes | Two buttons at the left of the current slide's row (under the slide): **Slides** (the slide list: click a slide to go there) and **Notes** (the speaker notes of the slide in view). A button opens its panel at the far left of the console (the far right when the sides are swapped); the same button closes it. |
 | Next slide (right) | The slide after the selected card's slide. Click it to look further ahead. |
@@ -191,11 +191,20 @@ The **⇄** button in the top bar turns the whole console left to right: the cur
 
 **Text size** (Ctrl + / Ctrl − / Ctrl 0; ⌘ on a Mac) enlarges an HTML deck in steps of 5 % and is remembered per deck file. Hold **A−** or **A+** to change it fast. It is above the current slide for Projector 1 and in a card's **⋯** menu for the others. PPT and PDF show whole pages, so it does not apply to them.
 
+## Version and updates
+
+The version number sits next to the name in the top bar. Click it to open a small pop-up (it stays closed otherwise):
+
+- **Check for updates** asks GitHub for the number of the newest version. A newer one shows **Download** (the zip for your computer), **What's new** and a blue dot next to the version.
+- **GitHub page**, **All versions** and **Report a problem** open the project on GitHub.
+- **Check when Presenter starts** (off by default) looks once, a few seconds after the start.
+- Presenter never installs anything by itself: download the zip, unzip it and use the new folder.
+
 ## Licence and privacy
 
 - Presenter is free: use it, copy it and share it. Its own code is under the MIT Licence ([LICENSE](LICENSE)), with no warranty.
 - It contains other free software (Electron and Chromium, LibreOffice, PDF.js, React …), each with its own licence. They are listed in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md); the licence files are inside the app folder. LibreOffice's source code is at https://www.libreoffice.org/download/source-code/.
-- Presenter's own code sends nothing: no account, no usage statistics, no update check. Your decks stay on your computer. (A deck you open may connect to the internet by itself, as in a browser.)
+- Presenter's own code sends nothing about you: no account, no usage statistics. It connects to the internet only when you click **Check for updates** (or turned **Check when Presenter starts** on, off by default): it then asks GitHub for the number of the newest version and sends nothing else. Your decks stay on your computer. (A deck you open may connect to the internet by itself, as in a browser.)
 
 ## If something goes wrong
 
