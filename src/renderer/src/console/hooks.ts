@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { blankKey, commandKey, keyIntent } from '../../../shared/keys'
+import { blankKey, commandKey, keyIntent, sectionKey } from '../../../shared/keys'
 import { zoomKey } from '../../../shared/zoom'
 import { INK_KEYS, type InkTool } from '../../../shared/ink'
 import type { AppState } from '../../../shared/types'
@@ -129,6 +129,13 @@ export function useConsoleKeys(alarming: boolean, inkTool: InkTool, blank: boole
       if (tool) {
         e.preventDefault()
         window.presenter.setInkTool(inkTool === tool ? 'pointer' : tool)
+        return
+      }
+      // Tab switches the section that has the page keys (current slide / next slide); Alt+1 and Alt+2 choose it.
+      const section = sectionKey(e.key, { ...mods, shift: e.shiftKey })
+      if (section && !document.querySelector('[role=dialog]')) {
+        e.preventDefault()
+        window.presenter.selectSection(section)
         return
       }
       const intent = keyIntent(e.key, mods)

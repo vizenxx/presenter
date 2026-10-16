@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { blankKey, commandKey, intentToAction, keyIntent } from '../src/shared/keys'
+import { blankKey, commandKey, intentToAction, keyIntent, sectionKey } from '../src/shared/keys'
 
 describe('keyIntent', () => {
   it('maps clicker and arrow keys', () => {
@@ -51,5 +51,19 @@ describe('blankKey', () => {
     expect(blankKey('b', { control: true })).toBeNull()
     expect(blankKey('w', { meta: true })).toBeNull()
     expect(blankKey('x')).toBeNull()
+  })
+})
+
+describe('sectionKey', () => {
+  it('Tab switches, Alt+1 / Alt+2 choose the section', () => {
+    expect(sectionKey('Tab')).toBe('toggle')
+    expect(sectionKey('1', { alt: true })).toBe('current')
+    expect(sectionKey('2', { alt: true })).toBe('next')
+  })
+  it('leaves other keys alone (digits alone jump to a slide; Ctrl or Alt+Tab belong to the system)', () => {
+    expect(sectionKey('1')).toBeNull()
+    expect(sectionKey('ArrowRight')).toBeNull()
+    expect(sectionKey('Tab', { alt: true })).toBeNull()
+    expect(sectionKey('Tab', { control: true })).toBeNull()
   })
 })

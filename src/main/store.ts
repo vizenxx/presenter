@@ -933,11 +933,29 @@ export class Store {
       this.closeRollerByUser()
       return
     }
-    // A key pressed inside a screen (or the next preview) selects it first; window screens
-    // have no pages (the key belongs to their own program).
     const source = sourceId ? this.outputs.get(sourceId) : undefined
-    if (source && source.kind !== 'capture') this.select(source.id)
+    // A key pressed on a projector's own window (a clicker, the keyboard there) selects what is shown there
+    // first; window screens have no pages (the key belongs to their own program).
+    if (source && source.kind !== 'capture' && !this.inConsole(source)) this.select(source.id)
+    // In the console a key never changes the selection: it goes to the section the teacher selected (a click,
+    // Tab, Alt+1 / Alt+2), whichever view holds the keyboard. A deck page can take the keyboard by itself when it
+    // loads (the next preview does after every page turn); its keys must not move the selection over to the next slide.
     this.navigate(intentToAction(intent))
+  }
+
+  /** True for a content shown inside the console (the next preview, or the screen on air before projecting). */
+  private inConsole(o: Output): boolean {
+    return o.kind === 'preview' || (!this.projecting && o === this.onAir())
+  }
+
+  /**
+   * Tab (switch) or Alt+1 / Alt+2 (choose): which console section has the page keys. The current slide
+   * is the screen on air; the next slide is the preview. Nothing changes without a deck.
+   */
+  selectSection(which: 'toggle' | 'current' | 'next'): void {
+    const next = this.next()
+    const target = which === 'next' || (which === 'toggle' && this.selectedId !== next.id) ? next.id : (this.onAirId ?? 'projector')
+    this.select(target)
   }
 
   /** The "continued at page n" notice in the console: until the next page move, at most 30 seconds. */
@@ -965,13 +983,18 @@ export class Store {
     // them, and so do screens linked with it that show the same slide of the same deck.
     const dir = selected ? stepFirst(action, selected.steps) : null
     if (selected && dir !== null) {
-      for (const o of this.outputs.values()) {
-        const partner = o === selected || (selected.linked && o.linked && o.kind !== 'preview' && o.deck?.path === selected.deck?.path && o.shownIndex() === selected.shownIndex())
-        if (partner) o.step(dir)
-      }
+      this.stepWithPartners(selected, dir)
       return
     }
     this.applyMoves(planMove(this.navOutputs(), this.selectedId, action))
+  }
+
+  /** The screen plays its next click step (or takes one back); screens linked with it showing the same slide play it too. */
+  private stepWithPartners(selected: Output, dir: 1 | -1): void {
+    for (const o of this.outputs.values()) {
+      const partner = o === selected || (selected.linked && o.linked && o.kind !== 'preview' && o.deck?.path === selected.deck?.path && o.shownIndex() === selected.shownIndex())
+      if (partner) o.step(dir)
+    }
   }
 
   /** −/+ on a screen card: move only that screen, whatever its link state. */
@@ -1192,6 +1215,9 @@ export class Store {
         break
       case 'zoom':
         this.zoom(o.id, e.direction)
+        break
+      case 'section':
+        this.selectSection(e.which)
         break
       case 'anykey':
         if (this.timer.alarming) this.dismissAlarm()

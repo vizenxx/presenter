@@ -42,6 +42,7 @@ const api: ConsoleApi = {
   setBlank: (kind) => ipcRenderer.send('console:set-blank', kind),
   toolbarSize: (width, height) => ipcRenderer.send('console:toolbar-size', width, height),
   focusConsole: () => ipcRenderer.send('console:focus'),
+  selectSection: (which) => ipcRenderer.send('console:section', which),
   closeProjector: (n) => ipcRenderer.send('console:close-projector', n),
   listWindows: () => ipcRenderer.invoke('console:list-windows'),
   addWindowScreen: (id, name, show) => ipcRenderer.send('console:add-window-screen', id, name, show === true),

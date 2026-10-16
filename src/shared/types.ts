@@ -277,6 +277,8 @@ export interface ConsoleApi {
   toolbarSize(width: number, height: number): void
   /** Brings the Presenter console to the front (the floating toolbar's way back). */
   focusConsole(): void
+  /** Which console section has the page keys: Tab (toggle), Alt+1 (current slide), Alt+2 (next slide). */
+  selectSection(which: 'toggle' | 'current' | 'next'): void
   closeProjector(n: number): void
   listWindows(): Promise<WindowSource[]>
   /** show = put it on Projector 1 at once (the start screen's choice); otherwise it waits. */

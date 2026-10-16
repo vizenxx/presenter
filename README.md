@@ -68,7 +68,7 @@ The **Guide** in the app has the same help in two parts: **1 · Use Presenter** 
   - LibreOffice draws the slides, so a font, a chart or a SmartArt can look a little different from PowerPoint. Check a new deck once before you present.
   - If the animated pages cannot be made, the slides show as still pages (each slide in its final state), made by the same LibreOffice or by PowerPoint or Keynote.
 - Videos and sounds in a PPTX play where they stand on the slide. Click **▶ Video** next to the slide title in the console (and **Full screen** to make it fill the projector), or click the ▶ on the video. A page turn stops it. No extra program is needed.
-- A video in an HTML deck (a `<video>`, an embedded YouTube or Vimeo player, a "click to play" cover) gets the same **▶ Video** and **Full screen** buttons in the console. While projecting, a click on the console's live copy of the slide (with the pointer tool) is a click on the slide on the projector, so nothing needs to be done on the projector itself.
+- A video in an HTML deck (a `<video>`, an embedded YouTube or Vimeo player, a "click to play" cover) gets the same **▶ Video** and **Full screen** buttons in the console. While projecting, a click on a video, a player or a "click to play" cover in the console's live copy of the slide (with the pointer tool) is a click on it on the projector, so nothing needs to be done on the projector itself. A click anywhere else on the live copy only selects the pane: nothing on the projected slide reacts.
   - MP4, M4V, MOV (H.264), WebM, MP3, M4A, WAV and OGG play. WMV and AVI cannot play: the video shows a note; save it as MP4 and insert it again.
   - A linked video (not embedded) plays when its file is still where the PPTX points.
   - Old .ppt files: save them as .pptx first to play their videos.
@@ -85,7 +85,7 @@ The **Guide** in the app has the same help in two parts: **1 · Use Presenter** 
 - Select a card by clicking it, or by clicking its picture. The selected card has a blue border.
 - Type a slide number and press **Enter** to jump there (the number shows in the top bar; **Esc** drops it).
 - **−** and **+** on a card move only that card, e.g. to set how many pages two decks are apart.
-- **Next slide** shows the slide after the selected card's slide. Click it to look further ahead: page keys then turn only the preview, and the audience sees no change. Click the current slide or a card to go back.
+- **Next slide** shows the slide after the selected card's slide. Click it to look further ahead: page keys then turn only the preview, and the audience sees no change. Click the current slide or a card to go back. The keys always go to the section you selected; the selection never moves by itself. **Tab** switches between the current slide and the next slide; **Alt+1** chooses the current slide, **Alt+2** the next slide.
 
 ## Contents and projectors
 

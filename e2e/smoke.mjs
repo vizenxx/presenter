@@ -107,6 +107,24 @@ try {
   s = await waitFor('preview back', (s) => out(s, 'next').shownIndex === 2)
   console.log('ok 3 preview pages alone while selected')
 
+  // 3b. A key that reaches the keyboard through the next preview (a deck page can take the keyboard by itself after
+  // a page turn) must not move the selection over to the next slide: it turns the page of the selected current slide.
+  assert.equal((await waitFor('current selected', (s) => s.selectedId === 'projector')).selectedId, 'projector')
+  await call(() => globalThis.__presenter.onKey('next', 'next'))
+  s = await waitFor('the current slide turned, the selection stayed', (s) => s.selectedId === 'projector' && out(s, 'projector').shownIndex === 2 && out(s, 'next').shownIndex === 3)
+  await call(() => globalThis.__presenter.onKey('prev', 'next'))
+  s = await waitFor('and back, still on the current slide', (s) => s.selectedId === 'projector' && out(s, 'projector').shownIndex === 1 && out(s, 'next').shownIndex === 2)
+  // Tab / Alt+1 / Alt+2 choose the section.
+  await press('Tab')
+  s = await waitFor('Tab selects the next slide', (s) => s.selectedId === 'next')
+  await press('Alt+Digit1')
+  s = await waitFor('Alt+1 selects the current slide', (s) => s.selectedId === 'projector')
+  await press('Alt+Digit2')
+  s = await waitFor('Alt+2 selects the next slide', (s) => s.selectedId === 'next')
+  await press('Tab')
+  s = await waitFor('Tab goes back to the current slide', (s) => s.selectedId === 'projector')
+  console.log('ok 3b keys never move the selection by themselves; Tab, Alt+1, Alt+2 choose the section')
+
   // 4. An unlinked extra screen, selected, turns alone; the preview, list and notes follow it.
   await call(() => globalThis.__presenter.addScreen(true))
   s = await waitFor('screen 2 detected', (s) => out(s, 'screen-2')?.adapter === 'uxd202' && out(s, 'screen-2').shownIndex === 1)

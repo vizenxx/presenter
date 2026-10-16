@@ -66,6 +66,9 @@ function wireIpc(store: Store): void {
   ipcMain.on('console:set-blank', (_e, kind: 'black' | 'white' | null) => store.setBlank(kind === 'black' || kind === 'white' ? kind : null))
   ipcMain.on('console:toolbar-size', (_e, width: number, height: number) => store.toolbarSize(Number(width), Number(height)))
   ipcMain.on('console:focus', () => store.focusConsole())
+  ipcMain.on('console:section', (_e, which: unknown) => {
+    if (which === 'toggle' || which === 'current' || which === 'next') store.selectSection(which)
+  })
   ipcMain.on('console:close-projector', (_e, n: number) => store.closeProjector(Number(n)))
   ipcMain.handle('console:list-windows', () => store.listWindows())
   ipcMain.on('console:add-window-screen', (_e, id: string, name: string, show: boolean) => store.addWindowScreen(String(id), String(name), show === true))

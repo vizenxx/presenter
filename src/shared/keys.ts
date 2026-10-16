@@ -32,6 +32,22 @@ export function commandKey(key: string, mods: KeyMods = {}): CommandKey | null {
   return null
 }
 
+export type SectionKey = 'toggle' | 'current' | 'next'
+
+/**
+ * Which console section has the page keys: Tab switches between the current slide and the next slide;
+ * Alt+1 chooses the current slide, Alt+2 the next slide. (The next slide section turns the pages.)
+ */
+export function sectionKey(key: string, mods: KeyMods = {}): SectionKey | null {
+  if (mods.control || mods.meta) return null
+  if (key === 'Tab' && !mods.alt) return 'toggle'
+  if (mods.alt && !mods.shift) {
+    if (key === '1') return 'current'
+    if (key === '2') return 'next'
+  }
+  return null
+}
+
 /** Keys a presenter clicker or keyboard uses to turn pages. */
 export function keyIntent(key: string, mods: KeyMods = {}): KeyIntent | null {
   if (mods.control || mods.alt || mods.meta) return null
