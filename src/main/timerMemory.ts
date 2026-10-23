@@ -1,7 +1,7 @@
 import { app } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
-import { cleanWarnings, DEFAULT_WARNINGS, type TimerWarning } from '../shared/timer'
+import { cleanCountdown, cleanWarnings, DEFAULT_COUNTDOWN_SEC, DEFAULT_WARNINGS, type TimerWarning } from '../shared/timer'
 
 /** Remembers the shared timer's warning bells. */
 const file = (): string => path.join(app.getPath('userData'), 'timer.json')
@@ -18,10 +18,21 @@ export function loadWarnings(): TimerWarning[] {
   return DEFAULT_WARNINGS.map((w) => ({ ...w }))
 }
 
-export function saveWarnings(warnings: TimerWarning[]): void {
+/** From how many seconds left the countdown beeps start. */
+export function loadCountdown(): number {
+  try {
+    const saved = JSON.parse(fs.readFileSync(file(), 'utf8')) as { countdownSec?: unknown }
+    if (saved.countdownSec !== undefined) return cleanCountdown(saved.countdownSec)
+  } catch {
+    // Nothing saved yet.
+  }
+  return DEFAULT_COUNTDOWN_SEC
+}
+
+export function saveWarnings(warnings: TimerWarning[], countdownSec: number): void {
   try {
     fs.mkdirSync(path.dirname(file()), { recursive: true })
-    fs.writeFileSync(file(), JSON.stringify({ warnings }, null, 2))
+    fs.writeFileSync(file(), JSON.stringify({ warnings, countdownSec }, null, 2))
   } catch {
     // A convenience; a failed write must not stop a class.
   }

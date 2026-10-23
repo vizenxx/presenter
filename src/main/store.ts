@@ -1,4 +1,4 @@
-import { app, desktopCapturer, dialog, powerSaveBlocker, screen, session, systemPreferences, type BrowserWindow, type Rectangle, type WebContents, type WebContentsView } from 'electron'
+import { app, desktopCapturer, dialog, powerSaveBlocker, screen, session, systemPreferences, type BrowserWindow, type Rectangle, type WebContents, WebContentsView } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
 import { blankKey, commandKey, intentToAction, keyIntent, type BlankKind, type CommandKey } from '../shared/keys'
@@ -6,6 +6,7 @@ import { planMove, type NavOutput, stepFirst } from '../shared/nav'
 import { DECK_EXTENSIONS, deckKind, deckTitle } from '../shared/deckKinds'
 import { INK_COLORS, INK_TOOLS, InkScene, type InkOp, type InkSettings, type InkStroke, type InkTool } from '../shared/ink'
 import { MAIN_STRINGS } from '../shared/lang'
+import { addLeaf, computeRects, contains, evenOut, leaves, preset, removeLeaf, setRatio, swapLeaves, type TilePath, type TilePreset, type TileNode } from '../shared/tiles'
 import { mergeRecent } from '../shared/recentList'
 import * as T from '../shared/timer'
 import { stepZoom, zoomKey, type ZoomDirection } from '../shared/zoom'
@@ -30,10 +31,11 @@ import { rememberPages, resumePage } from './pageMemory'
 import { whiteboardFile } from './whiteboard'
 import { loadTheme, saveTheme, themeBackground } from './themeMemory'
 import { Updater } from './updates'
+import { TILE_GAP } from './projectorWindow'
 import { loadFlipped, saveFlipped } from './layoutMemory'
 import { HEADLESS } from './headless'
 import { toolsLog } from './toolsLog'
-import { loadWarnings, saveWarnings } from './timerMemory'
+import { loadCountdown, loadWarnings, saveWarnings } from './timerMemory'
 import { loadMyTimer, saveMyTimer } from './myTimerMemory'
 import { loadFolder, saveFolder } from './folderMemory'
 
@@ -58,6 +60,8 @@ const MIRROR_MS = 250
 const ALARM_GUARD_MS = 1500
 /** Live decks in the console have the same round corners as their slot (rounded-xl); on a projector they are square. */
 const CONSOLE_VIEW_RADIUS = 12
+/** The gap between two contents in the console's current pane (wide enough to grab). */
+const PANE_GAP = 8
 /** Ignore deck timer reports this soon after our own timer command. */
 const DECK_TIMER_GUARD_MS = 1000
 
@@ -66,6 +70,8 @@ export class Store {
   private readonly outputs = new Map<OutputId, Output>()
   /** Projector 2, 3 …: extra audience screens, each showing one content (or black). */
   private readonly extras = new Map<number, { screen: ProjectorScreen; roller: RollerOverlay; contentId: OutputId | null; displayId: number | null }>()
+  /** Projectors that show several contents at once: how they share the screen (only while there are two or more). */
+  private readonly layouts = new Map<number, TileNode>()
   private selectedId: OutputId = 'projector'
   /** The screen the next preview follows: the last selected real screen. */
   private previewOfId: OutputId = 'projector'
@@ -95,6 +101,8 @@ export class Store {
   /** The followed program window, or the floating toolbar, is the window in front (the pad may take the mouse). */
   private windowInFront = false
   private warnings: T.TimerWarning[] = T.DEFAULT_WARNINGS.map((w) => ({ ...w }))
+  /** The countdown beeps (two quick beeps a second) start with this many seconds left; 0 = none. */
+  private countdownSec = T.DEFAULT_COUNTDOWN_SEC
   /** The main deck opened again on the page it showed last (0-based); null after the next page move. */
   private resumed: number | null = null
   private resumedTimer: ReturnType<typeof setTimeout> | null = null
@@ -139,6 +147,7 @@ export class Store {
     this.theme = loadTheme()
     this.flipped = loadFlipped()
     this.warnings = loadWarnings()
+    this.countdownSec = loadCountdown()
     this.speaker = { ...loadMyTimer(), startedAt: null, heldMs: 0, clockExtra: null }
     this.lastFolder = loadFolder()
     const projector = this.createOutput('projector', 1, 'projector', 0)
@@ -159,25 +168,7 @@ export class Store {
       this.emitNow()
     })
 
-    const overlay = this.projectorWin.overlay.webContents
-    overlay.on('did-finish-load', () => this.syncTimer(true))
-    overlay.on('before-input-event', (event, input) => {
-      const zoom = zoomKey(input.key, input)
-      const command = commandKey(input.key, input)
-      const intent = keyIntent(input.key, input)
-      const blank = blankKey(input.key, input)
-      if (blank) {
-        event.preventDefault()
-        if (input.type === 'keyDown') this.setBlank(blank)
-        return
-      }
-      if (!zoom && !command && !intent) return
-      event.preventDefault()
-      if (input.type !== 'keyDown') return
-      if (zoom) this.zoom(this.onAirId ?? 'projector', zoom)
-      else if (command) this.onCommand(command)
-      else if (intent) this.onKey(intent, this.onAirId)
-    })
+    this.watchOverlay(this.projectorWin.overlay)
 
     screen.on('display-added', () => this.onDisplaysChanged())
     screen.on('display-removed', () => this.onDisplaysChanged())
@@ -337,7 +328,8 @@ export class Store {
     const o = this.outputs.get(id)
     if (!o || (o.kind !== 'window' && o.kind !== 'capture')) return
     const on = this.shownOn(o)
-    if (on === 1 && this.hasContent(this.projector())) this.showOn('projector', 1)
+    if (on !== null && this.isCompanion(o)) this.removeTile(o)
+    else if (on === 1 && this.hasContent(this.projector())) this.showOn('projector', 1)
     else if (on !== null) this.showOn(id, null)
     if (o.capture) this.windows.release(o.capture.sourceId)
     this.outputs.delete(id)
@@ -415,7 +407,10 @@ export class Store {
     // A new card in the old card's place: it takes over its projector and selection; the old card goes.
     const added = [...this.outputs.keys()].find((k) => !before.has(k))
     if (!added) return
-    if (was !== null) this.showOn(added, was)
+    if (was !== null) {
+      if (this.isCompanion(o)) this.splitOn(added, was)
+      else this.showOn(added, was)
+    }
     this.select(added)
     this.removeScreen(id)
   }
@@ -493,11 +488,8 @@ export class Store {
     const onAir = this.onAir()
     if (this.projecting || !onAir) return
     this.projecting = true
-    this.consoleWin.win.contentView.removeChildView(onAir.view)
-    this.projectorWin.attach(onAir.view)
-    onAir.view.setVisible(true)
-    onAir.setBaseZoom(1)
-    onAir.escapeStops = true
+    for (const o of this.tileOutputs(1)) this.consoleWin.win.contentView.removeChildView(o.view)
+    this.applyTiles(1)
     this.projectorWin.open()
     this.sendInkSettings()
     this.applyPreview()
@@ -511,12 +503,12 @@ export class Store {
     if (this.roller.showing) this.rollerHide()
     if (this.blank) this.setBlank(null)
     this.projecting = false
-    const onAir = this.onAir()
+    const outs = this.tileOutputs(1)
     this.projectorWin.close()
-    if (onAir) {
-      onAir.escapeStops = false
-      this.projectorWin.detach(onAir.view)
-      this.consoleWin.win.contentView.addChildView(onAir.view)
+    this.projectorWin.setTiles(new Map(), null)
+    for (const o of outs) {
+      o.escapeStops = false
+      this.consoleWin.win.contentView.addChildView(o.view)
     }
     this.mirrorVideo = false
     this.sendInkSettings()
@@ -536,8 +528,18 @@ export class Store {
     const o = this.outputs.get(id)
     if (!o || o.kind === 'preview' || !this.hasContent(o)) return
     const to = target === 'new' ? this.nextProjectorNumber() : target
-    const from = this.shownOn(o)
-    if (to === from) return
+    let from = this.shownOn(o)
+    if (to === from) {
+      // Already there as one of several: it now shows alone, the others wait.
+      if (to !== null && this.layouts.has(to)) this.showAlone(o, to)
+      return
+    }
+    // A tile of a split leaves it; a projector that shows several gives them up for the new content.
+    if (from !== null && this.isCompanion(o)) {
+      this.removeTile(o)
+      from = null
+    }
+    if (to !== null && this.layouts.has(to)) this.endSplit(to)
     // Marks belong to where a content was shown: the moved content and the one it replaces lose theirs.
     const replaced = to === 1 ? this.onAirId : to !== null ? (this.extras.get(to)?.contentId ?? null) : null
     for (const id of [o.id, replaced]) if (id) this.applyInk(id, { t: 'clear' }, 'main')
@@ -545,8 +547,9 @@ export class Store {
       if (target !== 'new') return
       this.createProjector(to)
     }
-    // Off where it was …
-    if (from === 1) this.clearStage()
+    // Off where it was … (the others of its split stay; one of them becomes the main content)
+    if (from !== null && this.layouts.has(from)) this.promoteFrom(o, from)
+    else if (from === 1) this.clearStage()
     else if (from !== null) this.setExtraContent(from, null)
     // … on where it goes; what was there waits.
     if (to === 1) {
@@ -569,6 +572,29 @@ export class Store {
       if (waiting?.capture) this.windows.release(waiting.capture.sourceId)
     }
     this.sendInkSettings()
+    this.emit()
+  }
+
+  /** A content of a split shows alone on its projector; the others wait. */
+  private showAlone(o: Output, n: number): void {
+    const tree = this.layouts.get(n)
+    if (!tree) return
+    const others = leaves(tree).filter((id) => id !== o.id)
+    this.layouts.delete(n)
+    if (this.primaryIdOf(n) !== o.id) {
+      if (n === 1) this.onAirId = o.id
+      else {
+        const x = this.extras.get(n)
+        if (x) x.contentId = o.id
+      }
+    }
+    this.applyTiles(n)
+    for (const id of others) {
+      const w = this.outputs.get(id)
+      if (w) this.releaseView(w, n)
+    }
+    this.sendInkSettings()
+    this.syncTimer(true)
     this.emit()
   }
 
@@ -910,6 +936,16 @@ export class Store {
 
   // ---------- zoom (字号) ----------
 
+  /**
+   * Alt + wheel over a screen. Over the console's panes (the current slide, the next slide) it zooms the
+   * selected screen, like the keys do; over a projector's own window it zooms the screen shown there.
+   */
+  wheelZoom(id: OutputId, direction: ZoomDirection): void {
+    const o = this.outputs.get(id)
+    if (!o) return
+    this.zoom(this.inConsole(o) ? null : id, direction)
+  }
+
   /** Zoom a screen like a browser page. The next preview follows the screen it previews. */
   zoom(id: OutputId | null, direction: ZoomDirection): void {
     const requested = this.outputs.get(id ?? this.selectedId)
@@ -1026,6 +1062,9 @@ export class Store {
     // From the deck end, browsing starts on the last slide (not one past it).
     if (o.kind === 'preview' && this.selectedId !== id) o.index = o.shownIndex()
     this.setSelected(id)
+    // One of several on a projector: its marks, media buttons and timer are the ones in use now.
+    const shown = o.kind === 'preview' ? null : this.shownOn(o)
+    if (shown !== null && this.isCompanion(o)) this.focusTile(o, shown)
     this.followPreview()
     this.emit()
   }
@@ -1125,7 +1164,14 @@ export class Store {
   /** The shared timer's warning bells: time left and number of beeps for each. */
   timerWarnings(list: unknown): void {
     this.warnings = T.cleanWarnings(list)
-    saveWarnings(this.warnings)
+    saveWarnings(this.warnings, this.countdownSec)
+    this.syncTimer(true)
+  }
+
+  /** From how many seconds left the countdown beeps start (0 = none). */
+  timerCountdown(sec: unknown): void {
+    this.countdownSec = T.cleanCountdown(sec)
+    saveWarnings(this.warnings, this.countdownSec)
     this.syncTimer(true)
   }
 
@@ -1160,6 +1206,7 @@ export class Store {
       onAirId: this.onAirId,
       projectors: [...this.extras].sort((a, b) => a[0] - b[0]).map(([number, x]) => ({ number, contentId: x.contentId, fullscreen: x.screen.isFullscreen() })),
       previewOf: this.previewSource().id,
+      splits: [...this.layouts].map(([number, tree]) => ({ number, tree, ...this.stageSize(number) })),
       previewSize: this.layoutSize(this.previewSource()),
       milestones: onAir?.milestones ?? [],
       timer: this.timerView(),
@@ -1193,6 +1240,29 @@ export class Store {
   /** Keys and clicks close the picture only after the highlight has landed. */
   private closeRollerByUser(): void {
     if (!this.roller.busy()) this.rollerHide()
+  }
+
+  /** A projector's timer overlay: it shows the shared timer; keys pressed there act as on the projector. */
+  private watchOverlay(view: WebContentsView): void {
+    const overlay = view.webContents
+    overlay.on('did-finish-load', () => this.syncTimer(true))
+    overlay.on('before-input-event', (event, input) => {
+      const zoom = zoomKey(input.key, input)
+      const command = commandKey(input.key, input)
+      const intent = keyIntent(input.key, input)
+      const blank = blankKey(input.key, input)
+      if (blank) {
+        event.preventDefault()
+        if (input.type === 'keyDown') this.setBlank(blank)
+        return
+      }
+      if (!zoom && !command && !intent) return
+      event.preventDefault()
+      if (input.type !== 'keyDown') return
+      if (zoom) this.zoom(this.onAirId ?? 'projector', zoom)
+      else if (command) this.onCommand(command)
+      else if (intent) this.onKey(intent, this.onAirId)
+    })
   }
 
   private createRollerOverlay(): RollerOverlay {
@@ -1546,22 +1616,32 @@ export class Store {
   private syncTimer(force: boolean): void {
     if (!this.projectorWin) return
     const view = this.timerView()
-    const key = `${view.status}|${view.remainingSec}|${view.alarming}|${view.durationSec}|${JSON.stringify(view.warnings)}`
+    const key = `${view.status}|${view.remainingSec}|${view.alarming}|${view.durationSec}|${JSON.stringify(view.warnings)}|${view.countdownSec}`
     if (!force && key === this.lastTimerKey) return
     this.lastTimerKey = key
     if (force) this.lastTimerCmd = Date.now()
-    const onAir = this.onAir()
-    onAir?.sendTimer({ remaining: view.status === 'idle' ? null : view.remainingSec, isRunning: view.status === 'running', isDone: view.alarming })
-    // UXD202 decks show the countdown in their own navbar; everything else gets the overlay.
-    const deckShowsTimer = !!onAir && onAir.adapter === 'uxd202' && onAir.ownTimer
-    this.projectorWin.setOverlayVisible(this.projecting && !deckShowsTimer && view.status !== 'idle')
+    // Every deck on a projector gets the countdown (UXD202 decks show it in their own navbar).
+    const sync = { remaining: view.status === 'idle' ? null : view.remainingSec, isRunning: view.status === 'running', isDone: view.alarming }
+    for (const o of this.outputs.values()) if (o.kind !== 'preview' && this.shownOn(o) !== null) o.sendTimer(sync)
+    // Every projector shows the same shared timer: in the decks' own bars where all of them have one, else in the overlay.
+    const ownBar = (n: number): boolean => {
+      const outs = this.tileOutputs(n)
+      return outs.length > 0 && outs.every((o) => o.adapter === 'uxd202' && o.ownTimer)
+    }
+    this.projectorWin.setOverlayVisible(this.projecting && !ownBar(1) && view.status !== 'idle')
     const overlay = this.projectorWin.overlay.webContents
     if (!overlay.isDestroyed()) overlay.send('timer', view)
+    for (const [n, x] of this.extras) {
+      x.screen.setOverlayVisible(!ownBar(n) && view.status !== 'idle')
+      const extra = x.screen.overlay.webContents
+      // Only Projector 1's overlay makes a sound; the others show the same time silently.
+      if (!extra.isDestroyed()) extra.send('timer', { ...view, silent: true })
+    }
     this.emit()
   }
 
   private timerView(): TimerView {
-    return { status: this.timer.status, remainingSec: T.remainingSec(this.timer), durationSec: this.timer.durationSec, alarming: this.timer.alarming, warnings: this.warnings }
+    return { status: this.timer.status, remainingSec: T.remainingSec(this.timer), durationSec: this.timer.durationSec, alarming: this.timer.alarming, warnings: this.warnings, countdownSec: this.countdownSec }
   }
 
   private plannedMinutes(): number | null {
@@ -1632,7 +1712,24 @@ export class Store {
     const r = this.currentRect
     if (!onAir) return
     if (!r || !this.hasContent(onAir)) {
-      onAir.view.setVisible(false)
+      for (const o of this.tileOutputs(1)) o.view.setVisible(false)
+      return
+    }
+    const tree = this.layouts.get(1)
+    if (tree) {
+      // Several contents: each in its place of the pane, laid out for its share of the projector.
+      const pane = computeRects(tree, { x: r.x, y: r.y, width: r.width, height: r.height }, PANE_GAP)
+      const size = this.targetSize()
+      const real = computeRects(tree, { x: 0, y: 0, width: size.width, height: size.height }, TILE_GAP)
+      for (const o of this.tileOutputs(1)) {
+        const a = pane.get(o.id)
+        const p = real.get(o.id)
+        if (!a || !p) continue
+        o.view.setBounds({ x: Math.round(a.x), y: Math.round(a.y), width: Math.round(a.width), height: Math.round(a.height) })
+        o.view.setBorderRadius(CONSOLE_VIEW_RADIUS)
+        o.view.setVisible(true)
+        o.setBaseZoom(a.width / Math.max(1, p.width))
+      }
       return
     }
     onAir.view.setBounds({ x: Math.round(r.x), y: Math.round(r.y), width: Math.round(r.width), height: Math.round(r.height) })
@@ -1650,7 +1747,164 @@ export class Store {
   private shownOn(o: Output): number | null {
     if (o.id === this.onAirId) return 1
     for (const [n, x] of this.extras) if (x.contentId === o.id) return n
+    for (const [n, tree] of this.layouts) if (contains(tree, o.id)) return n
     return null
+  }
+
+  /** The content a projector's controls follow (marks, media, the console's current pane): Projector 1's on-air content, or the extra screen's first. */
+  private primaryIdOf(n: number): OutputId | null {
+    return n === 1 ? this.onAirId : (this.extras.get(n)?.contentId ?? null)
+  }
+
+  /** A content that shares a projector with another one and is not its main content. */
+  private isCompanion(o: Output): boolean {
+    const n = this.shownOn(o)
+    return n !== null && this.primaryIdOf(n) !== o.id
+  }
+
+  /** Everything a projector shows: one content, or the tiles of its split. */
+  private tileOutputs(n: number): Output[] {
+    const tree = this.layouts.get(n)
+    const ids = tree ? leaves(tree) : [this.primaryIdOf(n)]
+    return ids.map((id) => (id ? this.outputs.get(id) : undefined)).filter((o): o is Output => !!o)
+  }
+
+  private stageSize(n: number): { width: number; height: number } {
+    return n === 1 ? this.targetSize() : (this.extras.get(n)?.screen.contentSize() ?? { width: 960, height: 540 })
+  }
+
+  /** Puts every content of a projector where its split says (attach: also moves the views into the right window). */
+  private applyTiles(n: number, attach = true): void {
+    const tree = this.layouts.get(n) ?? null
+    const outs = this.tileOutputs(n)
+    if (n === 1) {
+      if (this.projecting) {
+        this.projectorWin.setTiles(new Map(outs.map((o) => [o.id, o.view])), tree)
+        for (const o of outs) {
+          o.setBaseZoom(1)
+          o.escapeStops = true
+        }
+      } else {
+        if (attach) for (const o of outs) this.consoleWin.win.contentView.addChildView(o.view)
+        this.applyCurrent()
+      }
+      return
+    }
+    const x = this.extras.get(n)
+    if (!x) return
+    x.screen.setTiles(new Map(outs.map((o) => [o.id, o.view])), tree)
+    for (const o of outs) o.setBaseZoom(1)
+  }
+
+  /** A content that left a projector's split: out of its window, out of sight, keeping its page. */
+  private releaseView(o: Output, n: number): void {
+    if (n === 1 && !this.projecting) this.consoleWin.win.contentView.removeChildView(o.view)
+    o.escapeStops = false
+    o.view.setVisible(false)
+  }
+
+  /** A content joins what a projector shows: the largest tile is split along its longer side (automatic tiling). */
+  splitOn(id: OutputId, n: number): void {
+    const o = this.outputs.get(id)
+    if (!o || o.kind === 'preview' || !this.hasContent(o)) return
+    if (n !== 1 && !this.extras.has(n)) return
+    const primary = this.primaryIdOf(n)
+    if (!primary) {
+      this.showOn(id, n)
+      return
+    }
+    if (o.id === primary || contains(this.layouts.get(n) ?? null, o.id)) return
+    // It leaves wherever it was (alone on another projector, or a tile there).
+    if (this.shownOn(o) !== null) this.showOn(id, null)
+    const size = this.stageSize(n)
+    this.layouts.set(n, addLeaf(this.layouts.get(n) ?? { id: primary }, id, { x: 0, y: 0, ...size }, TILE_GAP))
+    this.applyTiles(n)
+    this.sendInkSettings()
+    this.syncTimer(true)
+    this.emit()
+  }
+
+  /** A content leaves a projector's split; its neighbour takes the room. One left: the split ends. */
+  private removeTile(o: Output): void {
+    const n = this.shownOn(o)
+    if (n === null) return
+    const tree = removeLeaf(this.layouts.get(n) ?? null, o.id)
+    if (tree && leaves(tree).length >= 2) this.layouts.set(n, tree)
+    else this.layouts.delete(n)
+    this.applyTiles(n)
+    this.releaseView(o, n)
+    this.syncTimer(true)
+    this.emit()
+  }
+
+  /** The main content of a projector leaves while others stay: one of them becomes the main content, the split goes on (or ends). */
+  private promoteFrom(o: Output, n: number): void {
+    const tree = removeLeaf(this.layouts.get(n) ?? null, o.id)
+    const next = tree ? leaves(tree)[0] : null
+    if (n === 1) this.onAirId = next ?? null
+    else {
+      const x = this.extras.get(n)
+      if (x) x.contentId = next ?? null
+    }
+    if (tree && leaves(tree).length >= 2) this.layouts.set(n, tree)
+    else this.layouts.delete(n)
+    this.applyTiles(n)
+    this.releaseView(o, n)
+  }
+
+  /** Every companion of a projector leaves its split (they wait); the main content stays. */
+  private endSplit(n: number): void {
+    const tree = this.layouts.get(n)
+    if (!tree) return
+    const main = this.primaryIdOf(n)
+    this.layouts.delete(n)
+    const gone = leaves(tree).filter((id) => id !== main)
+    this.applyTiles(n)
+    for (const id of gone) {
+      const o = this.outputs.get(id)
+      if (o) this.releaseView(o, n)
+    }
+  }
+
+  /** Dividers pulled in the console: one split's ratio. */
+  setSplitRatio(n: number, path: TilePath, ratio: number): void {
+    const tree = this.layouts.get(n)
+    if (!tree || !Array.isArray(path) || path.some((p) => p !== 'a' && p !== 'b') || !Number.isFinite(ratio)) return
+    this.layouts.set(n, setRatio(tree, path, ratio))
+    this.applyTiles(n, false)
+    this.emit()
+  }
+
+  /** A ready-made arrangement (side by side, stacked, grid, one large) or equal room for everyone. */
+  arrangeSplit(n: number, kind: TilePreset | 'even'): void {
+    const tree = this.layouts.get(n)
+    if (!tree) return
+    const next = kind === 'even' ? evenOut(tree) : preset(leaves(tree), kind)
+    if (!next) return
+    this.layouts.set(n, next)
+    this.applyTiles(n, false)
+    this.emit()
+  }
+
+  /** Two contents of a split trade places. */
+  swapTiles(n: number, one: OutputId, other: OutputId): void {
+    const tree = this.layouts.get(n)
+    if (!tree || !contains(tree, one) || !contains(tree, other)) return
+    this.layouts.set(n, swapLeaves(tree, one, other))
+    this.applyTiles(n, false)
+    this.emit()
+  }
+
+  /** The projector's controls (marks, media, timer) follow this tile now. */
+  private focusTile(o: Output, n: number): void {
+    if (n === 1) this.onAirId = o.id
+    else {
+      const x = this.extras.get(n)
+      if (x) x.contentId = o.id
+    }
+    this.inkPage = o.shownIndex()
+    this.sendInkSettings()
+    this.syncTimer(true)
   }
 
   private nextProjectorNumber(): number {
@@ -1667,9 +1921,13 @@ export class Store {
     for (const x of this.extras.values()) if (x.displayId !== null) used.add(x.displayId)
     const display = screen.getAllDisplays().find((d) => !used.has(d.id)) ?? null
     const roller = this.createRollerOverlay()
+    const overlay = new WebContentsView({ webPreferences: { preload: this.paths.overlayPreload, contextIsolation: true, sandbox: true, backgroundThrottling: false } })
+    this.paths.loadOverlay(overlay)
+    this.watchOverlay(overlay)
     const screenWin = new ProjectorScreen(
       n,
       roller.view,
+      overlay,
       this.strings().extraProjectorTitle(n),
       display,
       () => this.emit(),
@@ -1691,9 +1949,14 @@ export class Store {
     const x = this.extras.get(n)
     if (!x) return
     this.extras.delete(n)
-    const shown = x.contentId ? this.outputs.get(x.contentId) : undefined
-    shown?.view.setVisible(false)
+    const tree = this.layouts.get(n)
+    this.layouts.delete(n)
+    for (const id of tree ? leaves(tree) : [x.contentId]) {
+      const shown = id ? this.outputs.get(id) : undefined
+      shown?.view.setVisible(false)
+    }
     x.roller.destroy()
+    if (!x.screen.overlay.webContents.isDestroyed()) x.screen.overlay.webContents.close()
     if (this.roller.showing && this.audienceRollers().length === 0) this.roller.showing = false
     this.emit()
   }

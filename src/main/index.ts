@@ -3,6 +3,7 @@ import path from 'node:path'
 import type { InkOp, InkTool } from '../shared/ink'
 import type { KeyIntent, NavAction, OutputId, PreviewRect, SpeakerMode, UiTheme } from '../shared/types'
 import type { ZoomDirection } from '../shared/zoom'
+import type { TilePath } from '../shared/tiles'
 import type { GuideFile } from '../shared/guide'
 import { registerDeckScheme, setViewerRoot } from './deckProtocol'
 import { AI_REQUEST, copyText } from './guide'
@@ -66,6 +67,12 @@ function wireIpc(store: Store): void {
   ipcMain.on('console:set-blank', (_e, kind: 'black' | 'white' | null) => store.setBlank(kind === 'black' || kind === 'white' ? kind : null))
   ipcMain.on('console:toolbar-size', (_e, width: number, height: number) => store.toolbarSize(Number(width), Number(height)))
   ipcMain.on('console:focus', () => store.focusConsole())
+  ipcMain.on('console:split-on', (_e, id: string, n: number) => store.splitOn(String(id), Number(n)))
+  ipcMain.on('console:split-ratio', (_e, n: number, path: unknown, ratio: number) => store.setSplitRatio(Number(n), Array.isArray(path) ? (path as TilePath) : [], Number(ratio)))
+  ipcMain.on('console:split-arrange', (_e, n: number, kind: unknown) => {
+    if (kind === 'even' || kind === 'side' || kind === 'stack' || kind === 'grid' || kind === 'main') store.arrangeSplit(Number(n), kind)
+  })
+  ipcMain.on('console:split-swap', (_e, n: number, one: string, other: string) => store.swapTiles(Number(n), String(one), String(other)))
   ipcMain.on('console:check-update', () => store.updater.check())
   ipcMain.on('console:set-auto-update', (_e, auto: boolean) => store.updater.setAuto(auto === true))
   ipcMain.on('console:open-link', (_e, kind: unknown) => {
@@ -87,6 +94,10 @@ function wireIpc(store: Store): void {
     const o = outputOf(e.sender)
     if (o) store.onPointer(o.id)
     else if (store.isPad(e.sender)) store.padPointer()
+  })
+  ipcMain.on('deck:wheel-zoom', (e, direction: unknown) => {
+    const o = outputOf(e.sender)
+    if (o && (direction === 'in' || direction === 'out')) store.wheelZoom(o.id, direction)
   })
   ipcMain.on('overlay:pointer', () => store.onProjectorPointer())
   // Marks: only the projector deck page may send them.
@@ -127,6 +138,7 @@ function wireIpc(store: Store): void {
   ipcMain.on('console:timer-reset', () => store.timerReset())
   ipcMain.on('console:timer-dismiss', () => store.dismissAlarm())
   ipcMain.on('console:timer-warnings', (_e, list: unknown) => store.timerWarnings(list))
+  ipcMain.on('console:timer-countdown', (_e, sec: unknown) => store.timerCountdown(sec))
   ipcMain.on('console:layout-preview', (_e, rect: PreviewRect | null) => store.layoutPreview(rect))
   ipcMain.on('console:layout-current', (_e, rect: PreviewRect | null) => store.layoutCurrent(rect))
   ipcMain.on('console:start-projecting', () => store.startProjecting())

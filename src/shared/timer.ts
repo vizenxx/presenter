@@ -68,7 +68,7 @@ export interface TimerWarning {
   beeps: number
 }
 
-/** A sound before the end: a warning bell's beeps, or one beep for each of the last five seconds. */
+/** A sound before the end: a warning bell's beeps, or two quick beeps for each of the last seconds (the teacher sets how many). */
 export type TimerCue = { kind: 'warning'; beeps: number } | { kind: 'last-seconds' } | null
 
 /** Until the teacher sets others: one bell, 3 beeps with one minute left. */
@@ -76,6 +76,14 @@ export const DEFAULT_WARNINGS: TimerWarning[] = [{ sec: 60, beeps: 3 }]
 export const MAX_WARNINGS = 5
 export const MAX_WARN_SEC = 60 * 60
 export const MAX_BEEPS = 9
+/** From how many seconds left the countdown beeps start (two quick beeps each second); 0 = no countdown beeps. */
+export const DEFAULT_COUNTDOWN_SEC = 5
+export const MAX_COUNTDOWN_SEC = 30
+
+export function cleanCountdown(value: unknown): number {
+  const n = Number(value)
+  return Number.isFinite(n) ? Math.min(MAX_COUNTDOWN_SEC, Math.max(0, Math.round(n))) : DEFAULT_COUNTDOWN_SEC
+}
 
 /** A list as the console may send it, put into range (at most 5 bells, 0 s – 60 min, 1–9 beeps) and in the order the bells ring. */
 export function cleanWarnings(list: unknown): TimerWarning[] {
@@ -94,12 +102,12 @@ export function cleanWarnings(list: unknown): TimerWarning[] {
 /**
  * The cue for a change of the shown time. A start, a resume or a reset never beeps. A bell rings
  * when its time is passed; when one step passes several bells, the one nearest the end rings.
- * A bell at 0:00 never rings. The last five seconds always beep once a second.
+ * A bell at 0:00 never rings. The last `countdownSec` seconds (5 unless the teacher sets another number; 0 = off) give a countdown cue every second.
  */
-export function timerCue(before: { status: TimerStatus; remainingSec: number } | null, now: { status: TimerStatus; remainingSec: number }, warnings: TimerWarning[] = DEFAULT_WARNINGS): TimerCue {
+export function timerCue(before: { status: TimerStatus; remainingSec: number } | null, now: { status: TimerStatus; remainingSec: number }, warnings: TimerWarning[] = DEFAULT_WARNINGS, countdownSec: number = DEFAULT_COUNTDOWN_SEC): TimerCue {
   if (!before || before.status !== 'running' || now.status !== 'running') return null
   if (now.remainingSec >= before.remainingSec) return null
-  if (now.remainingSec >= 1 && now.remainingSec <= 5) return { kind: 'last-seconds' }
+  if (countdownSec > 0 && now.remainingSec >= 1 && now.remainingSec <= countdownSec) return { kind: 'last-seconds' }
   const passed = warnings.filter((w) => w.sec > 0 && before.remainingSec > w.sec && now.remainingSec <= w.sec)
   if (passed.length === 0) return null
   const nearest = passed.reduce((a, b) => (b.sec < a.sec || (b.sec === a.sec && b.beeps > a.beeps) ? b : a))

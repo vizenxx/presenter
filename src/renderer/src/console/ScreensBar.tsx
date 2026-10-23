@@ -1,8 +1,12 @@
+import { leaves } from '../../../shared/tiles'
 import type { AppState, OutputView, ReplaceSpec } from '../../../shared/types'
 import { screenLabel, useT } from './i18n'
+import { LayoutEditor } from './LayoutEditor'
 import { Menu, MenuItem, UiIcon, ZoomControl, useFlipped, type ConsoleMenu } from './ui'
 
 const SMALL_BTN = 'grid h-7 min-w-7 place-items-center rounded-full px-1.5 text-sm hover:bg-line'
+
+const leavesOf = (split: AppState['splits'][number]): number => leaves(split.tree).length
 
 /** Projector numbers in use: 1 always, then the extra ones. */
 function projectorNumbers(state: AppState): number[] {
@@ -59,6 +63,14 @@ function ProjectorPicker(props: { o: OutputView; state: AppState; menu: ConsoleM
             </MenuItem>
           ))}
           <MenuItem onClick={() => pick('new')}>＋ {t.newProjector(nextProjectorNumber(state))}</MenuItem>
+          {projectorNumbers(state)
+            // Beside what a projector already shows: only where there is something and this content is not on it yet.
+            .filter((n) => on !== n && (n === 1 ? state.onAirId : state.projectors.find((p) => p.number === n)?.contentId))
+            .map((n) => (
+              <MenuItem key={`split-${n}`} onClick={() => { onMenu(null); window.presenter.splitOn(o.id, n) }}>
+                {t.splitBeside(n)}
+              </MenuItem>
+            ))}
           <MenuItem onClick={() => pick(null)}>
             {on === null ? '✓ ' : ''}
             {t.notShownItem}
@@ -213,6 +225,27 @@ export function ScreensBar({ state, menu, onMenu, onPickWindow, onReplaceWindow 
         .map((o) => (
           <ScreenChip key={o.id} o={o} state={state} menu={menu} onMenu={onMenu} onReplaceWindow={onReplaceWindow} />
         ))}
+      {state.splits.map((split) => {
+        const id: ConsoleMenu = `layout:${split.number}`
+        const count = leavesOf(split)
+        return (
+          <span key={split.number} className="relative">
+            <button
+              type="button"
+              title={t.layoutChipTitle}
+              onClick={() => onMenu(menu === id ? null : id)}
+              className={`h-10 rounded-full px-4 text-sm whitespace-nowrap ${menu === id ? 'bg-accent text-white' : 'bg-panel-2 text-ink hover:bg-line'}`}
+            >
+              {t.layoutChip(split.number, count)}
+            </button>
+            {menu === id && (
+              <Menu up width="w-[30rem]" onClose={close}>
+                <LayoutEditor state={state} split={split} />
+              </Menu>
+            )}
+          </span>
+        )
+      })}
       <span className="relative">
         <button
           type="button"

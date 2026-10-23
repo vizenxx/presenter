@@ -40,6 +40,16 @@ export function beep(count = 1): void {
   }
 }
 
+/** The countdown before the end: two quick beeps in a row (about 0.17 s apart), once for each of the last seconds. */
+export function countdownBeep(): void {
+  try {
+    note('sine', 1046.5, 0.32, 0.09, 0)
+    note('sine', 1046.5, 0.32, 0.09, 0.17)
+  } catch {
+    // No audio device; the countdown still shows.
+  }
+}
+
 /** A short, quiet click for each step of the 抽人 highlight. */
 export function tick(): void {
   try {

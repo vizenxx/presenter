@@ -48,3 +48,18 @@ function isEditable(el: Element | null): boolean {
 window.addEventListener('focusin', () => ipcRenderer.send('deck:editing', isEditable(document.activeElement)), true)
 window.addEventListener('focusout', () => setTimeout(() => ipcRenderer.send('deck:editing', isEditable(document.activeElement)), 0), true)
 window.addEventListener('pointerdown', () => ipcRenderer.send('deck:pointer'), true)
+
+// Alt + mouse wheel changes the text size (like Ctrl + wheel in a browser): up = larger, down = smaller. One step at most every 60 ms.
+let lastWheelZoom = 0
+window.addEventListener(
+  'wheel',
+  (e) => {
+    if (!e.altKey || e.ctrlKey || e.metaKey || e.deltaY === 0) return
+    e.preventDefault()
+    const now = Date.now()
+    if (now - lastWheelZoom < 60) return
+    lastWheelZoom = now
+    ipcRenderer.send('deck:wheel-zoom', e.deltaY < 0 ? 'in' : 'out')
+  },
+  { capture: true, passive: false }
+)

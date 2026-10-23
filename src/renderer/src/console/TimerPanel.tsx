@@ -1,5 +1,5 @@
 import { mmss } from '../../../shared/format'
-import { MAX_BEEPS, MAX_WARNINGS, type TimerWarning } from '../../../shared/timer'
+import { MAX_BEEPS, MAX_COUNTDOWN_SEC, MAX_WARNINGS, type TimerWarning } from '../../../shared/timer'
 import type { AppState } from '../../../shared/types'
 import { AdjustTime } from './AdjustTime'
 import { useT } from './i18n'
@@ -16,7 +16,7 @@ const SMALL = 'rounded-full bg-panel-2 px-2.5 py-1 text-sm hover:bg-line disable
  * left (minutes : seconds), number of beeps, ✕. The list is sorted again when you leave a box,
  * never while you type. Up to 5 bells; Presenter remembers them.
  */
-export function WarningBells({ warnings }: { warnings: TimerWarning[] }) {
+export function WarningBells({ warnings, countdownSec }: { warnings: TimerWarning[]; countdownSec: number }) {
   const t = useT()
   const send = (list: TimerWarning[]): void => window.presenter.timerWarnings(list)
   const change = (i: number, next: Partial<TimerWarning>): void => send(warnings.map((w, j) => (j === i ? { ...w, ...next } : w)))
@@ -50,6 +50,11 @@ export function WarningBells({ warnings }: { warnings: TimerWarning[] }) {
             </button>
           </div>
         ))}
+      </div>
+      <div className="mt-3 flex items-center gap-1 rounded-xl py-1 pr-2 pl-2 ring-1 ring-line/70">
+        <span>{t.countdownFrom}</span>
+        <NumberField value={countdownSec} min={0} max={MAX_COUNTDOWN_SEC} live={false} onChange={(sec) => window.presenter.timerCountdown(sec)} title={t.countdownTitle} className="w-9 text-ink" />
+        <span>{countdownSec === 0 ? t.countdownOff : t.countdownSeconds}</span>
       </div>
     </div>
   )
@@ -91,7 +96,7 @@ export function TimerPanel({ state, menu, onMenu }: { state: AppState; menu: Con
           </button>
           {menu === 'bells' && (
             <Menu up width="w-[23rem]" onClose={close}>
-              <WarningBells warnings={timer.warnings} />
+              <WarningBells warnings={timer.warnings} countdownSec={timer.countdownSec} />
             </Menu>
           )}
         </span>

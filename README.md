@@ -96,7 +96,13 @@ The **Guide** in the app has the same help in two parts: **1 · Use Presenter** 
   - **Projector 2, 3 …**: projectors you opened.
   - **New projector**: a second projector or a TV. It opens full screen on a free display, else as a normal window.
   - **Not shown**: the content waits.
-- A projector shows one content at a time. The content it showed before waits and **keeps its page**, so you can switch back and go on where you were.
+- By default a projector shows one content at a time. The content it showed before waits and **keeps its page**, so you can switch back and go on where you were.
+- **Split screen: several contents on one projector.** In a card's **Projector ▾** menu choose **＋ Beside what Projector n shows**. The new content takes half of the largest part of the screen (the part is split along its longer side, as tiling window managers do), so a third and a fourth content tile the screen by themselves. A chip **▦ Projector n: 3 screens** appears in the bottom bar; it opens the layout pop-up:
+  - a small picture of the projector with a **divider** between the parts: pull it to change the sizes (double-click for equal room);
+  - one button for each arrangement: side by side, one above the other, a grid, one large with the others beside it, equal room;
+  - a row for each screen: **⇄** swaps it with the one before, **Alone** shows it alone, **✕** takes it off the projector;
+  - clicking a screen (in the picture or its card) gives it the projector's marks, video buttons and timer.
+  The same arrangement shows in the console's current pane before you project, and on a second projector the same way. **Projector n** in a card's menu shows that content alone again.
 - The same menu has **full screen** and **close** for Projector 2, 3 …. Closing a projector lets its content wait.
 - **Clicking a card only selects it**: page keys, Next slide and Notes follow it, and the audience keeps seeing the same thing. Use this to look through a waiting deck quietly.
 - Click a card's **name** (it has a ▾) to change what it holds: **Open a deck…**, **A program window…**, **Whiteboard**, or a deck from **Recent**. The card keeps its place and its projector. On Screen 1 a deck replaces the main deck; a program window or a whiteboard takes Screen 1's place and Projector 1, and the old deck is closed (it is in **Recent**).
@@ -151,9 +157,9 @@ The bar above the current slide: **Pointer, Pen, Highlighter, Box, Arrow, Text, 
 - Click a preset (**1 min**, **5 min** …) to start at once.
 - **The big time is its own entry**: double-click the minutes or the seconds, type a number and press **Enter** (or **✓**). **Esc** (or **✕**) leaves it as it was. While the timer is stopped, the number is the time **Start** will use. While it runs, the timer **keeps running** while you type: the part you typed is set when you press Enter, and the other parts are what they are at that moment (type 5 in the minutes at 12:34 and it goes on from 5:34, a few seconds later 5:31). **±** is still there for adding or taking away an amount.
 - When a deck plans a time for a slide, the timer shows it.
-- **Warning bells**: the bell button next to the shared timer's name (it shows how many bells are set) opens them in a pop-up: each bell beeps its own number of times (1–9) when its time is left (minutes : seconds). The bells are listed in the order they ring. **＋ Add a bell** adds one (up to 5); **✕** removes one. At first there is one bell: 1:00 left, 3 beeps. Presenter remembers the bells. In the last 5 seconds it always beeps once a second.
+- **Warning bells**: the bell button next to the shared timer's name (it shows how many bells are set) opens them in a pop-up: each bell beeps its own number of times (1–9) when its time is left (minutes : seconds). The bells are listed in the order they ring. **＋ Add a bell** adds one (up to 5); **✕** removes one. At first there is one bell: 1:00 left, 3 beeps. Presenter remembers the bells. **Countdown beeps**: in the same pop-up, below the bells, two quick beeps sound every second for the last seconds before the end. The number of seconds is yours to set (5 at first; 0 turns the countdown beeps off, 30 is the most); Presenter remembers it.
 - At zero the alarm rings until you press any key or click. That key does not turn the page.
-- UXD202 decks show the countdown in their own bar; everything else shows it at the bottom right of the projector.
+- **Every projector shows the same shared timer**: Projector 1, and Projector 2, 3 …. UXD202 decks show the countdown in their own bar; where a projector has any other content (or nothing), it shows it at the bottom right. Only Projector 1 plays the bells and the alarm.
 
 **My timer** (only you see it)
 
@@ -189,7 +195,7 @@ The **⇄** button in the top bar turns the whole console left to right: the cur
 
 ## Text size
 
-**Text size** (Ctrl + / Ctrl − / Ctrl 0; ⌘ on a Mac) enlarges an HTML deck in steps of 5 % and is remembered per deck file. Hold **A−** or **A+** to change it fast. It is above the current slide for Projector 1 and in a card's **⋯** menu for the others. PPT and PDF show whole pages, so it does not apply to them.
+**Text size** (Ctrl + / Ctrl − / Ctrl 0; ⌘ on a Mac) enlarges an HTML deck in steps of 5 % and is remembered per deck file. Hold **A−** or **A+** to change it fast. **Alt + mouse wheel** over the current slide, the next slide or a projector's own window does the same as in a browser with Ctrl + wheel: wheel up = larger, down = smaller (over the console's panes it changes the selected screen). It is above the current slide for Projector 1 and in a card's **⋯** menu for the others. PPT and PDF show whole pages, so it does not apply to them.
 
 ## Version and updates
 

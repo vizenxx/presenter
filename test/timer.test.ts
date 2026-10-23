@@ -45,6 +45,20 @@ describe('timer', () => {
     expect(T.timerCue(run(7), run(6))).toBeNull()
     expect(T.timerCue(run(1), { status: 'done', remainingSec: 0 })).toBeNull()
   })
+  it('the countdown cue starts at the number of seconds the teacher sets (0 = none)', () => {
+    const run = (sec: number) => ({ status: 'running' as const, remainingSec: sec })
+    expect(T.timerCue(run(11), run(10), T.DEFAULT_WARNINGS, 10)).toEqual({ kind: 'last-seconds' })
+    expect(T.timerCue(run(12), run(11), T.DEFAULT_WARNINGS, 10)).toBeNull()
+    expect(T.timerCue(run(6), run(5), T.DEFAULT_WARNINGS, 3)).toBeNull()
+    expect(T.timerCue(run(4), run(3), T.DEFAULT_WARNINGS, 3)).toEqual({ kind: 'last-seconds' })
+    expect(T.timerCue(run(2), run(1), T.DEFAULT_WARNINGS, 0)).toBeNull()
+  })
+  it('the countdown number is put into range', () => {
+    expect(T.cleanCountdown(8)).toBe(8)
+    expect(T.cleanCountdown(-3)).toBe(0)
+    expect(T.cleanCountdown(99)).toBe(T.MAX_COUNTDOWN_SEC)
+    expect(T.cleanCountdown('x')).toBe(T.DEFAULT_COUNTDOWN_SEC)
+  })
   it('rings each bell the teacher set, with its own number of beeps', () => {
     const run = (sec: number) => ({ status: 'running' as const, remainingSec: sec })
     const bells = [

@@ -101,6 +101,7 @@ export function MirrorView({ aspect, ink, fallback }: { aspect: number; ink: Ink
   const settings = useRef(ink)
   settings.current = ink
   const [live, setLive] = useState(false)
+  const lastWheel = useRef(0)
 
   useEffect(() => {
     let stream: MediaStream | null = null
@@ -206,6 +207,14 @@ export function MirrorView({ aspect, ink, fallback }: { aspect: number; ink: Ink
           // The same click reaches the slide on the projector only when it lands on a video, a player or a "click to play" cover (the main process decides); elsewhere it only selects.
           const box = e.currentTarget.parentElement?.getBoundingClientRect()
           if (box && box.width > 0 && box.height > 0) window.presenter.projectorClick((e.clientX - box.left) / box.width, (e.clientY - box.top) / box.height)
+        }}
+        onWheel={(e) => {
+          // Alt + wheel: the text size of the selected screen, as over a browser page.
+          if (!e.altKey || e.deltaY === 0) return
+          const now = Date.now()
+          if (now - lastWheel.current < 60) return
+          lastWheel.current = now
+          window.presenter.zoom(null, e.deltaY < 0 ? 'in' : 'out')
         }}
         className="absolute inset-0 h-full w-full"
         style={{ cursor: CURSORS[ink.tool], touchAction: 'none' }}

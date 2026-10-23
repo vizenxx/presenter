@@ -5,6 +5,7 @@ import type { InkOp, InkSettings, InkStroke, InkTool } from './ink'
 import type { DeckErrorCode } from './lang'
 import type { RollStep } from './roller'
 import type { ZoomDirection } from './zoom'
+import type { TileNode, TilePath, TilePreset } from './tiles'
 
 export type OutputId = string
 /** projector = the main deck (Screen 1) · window = an extra deck screen · capture = another program's window, shown live · preview = the next-slide preview */
@@ -89,6 +90,15 @@ export interface ClockPeriod {
 export type SpeakerMode = 'up' | 'down' | 'clock'
 
 /** Projector 2, 3 …: extra audience screens the teacher opened. */
+/** A projector that shows several contents at once: how they share its screen (see shared/tiles.ts). */
+export interface SplitView {
+  number: number
+  tree: TileNode
+  /** The projector's size in pixels (the editor draws the same proportions). */
+  width: number
+  height: number
+}
+
 export interface ProjectorView {
   number: number
   contentId: OutputId | null
@@ -125,6 +135,10 @@ export interface TimerView {
   alarming: boolean
   /** Warning bells: beep a set number of times when a set time is left. Empty = no bells. */
   warnings: TimerWarning[]
+  /** The countdown beeps (two quick beeps a second) start with this many seconds left; 0 = none. */
+  countdownSec: number
+  /** A second projector shows the time without a sound (Projector 1 plays the bells and the alarm). */
+  silent?: boolean
 }
 
 export interface RollerListInfo {
@@ -196,6 +210,8 @@ export interface UpdateView {
 }
 
 export interface AppState {
+  /** Projectors that show several contents (Projector 1 is number 1). */
+  splits: SplitView[]
   /** The version of this Presenter. */
   version: string
   update: UpdateView
@@ -279,6 +295,12 @@ export interface ConsoleApi {
   setTheme(theme: UiTheme): void
   /** Turns the console left to right (and back). */
   setFlipped(flipped: boolean): void
+  /** Put this content beside what a projector shows (automatic tiling). */
+  splitOn(id: OutputId, n: number): void
+  /** Pull a divider: path = the way to the split from the root ('a' or 'b' at each step); ratio = the first part's share. */
+  setSplitRatio(n: number, path: TilePath, ratio: number): void
+  arrangeSplit(n: number, kind: TilePreset | 'even'): void
+  swapTiles(n: number, one: OutputId, other: OutputId): void
   checkUpdate(): void
   setAutoUpdate(auto: boolean): void
   openLink(kind: LinkKind): void
@@ -327,6 +349,7 @@ export interface ConsoleApi {
   timerDismiss(): void
   /** The shared timer's warning bells (time left and number of beeps each). Remembered. */
   timerWarnings(list: TimerWarning[]): void
+  timerCountdown(sec: number): void
   layoutPreview(rect: PreviewRect | null): void
   layoutCurrent(rect: PreviewRect | null): void
   startProjecting(): void

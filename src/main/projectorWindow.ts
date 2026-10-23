@@ -2,6 +2,10 @@ import { app, BaseWindow, View, WebContentsView, screen } from 'electron'
 import { HEADLESS } from './headless'
 import { IS_MAC } from './platform'
 import { projectorDisplay } from './displays'
+import { computeRects, type TileNode } from '../shared/tiles'
+
+/** The dark line between two contents on one projector (the divider). */
+export const TILE_GAP = 6
 
 const OVERLAY = { width: 320, height: 120, margin: 24 }
 /** Deck design size, used when there is no second display. */
@@ -15,7 +19,9 @@ export const WINDOWED = { width: 1280, height: 720 }
 export class ProjectorWindow {
   readonly win: BaseWindow
   readonly overlay: WebContentsView
-  private content: WebContentsView | null = null
+  /** The contents shown now (one, or several in a split), and how they share the room. */
+  private tiles = new Map<string, WebContentsView>()
+  private tree: TileNode | null = null
   private overlayVisible = false
   /** Black or white over everything (B / W). */
   private readonly cover = new View()
@@ -57,17 +63,40 @@ export class ProjectorWindow {
     return !this.win.isDestroyed() && this.win.isVisible()
   }
 
-  /** Put the deck view under the overlay. */
-  attach(view: WebContentsView): void {
-    this.content = view
-    view.setBorderRadius(0)
-    this.win.contentView.addChildView(view, 0)
+  /**
+   * The contents under the overlay: one fills the window; several share it as the split tree says.
+   * Views that are no longer listed are taken off (their owner hides them).
+   */
+  setTiles(views: Map<string, WebContentsView>, tree: TileNode | null): void {
+    if (this.win.isDestroyed()) return
+    const keep = new Set(views.values())
+    for (const v of this.tiles.values()) if (!keep.has(v)) this.win.contentView.removeChildView(v)
+    const had = new Set(this.tiles.values())
+    for (const v of views.values()) {
+      if (had.has(v)) continue
+      v.setBorderRadius(0)
+      this.win.contentView.addChildView(v, 0)
+    }
+    this.tiles = views
+    this.tree = tree
     this.layout()
   }
 
+  shows(view: WebContentsView): boolean {
+    return [...this.tiles.values()].includes(view)
+  }
+
+  /** Put the deck view under the overlay. */
+  attach(view: WebContentsView): void {
+    this.setTiles(new Map([['one', view]]), null)
+  }
+
   detach(view: WebContentsView): void {
-    this.win.contentView.removeChildView(view)
-    if (this.content === view) this.content = null
+    if (this.tiles.size === 1 && [...this.tiles.values()][0] === view) this.setTiles(new Map(), null)
+    else {
+      const next = new Map([...this.tiles].filter(([, v]) => v !== view))
+      this.setTiles(next, this.tree)
+    }
   }
 
   /** Show on the external display, full-screen; without one, as a window. Keeps focus on the console. */
@@ -112,7 +141,12 @@ export class ProjectorWindow {
   layout(): void {
     if (this.win.isDestroyed()) return
     const { width, height } = this.contentSize()
-    this.content?.setBounds({ x: 0, y: 0, width, height })
+    const rects = this.tree && this.tiles.size > 1 ? computeRects(this.tree, { x: 0, y: 0, width, height }, TILE_GAP) : null
+    for (const [id, view] of this.tiles) {
+      const r = rects?.get(id)
+      view.setBounds(r ? { x: r.x, y: r.y, width: r.width, height: r.height } : { x: 0, y: 0, width, height })
+      view.setVisible(true)
+    }
     this.roller.setBounds({ x: 0, y: 0, width, height })
     this.cover.setBounds({ x: 0, y: 0, width, height })
     this.overlay.setBounds({

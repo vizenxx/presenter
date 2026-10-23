@@ -13,7 +13,7 @@ const OUT = path.join(ROOT, 'e2e', 'out')
 const STUB = path.join(OUT, 'harness', 'console-stub-preload.cjs')
 const AI_REQUEST = aiRequestText(fs.readFileSync(path.join(ROOT, 'docs', 'ai-integration.md'), 'utf8'))
 /** Every ConsoleApi method (contextBridge copies plain objects only, so no Proxy). */
-const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "focusConsole", "listWindows", "addWindowScreen", "setTheme", "setFlipped", "dismissResumed", "replaceScreen", "switchTo", "raiseWindow", "projectorClick", "mediaFullscreen", "selectSection", "checkUpdate", "setAutoUpdate", "openLink", "timerWarnings", "speakerAdjust", "timerAdjust", "timerSet", "speakerPeriods", "setBlank", "savePicture", "addWhiteboard", "rollerGroups", "rollerClearGroups", "mediaToggle"]
+const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "focusConsole", "listWindows", "addWindowScreen", "setTheme", "setFlipped", "dismissResumed", "replaceScreen", "switchTo", "raiseWindow", "projectorClick", "mediaFullscreen", "selectSection", "splitOn", "setSplitRatio", "arrangeSplit", "swapTiles", "checkUpdate", "setAutoUpdate", "openLink", "timerWarnings", "timerCountdown", "speakerAdjust", "timerAdjust", "timerSet", "speakerPeriods", "setBlank", "savePicture", "addWhiteboard", "rollerGroups", "rollerClearGroups", "mediaToggle"]
 
 app.disableHardwareAcceleration()
 // Each screenshot closes its window; keep the app alive between them.
@@ -42,7 +42,7 @@ function sampleState(projecting: boolean, crowd = false, theme: UiTheme = 'dark'
     previewOf: 'projector',
     slides: Array.from({ length: 18 }, (_, i) => ({ title: `Slide title ${i + 1}`, notes: i === 2 ? 'Ask the class first.' : '' })),
     milestones: [],
-    timer: { status: 'running', remainingSec: 297, durationSec: 300, alarming: false, warnings: [{ sec: 60, beeps: 3 }] },
+    timer: { status: 'running', remainingSec: 297, durationSec: 300, alarming: false, warnings: [{ sec: 60, beeps: 3 }], countdownSec: 5 },
     plannedMinutes: null,
     recent: [deck],
     hasExternalDisplay: true,
@@ -53,6 +53,7 @@ function sampleState(projecting: boolean, crowd = false, theme: UiTheme = 'dark'
     deckStatus: { state: 'ready' },
     ink: { tool: 'pen', color: '#ef4444' },
     zoomed: false,
+    splits: [],
     version: '0.4.2',
     update: { status: 'idle', latest: null, newer: false, downloadMb: 0, checkedAt: null, error: null, auto: false },
     theme,
@@ -203,7 +204,7 @@ async function inputs(): Promise<void> {
   const state = sampleState(false)
   state.outputs = state.outputs.map((o) => (o.deck ? { ...o, deckKind: 'html' as const } : o))
   // A stopped shared timer: Set works only then.
-  state.timer = { status: 'idle', remainingSec: 300, durationSec: 300, alarming: false, warnings: [{ sec: 60, beeps: 3 }] }
+  state.timer = { status: 'idle', remainingSec: 300, durationSec: 300, alarming: false, warnings: [{ sec: 60, beeps: 3 }], countdownSec: 5 }
   writeStub(state)
   const win = new BrowserWindow({ show: false, width: 1536, height: 864, useContentSize: true, webPreferences: { preload: STUB, contextIsolation: true, sandbox: true, offscreen: true } })
   await win.loadFile(path.join(ROOT, 'out', 'renderer', 'console.html'))
@@ -277,6 +278,18 @@ async function inputs(): Promise<void> {
   // Each box sends once, when you leave it (not on every key).
   const want = ['[{"sec":60,"beeps":3},{"sec":30,"beeps":1}]', '[{"sec":120,"beeps":3}]', '[{"sec":60,"beeps":5}]', '[]']
   if (JSON.stringify(bells) !== JSON.stringify(want)) throw new Error(`warning bells sent ${JSON.stringify(bells)}, expected ${JSON.stringify(want)}`)
+  // The countdown beeps: from the last 5 seconds at first; the number is set in the same pop-up.
+  if (!(await js<boolean>(`document.body.textContent.includes('Countdown beeps from the last')`))) throw new Error('the bells pop-up has no countdown setting')
+  const countdownBox = 'Two quick beeps every second, starting with this many seconds left (0–30; 0 = none)'
+  if ((await js<string>(`${field(countdownBox)}.value`)) !== '5') throw new Error('the countdown starts at 5 seconds')
+  await js(`${field(countdownBox)}.focus()`)
+  await js(`${field(countdownBox)}.setSelectionRange(9, 9)`)
+  await key('Backspace')
+  await key('8')
+  await leave(countdownBox)
+  await wait(100)
+  const countdowns = (await calls()).filter((c) => c[0] === 'timerCountdown').map((c) => c[1])
+  if (JSON.stringify(countdowns) !== '[8]') throw new Error(`the countdown should be sent once, as 8: ${JSON.stringify(countdowns)}`)
   await js(`document.body.focus()`)
   await key('Escape')
   await wait(150)
@@ -349,7 +362,7 @@ async function inputs(): Promise<void> {
  */
 async function timeEditing(): Promise<void> {
   const state = sampleState(false)
-  state.timer = { status: 'running', remainingSec: 754, durationSec: 900, alarming: false, warnings: [] }
+  state.timer = { status: 'running', remainingSec: 754, durationSec: 900, alarming: false, warnings: [], countdownSec: 5 }
   writeStub(state, true)
   const win = new BrowserWindow({ show: false, width: 1536, height: 864, useContentSize: true, webPreferences: { preload: STUB, contextIsolation: true, sandbox: true, offscreen: true } })
   await win.loadFile(path.join(ROOT, 'out', 'renderer', 'console.html'))
@@ -575,7 +588,7 @@ contextBridge.exposeInMainWorld('roller', {
  */
 async function toolbarTimer(): Promise<void> {
   const state = sampleState(false, true)
-  state.timer = { status: 'idle', remainingSec: 300, durationSec: 300, alarming: false, warnings: [{ sec: 60, beeps: 3 }] }
+  state.timer = { status: 'idle', remainingSec: 300, durationSec: 300, alarming: false, warnings: [{ sec: 60, beeps: 3 }], countdownSec: 5 }
   writeStub(state)
   const win = new BrowserWindow({ show: false, width: 1400, height: 160, useContentSize: true, backgroundColor: '#475569', webPreferences: { preload: STUB, contextIsolation: true, sandbox: true, offscreen: true } })
   await win.loadFile(path.join(ROOT, 'out', 'renderer', 'toolbar.html'))
@@ -836,6 +849,48 @@ async function aboutMenu(): Promise<void> {
   await wait(300)
 }
 
+/** Two screens on Projector 1: the chip in the screens bar opens the layout editor; a divider is pulled, a double-click evens it out. */
+async function layoutEditor(): Promise<void> {
+  const state = sampleState(false)
+  const other = state.outputs.find((o) => o.id === 'screen-2')
+  if (other) other.shownOn = 1
+  state.splits = [{ number: 1, tree: { dir: 'row', ratio: 0.5, a: { id: 'projector' }, b: { id: 'screen-2' } }, width: 1920, height: 1080 }]
+  writeStub(state)
+  const win = new BrowserWindow({ show: false, width: 1280, height: 760, useContentSize: true, webPreferences: { preload: STUB, contextIsolation: true, sandbox: true, offscreen: true } })
+  await win.loadFile(path.join(ROOT, 'out', 'renderer', 'console.html'))
+  await wait(1000)
+  const js = <T>(code: string): Promise<T> => win.webContents.executeJavaScript(code) as Promise<T>
+  if (await js<boolean>(`document.body.innerText.includes('Equal room')`)) throw new Error('the layout editor must stay closed until its chip is clicked')
+  await js(`[...document.querySelectorAll('footer button')].find((b) => b.textContent.startsWith('▦ Projector 1: 2 screens')).click()`)
+  await wait(400)
+  const info = await js<{ tiles: number; sep: number[] | null; box: number[] } | null>(`(() => {
+    const sep = document.querySelector('[role=separator]'); if (!sep) return null
+    const r = sep.getBoundingClientRect(); const box = sep.parentElement.getBoundingClientRect()
+    return { tiles: sep.parentElement.querySelectorAll('button').length, sep: [r.left + r.width / 2, r.top + r.height / 2], box: [box.width, box.height] } })()`)
+  if (!info || !info.sep) throw new Error('the layout editor has no divider')
+  if (info.tiles !== 2) throw new Error(`the editor should show two screens: ${info.tiles}`)
+  if (Math.abs(info.box[0] / info.box[1] - 1920 / 1080) > 0.05) throw new Error(`the picture should have the projector's proportions: ${info.box}`)
+  const [x, y] = info.sep as number[]
+  win.webContents.sendInputEvent({ type: 'mouseDown', x: Math.round(x), y: Math.round(y), button: 'left', clickCount: 1 })
+  win.webContents.sendInputEvent({ type: 'mouseMove', x: Math.round(x) + 60, y: Math.round(y), modifiers: ['leftButtonDown'] })
+  await wait(150)
+  win.webContents.sendInputEvent({ type: 'mouseUp', x: Math.round(x) + 60, y: Math.round(y), button: 'left', clickCount: 1 })
+  await wait(150)
+  const calls = await js<unknown[][]>('window.presenter.__calls()')
+  const pulled = calls.filter((c) => c[0] === 'setSplitRatio')
+  if (pulled.length === 0) throw new Error('pulling the divider should set the ratio')
+  const last = pulled[pulled.length - 1]
+  if (last[1] !== 1 || !Array.isArray(last[2]) || (last[2] as unknown[]).length !== 0 || Number(last[3]) <= 0.55) throw new Error(`the divider moved to the right: ${JSON.stringify(last)}`)
+  await js(`document.querySelector('[role=separator]').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))`)
+  await js(`[...document.querySelectorAll('button')].find((b) => b.title === 'One above the other').click()`)
+  const names = (await js<unknown[][]>('window.presenter.__calls()')).map((c) => c.join(':'))
+  for (const want of ['arrangeSplit:1:even', 'arrangeSplit:1:stack']) if (!names.includes(want)) throw new Error(`expected ${want}: ${JSON.stringify(names)}`)
+  fs.writeFileSync(path.join(OUT, 'console-layout.png'), (await win.webContents.capturePage()).toPNG())
+  console.log('ok split screen: a chip opens the editor; a divider is pulled; double-click evens out; arrangements')
+  win.destroy()
+  await wait(300)
+}
+
 app.whenReady().then(async () => {
   let code = 0
   try {
@@ -843,6 +898,7 @@ app.whenReady().then(async () => {
     await toolbarTimer()
     await resumeChoice()
     await aboutMenu()
+    await layoutEditor()
     await mirrorClick()
     await screenNameMenu()
     await addScreenRecent()

@@ -1,6 +1,10 @@
 import { BaseWindow, View, screen, type Display, type WebContentsView } from 'electron'
 import { HEADLESS } from './headless'
 import { IS_MAC } from './platform'
+import { TILE_GAP } from './projectorWindow'
+import { computeRects, type TileNode } from '../shared/tiles'
+
+const OVERLAY = { width: 320, height: 120, margin: 24 }
 
 const WINDOWED = { width: 960, height: 540 }
 
@@ -11,7 +15,10 @@ const WINDOWED = { width: 960, height: 540 }
  */
 export class ProjectorScreen {
   readonly win: BaseWindow
-  private content: WebContentsView | null = null
+  /** The contents shown now (one, or several in a split), and how they share the room. */
+  private tiles = new Map<string, WebContentsView>()
+  private tree: TileNode | null = null
+  private overlayVisible = false
   private fullscreen = false
   /** Black or white over everything (B / W). */
   private readonly cover = new View()
@@ -19,6 +26,7 @@ export class ProjectorScreen {
   constructor(
     readonly number: number,
     private readonly roller: WebContentsView,
+    readonly overlay: WebContentsView,
     private readonly title: string,
     display: Display | null,
     private readonly onFullscreen: (full: boolean) => void,
@@ -29,6 +37,9 @@ export class ProjectorScreen {
     const bounds = display ? display.bounds : { x: area.x + 80 + 40 * number, y: area.y + 80 + 30 * number, ...WINDOWED }
     this.win = new BaseWindow({ ...bounds, title, backgroundColor: '#000000', autoHideMenuBar: true, show: !HEADLESS })
     this.win.contentView.addChildView(roller)
+    this.overlay.setBackgroundColor('#00000000')
+    this.overlay.setVisible(false)
+    this.win.contentView.addChildView(this.overlay)
     this.cover.setVisible(false)
     this.win.contentView.addChildView(this.cover)
     this.win.on('resize', () => {
@@ -39,8 +50,9 @@ export class ProjectorScreen {
     this.win.on('leave-full-screen', () => this.setFull(false))
     // Take the content off first: closing the window must not end the content's page.
     this.win.on('close', () => {
-      if (this.content) this.win.contentView.removeChildView(this.content)
-      this.content = null
+      for (const v of this.tiles.values()) this.win.contentView.removeChildView(v)
+      this.tiles = new Map()
+      this.tree = null
     })
     this.win.on('closed', onClosed)
     this.layout()
@@ -53,19 +65,34 @@ export class ProjectorScreen {
 
   /** Show this content (null = black). The previous content is simply taken off. */
   show(view: WebContentsView | null): void {
+    this.setTiles(view ? new Map([['one', view]]) : new Map(), null)
+  }
+
+  /** Several contents share the screen as the split tree says; views no longer listed are taken off (their owner hides them). */
+  setTiles(views: Map<string, WebContentsView>, tree: TileNode | null): void {
     if (this.win.isDestroyed()) return
-    if (this.content && this.content !== view) this.win.contentView.removeChildView(this.content)
-    this.content = view
-    if (view) {
-      view.setBorderRadius(0)
-      this.win.contentView.addChildView(view, 0)
-      view.setVisible(true)
+    const keep = new Set(views.values())
+    const had = new Set(this.tiles.values())
+    for (const v of had) if (!keep.has(v)) this.win.contentView.removeChildView(v)
+    for (const v of keep) {
+      if (had.has(v)) continue
+      v.setBorderRadius(0)
+      this.win.contentView.addChildView(v, 0)
     }
+    this.tiles = views
+    this.tree = tree
     this.layout()
   }
 
   shows(view: WebContentsView): boolean {
-    return this.content === view
+    return [...this.tiles.values()].includes(view)
+  }
+
+  /** The shared timer's overlay (bottom right), like the main projector's. */
+  setOverlayVisible(visible: boolean): void {
+    if (visible === this.overlayVisible) return
+    this.overlayVisible = visible
+    this.overlay.setVisible(visible)
   }
 
   mediaSourceId(): string {
@@ -112,9 +139,15 @@ export class ProjectorScreen {
   private layout(): void {
     if (this.win.isDestroyed()) return
     const b = this.win.getContentBounds()
-    this.content?.setBounds({ x: 0, y: 0, width: b.width, height: b.height })
+    const rects = this.tree && this.tiles.size > 1 ? computeRects(this.tree, { x: 0, y: 0, width: b.width, height: b.height }, TILE_GAP) : null
+    for (const [id, view] of this.tiles) {
+      const r = rects?.get(id)
+      view.setBounds(r ? { x: r.x, y: r.y, width: r.width, height: r.height } : { x: 0, y: 0, width: b.width, height: b.height })
+      view.setVisible(true)
+    }
+    this.overlay.setBounds({ x: Math.max(0, b.width - OVERLAY.width - OVERLAY.margin), y: Math.max(0, b.height - OVERLAY.height - OVERLAY.margin), width: OVERLAY.width, height: OVERLAY.height })
     this.roller.setBounds({ x: 0, y: 0, width: b.width, height: b.height })
     this.cover.setBounds({ x: 0, y: 0, width: b.width, height: b.height })
-    this.win.setTitle(this.content ? this.title : `${this.title} · nothing shown`)
+    this.win.setTitle(this.tiles.size > 0 ? this.title : `${this.title} · nothing shown`)
   }
 }
