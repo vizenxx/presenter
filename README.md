@@ -33,7 +33,7 @@ Presenter is a folder you unzip; there is no installer and no administrator pass
 
 | Area | What it does |
 |---|---|
-| Top bar | The version (**v0.4.2**, next to the name: click it for updates and the GitHub page), **Open deck**, **Recent**, **Participants**, **Guide**, **☀ / ☾** (light or dark look), **⇄** (swap the left and right sides), **Black screen**, **▶ Start projecting** |
+| Top bar | The version (**v0.4.3**, next to the name: click it for updates and the GitHub page), **Open deck**, **Recent**, **Participants**, **Guide**, **☀ / ☾** (light or dark look), **⇄** (swap the left and right sides), **Black screen**, **▶ Start projecting** |
 | Current slide (left) | What Projector 1 shows. Before projecting it is the deck itself; while projecting it is a live copy of what the audience sees. The mark tools are above it; the slide number and the title are under it. |
 | Slides and Notes | Two buttons at the left of the current slide's row (under the slide): **Slides** (the slide list: click a slide to go there) and **Notes** (the speaker notes of the slide in view). A button opens its panel at the far left of the console (the far right when the sides are swapped); the same button closes it. |
 | Next slide (right) | The slide after the selected card's slide. Click it to look further ahead. |

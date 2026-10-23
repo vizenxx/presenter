@@ -54,7 +54,7 @@ function sampleState(projecting: boolean, crowd = false, theme: UiTheme = 'dark'
     ink: { tool: 'pen', color: '#ef4444' },
     zoomed: false,
     splits: [],
-    version: '0.4.2',
+    version: '0.4.3',
     update: { status: 'idle', latest: null, newer: false, downloadMb: 0, checkedAt: null, error: null, auto: false },
     theme,
     flipped: false,
@@ -825,10 +825,10 @@ async function aboutMenu(): Promise<void> {
   await win.loadFile(path.join(ROOT, 'out', 'renderer', 'console.html'))
   await wait(1000)
   const js = <T>(code: string): Promise<T> => win.webContents.executeJavaScript(code) as Promise<T>
-  const label = await js<string>(`(() => { const b = [...document.querySelectorAll('header button')].find((x) => x.textContent.trim() === 'v0.4.2'); return b ? b.textContent.trim() : '' })()`)
-  if (label !== 'v0.4.2') throw new Error(`the header should show the version: ${JSON.stringify(label)} in ${JSON.stringify(await js<string>('document.querySelector("header").innerText'))}`)
+  const label = await js<string>(`(() => { const b = [...document.querySelectorAll('header button')].find((x) => x.textContent.trim() === 'v0.4.3'); return b ? b.textContent.trim() : '' })()`)
+  if (label !== 'v0.4.3') throw new Error(`the header should show the version: ${JSON.stringify(label)} in ${JSON.stringify(await js<string>('document.querySelector("header").innerText'))}`)
   if (await js<boolean>(`document.body.innerText.includes('Check for updates')`)) throw new Error('the update section must be collapsed until the version is clicked')
-  await js(`[...document.querySelectorAll('header button')].find((x) => x.textContent.trim() === 'v0.4.2').click()`)
+  await js(`[...document.querySelectorAll('header button')].find((x) => x.textContent.trim() === 'v0.4.3').click()`)
   await wait(300)
   const text = await js<string>(`document.body.innerText`)
   for (const want of ['A newer version is out: 0.4.3.', 'Check for updates', 'Download (254 MB)', 'GitHub page', 'All versions', 'Report a problem', 'Check when Presenter starts']) {

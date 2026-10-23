@@ -1,3 +1,10 @@
+## What's new in 0.4.3
+
+- **Split screen: several screens on one projector.** In a card's **Projector ▾** menu choose **＋ Beside what Projector n shows**. The new screen takes half of the largest part, split along its longer side, so a third and a fourth screen tile the projector by themselves. The **▦ Projector n** chip in the bottom bar opens the layout: pull a divider to change the sizes (double-click for equal room), choose side by side, one above the other, grid, one large or equal room, swap places, show a screen alone, or take it off. Click a screen to give it the projector's marks, video buttons and timer. The same layout shows in the current pane before you project, and on a second projector.
+- **The shared timer on every projector.** Projector 2, 3 … now show the same timer as Projector 1 (in the decks' own bar, or at the bottom right). Only Projector 1 makes sounds.
+- **Alt + mouse wheel changes the text size**, like Ctrl + wheel in a browser: over the current slide, the next slide, the live copy while projecting, or a projector's own window.
+- **Countdown beeps**: two quick beeps every second for the last seconds before the end. You set how many seconds in the warning bells pop-up (5 at first, 0 = none, 30 at most).
+
 ## What's new in 0.4.2
 
 - **Page keys never move the selection by themselves.** With the current slide selected, a page key could hand the selection to the next slide (a deck page can take the keyboard after a page turn). Keys now always go to the section you selected. **Tab** switches between the current slide and the next slide; **Alt+1** chooses the current slide, **Alt+2** the next slide.
