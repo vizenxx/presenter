@@ -13,7 +13,7 @@ const OUT = path.join(ROOT, 'e2e', 'out')
 const STUB = path.join(OUT, 'harness', 'console-stub-preload.cjs')
 const AI_REQUEST = aiRequestText(fs.readFileSync(path.join(ROOT, 'docs', 'ai-integration.md'), 'utf8'))
 /** Every ConsoleApi method (contextBridge copies plain objects only, so no Proxy). */
-const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerMinutes", "speakerToggle", "speakerReset", "toolbarSize", "focusConsole", "listWindows", "addWindowScreen", "setTheme", "setFlipped", "dismissResumed", "replaceScreen", "switchTo", "raiseWindow", "projectorClick", "mediaFullscreen", "selectSection", "splitOn", "setSplitRatio", "arrangeSplit", "swapTiles", "checkUpdate", "setAutoUpdate", "openLink", "timerWarnings", "timerCountdown", "speakerAdjust", "timerAdjust", "timerSet", "speakerPeriods", "setBlank", "savePicture", "addWhiteboard", "rollerGroups", "rollerClearGroups", "mediaToggle"]
+const API_METHODS = ["onState", "onMirror", "openDialog", "openPath", "pathForFile", "navigate", "key", "select", "setLinked", "nudge", "addScreen", "removeScreen", "timerStart", "timerToggle", "timerReset", "timerDismiss", "layoutPreview", "layoutCurrent", "startProjecting", "stopProjecting", "zoom", "rollerRoll", "rollerHide", "rollerReset", "rollerSetSuperLucky", "rollerSetOnlySelected", "rollerSelect", "rollerSelectList", "rollerSaveList", "rollerDeleteList", "dismissDeckStatus", "setInkTool", "setInkColor", "inkOp", "onInkOp", "inkSnapshot", "mirrorMode", "guide", "copyText", "saveGuideFile", "showOn", "projectorFullscreen", "closeProjector", "speakerMode", "speakerSetTime", "speakerToggle", "speakerReset", "toolbarSize", "focusConsole", "listWindows", "addWindowScreen", "setTheme", "setFlipped", "dismissResumed", "replaceScreen", "switchTo", "raiseWindow", "projectorClick", "mediaFullscreen", "selectSection", "splitOn", "setSplitRatio", "arrangeSplit", "swapTiles", "checkUpdate", "setAutoUpdate", "openLink", "timerWarnings", "timerCountdown", "speakerAdjust", "timerAdjust", "timerSet", "speakerPeriods", "setBlank", "savePicture", "addWhiteboard", "rollerGroups", "rollerClearGroups", "mediaToggle"]
 
 app.disableHardwareAcceleration()
 // Each screenshot closes its window; keep the app alive between them.
@@ -36,7 +36,7 @@ function sampleState(projecting: boolean, crowd = false, theme: UiTheme = 'dark'
     mainDeck: deck,
     slidesOf: 'projector',
     onAirId: crowd ? 'screen-2' : 'projector',
-    speaker: { mode: 'down', minutes: 45, startedAt: null, heldMs: 754000, periods: [{ days: [1, 2, 3, 4, 5], fromSec: 9 * 3600, untilSec: 10 * 3600 + 50 * 60 }], clockExtra: null },
+    speaker: { mode: 'down', minutes: 45, seconds: 0, startedAt: null, heldMs: 754000, periods: [{ days: [1, 2, 3, 4, 5], fromSec: 9 * 3600, untilSec: 10 * 3600 + 50 * 60 }], clockExtra: null },
     toolsFor: crowd ? 'window-7' : null,
     projectors: crowd ? [{ number: 2, contentId: 'window-7', fullscreen: true }] : [],
     previewOf: 'projector',
@@ -49,7 +49,7 @@ function sampleState(projecting: boolean, crowd = false, theme: UiTheme = 'dark'
     projecting,
     projectorSize: { width: 1920, height: 1080 },
     previewSize: { width: 1920, height: 1080 },
-    roller: { lists: [{ id: 'l', name: 'Class list', count: 6 }], activeListId: 'l', activeText: '', people: ['Ann Lee', 'Bo Chen', 'Cai Dorji', 'Dema Wangmo', 'Eli Tashi', 'Fay Zangpo'].map((name, i) => ({ id: `1225010${i}`, name, wins: [1, 0, 2, 0, 0, 0][i] })), superLucky: true, roll: null, showing: false, groups: null },
+    roller: { lists: [{ id: 'l', name: 'Class list', count: 6 }], activeListId: 'l', activeText: '', people: ['Ann Lee', 'Bo Chen', 'Cai Dorji', 'Dema Wangmo', 'Eli Tashi', 'Fay Zangpo'].map((name, i) => ({ id: `1225010${i}`, name, wins: [1, 0, 2, 0, 0, 0][i], selected: i < 3 })), superLucky: true, onlySelected: false, eligible: 6, roll: null, showing: false, groups: null },
     deckStatus: { state: 'ready' },
     ink: { tool: 'pen', color: '#ef4444' },
     zoomed: false,
@@ -413,8 +413,9 @@ async function timeEditing(): Promise<void> {
 
   // My timer (paused, 32:26 left): the minutes to 20 → 12:00 less; the seconds stay.
   const mine = await parts('Only you see it')
-  if (mine.length < 2) throw new Error(`My timer should have editable time parts: ${JSON.stringify(mine)}`)
-  await js(`${card('Only you see it')}.querySelector('[role=button]').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))`)
+  if (mine.length < 3) throw new Error(`My timer should have editable hours, minutes and seconds: ${JSON.stringify(mine)}`)
+  // The hours box is always there now (a faint 0 under one hour): the minutes are the second part.
+  await js(`${card('Only you see it')}.querySelectorAll('[role=button]')[1].dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))`)
   await wait(100)
   await key('Backspace')
   await key('Backspace')
@@ -850,6 +851,77 @@ async function aboutMenu(): Promise<void> {
 }
 
 /** Two screens on Projector 1: the chip in the screens bar opens the layout editor; a divider is pulled, a double-click evens it out. */
+/** Participants: with "only the ticked names" on, each name has a tick box and a count of who can be picked; off, none. */
+async function rollerTicks(): Promise<void> {
+  for (const on of [false, true]) {
+    const state = sampleState(false)
+    state.roller = { ...state.roller, onlySelected: on, eligible: on ? 3 : 6 }
+    writeStub(state)
+    const win = new BrowserWindow({ show: false, width: 1280, height: 860, useContentSize: true, webPreferences: { preload: STUB, contextIsolation: true, sandbox: true, offscreen: true } })
+    await win.loadFile(path.join(ROOT, 'out', 'renderer', 'console.html'))
+    await wait(900)
+    const js = <T>(code: string): Promise<T> => win.webContents.executeJavaScript(code) as Promise<T>
+    await js(`[...document.querySelectorAll('button')].find((x) => x.textContent.trim() === 'Participants').click()`)
+    await wait(300)
+    const boxes = await js<number>(`document.querySelectorAll('input[type=checkbox][title^="Can "]').length`)
+    const text = await js<string>('document.body.innerText')
+    if (on) {
+      if (boxes !== 6) throw new Error(`each name needs a tick box when the switch is on: ${boxes}`)
+      if (!text.includes('Can be picked: 3 of 6')) throw new Error('the count of names that can be picked is missing')
+      await js(`document.querySelector('input[type=checkbox][title^="Can Bo Chen"]').click()`)
+      await js(`[...document.querySelectorAll('button')].find((x) => x.textContent.trim() === 'Untick all').click()`)
+      const names = (await js<unknown[][]>('window.presenter.__calls()')).map((c) => c.join(':'))
+      for (const want of ['rollerSelect:1:false', 'rollerSelect::false']) if (!names.includes(want)) throw new Error(`expected ${want}: ${JSON.stringify(names)}`)
+    } else if (boxes !== 0 || !text.includes('Only pick from the names I tick')) throw new Error(`with the switch off there are no tick boxes, but the switch is there: ${boxes}`)
+    win.destroy()
+    await wait(200)
+  }
+  console.log('ok participants: "only the ticked names" shows a tick box for each name, the count, Tick all / Untick all')
+}
+
+/** My timer before it starts: hours, minutes and seconds can all be clicked and typed, in a count down and in a count up. */
+async function speakerTimeEntry(): Promise<void> {
+  for (const mode of ['down', 'up'] as const) {
+    const state = sampleState(false)
+    state.speaker = { ...state.speaker, mode, minutes: 45, seconds: 0, startedAt: null, heldMs: 0 }
+    writeStub(state)
+    const win = new BrowserWindow({ show: false, width: 1536, height: 864, useContentSize: true, webPreferences: { preload: STUB, contextIsolation: true, sandbox: true, offscreen: true } })
+    await win.loadFile(path.join(ROOT, 'out', 'renderer', 'console.html'))
+    await wait(1000)
+    const wc = win.webContents
+    const js = <T>(code: string): Promise<T> => wc.executeJavaScript(code) as Promise<T>
+    const key = async (keyCode: string): Promise<void> => {
+      wc.sendInputEvent({ type: 'keyDown', keyCode })
+      if (keyCode.length === 1) wc.sendInputEvent({ type: 'char', keyCode })
+      wc.sendInputEvent({ type: 'keyUp', keyCode })
+      await wait(60)
+    }
+    const card = `[...document.querySelectorAll('section')].find((x) => x.textContent.includes('Only you see it'))`
+    const shown = await js<string[]>(`[...${card}.querySelectorAll('[role=button]')].map((e) => e.textContent)`)
+    const want = mode === 'down' ? ['0', '45', '00'] : ['0', '00', '00']
+    if (JSON.stringify(shown) !== JSON.stringify(want)) throw new Error(`${mode}: hours, minutes and seconds should all be there to click: ${JSON.stringify(shown)}, expected ${JSON.stringify(want)}`)
+    const type = async (place: number, digits: string): Promise<void> => {
+      await js(`${card}.querySelectorAll('[role=button]')[${place}].dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))`)
+      await wait(80)
+      for (let i = 0; i < 3; i++) await key('Backspace')
+      for (const d of digits) await key(d)
+      await key('Enter')
+      await wait(80)
+    }
+    await type(0, '1')
+    await type(2, '30')
+    await type(1, '5')
+    const sent = (await js<unknown[][]>('window.presenter.__calls()')).filter((c) => c[0] === 'speakerSetTime').map((c) => c[1] as number)
+    const base = mode === 'down' ? 45 * 60 : 0
+    // The stub keeps showing the same time, so each typed part is set against it: hours 1, seconds 30, minutes 5.
+    const expected = [3600 + base, base + 30, 5 * 60 + (mode === 'down' ? 0 : 0)]
+    if (JSON.stringify(sent) !== JSON.stringify(expected)) throw new Error(`${mode}: typed parts should send ${JSON.stringify(expected)}: ${JSON.stringify(sent)}`)
+    win.destroy()
+    await wait(200)
+  }
+  console.log('ok My timer before it starts: hours, minutes and seconds can all be typed, in a count down and in a count up')
+}
+
 async function layoutEditor(): Promise<void> {
   const state = sampleState(false)
   const other = state.outputs.find((o) => o.id === 'screen-2')
@@ -899,6 +971,8 @@ app.whenReady().then(async () => {
     await resumeChoice()
     await aboutMenu()
     await layoutEditor()
+    await speakerTimeEntry()
+    await rollerTicks()
     await mirrorClick()
     await screenNameMenu()
     await addScreenRecent()

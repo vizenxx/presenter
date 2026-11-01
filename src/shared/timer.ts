@@ -197,7 +197,7 @@ export function speakerSeconds(s: SpeakerTimerView, now: number): number {
     return c.phase === 'before' ? c.endSec - c.period.fromSec : c.endSec - secondsOfDay(now)
   }
   const elapsed = (s.heldMs + (s.startedAt !== null ? now - s.startedAt : 0)) / 1000
-  return s.mode === 'up' ? elapsed : s.minutes * 60 - elapsed
+  return s.mode === 'up' ? elapsed : s.minutes * 60 + (s.seconds ?? 0) - elapsed
 }
 
 /**
@@ -248,6 +248,15 @@ export function from12(hour: number, minute: number, pm: boolean): number {
 }
 
 export const SPEAKER_MODES: SpeakerMode[] = ['up', 'down', 'clock']
+
+/** The most My timer can be set to before it starts: 10 hours. */
+export const MAX_SPEAKER_SEC = 10 * 3600 - 1
+
+/** A typed length or start time put into range: whole seconds, 0 to the most. */
+export function cleanSpeakerSec(value: unknown, least = 0): number {
+  const n = Math.round(Number(value))
+  return Math.min(MAX_SPEAKER_SEC, Math.max(least, Number.isFinite(n) ? n : least))
+}
 
 /**
  * Adds time to My timer (a negative amount takes time away). Count down: more time left (it may

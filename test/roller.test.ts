@@ -36,6 +36,19 @@ describe('rollWeight (same rule as Lucky Roller)', () => {
   })
 })
 
+describe('pickWinner with only some names allowed', () => {
+  it('never picks a name that is not allowed, whatever the random number', () => {
+    const allowed = [false, false, true, false]
+    for (const r of [0, 0.3, 0.7, 0.999]) expect(pickWinner([0, 0, 0, 0], true, seq(r), allowed)).toBe(2)
+  })
+  it('keeps the usual rules among the allowed names (a picked name has a small chance)', () => {
+    expect(pickWinner([0, 5, 0, 0], false, seq(0.5), [false, true, true, true])).not.toBe(1)
+  })
+  it('nobody can be picked when no name is allowed', () => {
+    expect(pickWinner([0, 0], true, seq(0.5), [false, false])).toBeNull()
+  })
+})
+
 describe('pickWinner', () => {
   it('walks the weights with the random number', () => {
     expect(pickWinner([0, 0, 0], true, seq(0))).toBe(0)

@@ -113,17 +113,29 @@ describe('changing the time of a running timer', () => {
     expect(T.adjust(idle, 60, 0)).toBe(idle)
   })
   it('adds time to My timer: more left when counting down, more counted when counting up', () => {
-    const down = { mode: 'down' as const, minutes: 45, startedAt: 0, heldMs: 0, periods: [], clockExtra: null }
+    const down = { mode: 'down' as const, minutes: 45, seconds: 0, startedAt: 0, heldMs: 0, periods: [], clockExtra: null }
     expect(T.adjustSpeaker(down, 60, 10_000).heldMs).toBe(-60_000)
     expect(T.adjustSpeaker(down, -60, 10_000).heldMs).toBe(60_000)
-    const up = { mode: 'up' as const, minutes: 45, startedAt: null, heldMs: 30_000, periods: [], clockExtra: null }
+    const up = { mode: 'up' as const, minutes: 45, seconds: 0, startedAt: null, heldMs: 30_000, periods: [], clockExtra: null }
     expect(T.adjustSpeaker(up, 60, 0).heldMs).toBe(90_000)
     expect(T.adjustSpeaker(up, -120, 0).heldMs).toBe(0)
-    const upRunning = { mode: 'up' as const, minutes: 45, startedAt: 0, heldMs: 0, periods: [], clockExtra: null }
+    const upRunning = { mode: 'up' as const, minutes: 45, seconds: 0, startedAt: 0, heldMs: 0, periods: [], clockExtra: null }
     expect(T.adjustSpeaker(upRunning, -120, 50_000).heldMs).toBe(-50_000)
   })
+  it('a count down is minutes plus seconds long', () => {
+    const down = { mode: 'down' as const, minutes: 1, seconds: 30, startedAt: null, heldMs: 0, periods: [], clockExtra: null }
+    expect(T.speakerSeconds(down, 0)).toBe(90)
+    expect(T.speakerSeconds({ ...down, startedAt: 0 }, 20_000)).toBe(70)
+  })
+  it('a typed My timer time is put into range (whole seconds, at most 10 hours)', () => {
+    expect(T.cleanSpeakerSec(90.4)).toBe(90)
+    expect(T.cleanSpeakerSec(-5)).toBe(0)
+    expect(T.cleanSpeakerSec(0, 1)).toBe(1)
+    expect(T.cleanSpeakerSec(99999)).toBe(T.MAX_SPEAKER_SEC)
+    expect(T.cleanSpeakerSec('x', 1)).toBe(1)
+  })
   it('leaves My timer alone before it starts', () => {
-    const fresh = { mode: 'down' as const, minutes: 45, startedAt: null, heldMs: 0, periods: [], clockExtra: null }
+    const fresh = { mode: 'down' as const, minutes: 45, seconds: 0, startedAt: null, heldMs: 0, periods: [], clockExtra: null }
     expect(T.adjustSpeaker(fresh, 60, 0)).toBe(fresh)
     expect(T.speakerStarted(fresh)).toBe(false)
     expect(T.speakerStarted({ ...fresh, heldMs: -60_000 })).toBe(true)
@@ -137,7 +149,7 @@ describe('My timer From–to: sessions by weekday', () => {
     { days: [1, 3, 5], fromSec: 9 * 3600, untilSec: 10 * 3600 + 50 * 60 },
     { days: [5], fromSec: 14 * 3600, untilSec: 16 * 3600 }
   ]
-  const s = { mode: 'clock' as const, minutes: 45, startedAt: null, heldMs: 0, periods, clockExtra: null }
+  const s = { mode: 'clock' as const, minutes: 45, seconds: 0, startedAt: null, heldMs: 0, periods, clockExtra: null }
   it('waits before a period, counts down during it, and shows Over time for 30 minutes after it', () => {
     expect(T.clockNow(s, at(8, 59, 30)).phase).toBe('before')
     expect(T.speakerSeconds(s, at(8, 59, 30))).toBe(110 * 60)

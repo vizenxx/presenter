@@ -40,9 +40,12 @@ export function rollWeight(wins: number, superLucky: boolean): number {
   return superLucky ? 0.05 / wins : 0
 }
 
-/** Index of the picked person, or null when nobody can be picked. */
-export function pickWinner(wins: number[], superLucky: boolean, random: () => number = Math.random): number | null {
-  const weights = wins.map((w) => rollWeight(w, superLucky))
+/**
+ * Index of the picked person, or null when nobody can be picked. With `allowed`, only the people it
+ * marks can be picked (the list itself does not change).
+ */
+export function pickWinner(wins: number[], superLucky: boolean, random: () => number = Math.random, allowed?: boolean[]): number | null {
+  const weights = wins.map((w, i) => (allowed && !allowed[i] ? 0 : rollWeight(w, superLucky)))
   const total = weights.reduce((a, b) => a + b, 0)
   if (total <= 0) return null
   let r = random() * total

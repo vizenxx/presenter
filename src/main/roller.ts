@@ -14,6 +14,10 @@ interface Saved {
   lists: NameList[]
   activeListId: string | null
   superLucky: boolean
+  /** Only the ticked names can be picked. */
+  onlySelected?: boolean
+  /** The ticked names of each list ("id name"); the list text is not touched. */
+  selected?: Record<string, string[]>
 }
 
 /**
@@ -49,12 +53,55 @@ export class RollerController {
 
   roll(): RollerRoll | null {
     const wins = this.wins()
-    const winner = pickWinner(wins, this.saved.superLucky)
+    const allowed = this.allowedMask()
+    const winner = pickWinner(wins, this.saved.superLucky, Math.random, allowed)
     if (winner === null) return null
     wins[winner]++
     this.groupsMade = null
-    this.current = { rollId: ++this.rollSeq, path: rollPath(this.people.length, winner), winner, startAt: Date.now() + 150 }
+    // The highlight walks over the people who can be picked only; the numbers are places in the whole list.
+    const room = allowed.flatMap((ok, i) => (ok ? [i] : []))
+    const path = rollPath(room.length, room.indexOf(winner)).map((s) => ({ ...s, index: room[s.index] }))
+    this.current = { rollId: ++this.rollSeq, path, winner, startAt: Date.now() + 150 }
     return this.current
+  }
+
+  /** What the participants' screens play: only the people who can be picked, and the roll's places among them. */
+  playView(roll: RollerRoll): { people: RollerPersonView[]; path: RollerRoll['path']; winner: number } {
+    const all = this.peopleView()
+    const room = this.allowedMask().flatMap((ok, i) => (ok ? [i] : []))
+    const at = (i: number): number => Math.max(0, room.indexOf(i))
+    return { people: room.map((i) => all[i]), path: roll.path.map((s) => ({ ...s, index: at(s.index) })), winner: at(roll.winner) }
+  }
+
+  /** Who can be picked: the ticked names when "only the ticked names" is on, else everyone. */
+  private allowedMask(): boolean[] {
+    return this.people.map((p) => !this.saved.onlySelected || this.isSelected(p))
+  }
+
+  private key(p: RollerPerson): string {
+    return `${p.id} ${p.name}`
+  }
+
+  private isSelected(p: RollerPerson): boolean {
+    return (this.saved.selected?.[this.activeKey()] ?? []).includes(this.key(p))
+  }
+
+  setOnlySelected(on: boolean): void {
+    this.saved.onlySelected = on
+    this.current = null
+    this.save()
+  }
+
+  /** Tick or untick one name (its place in the list), or everyone (null). The list text stays as it is. */
+  select(index: number | null, on: boolean): void {
+    const keys = new Set(this.saved.selected?.[this.activeKey()] ?? [])
+    const targets = index === null ? this.people : [this.people[index]].filter(Boolean)
+    for (const p of targets) {
+      if (on) keys.add(this.key(p))
+      else keys.delete(this.key(p))
+    }
+    this.saved.selected = { ...(this.saved.selected ?? {}), [this.activeKey()]: [...keys] }
+    this.save()
   }
 
   /** True while the highlight is still moving; keys and clicks then do not close the picture. */
@@ -121,7 +168,7 @@ export class RollerController {
 
   peopleView(): RollerPersonView[] {
     const wins = this.wins()
-    return this.people.map((p, i) => ({ ...p, wins: wins[i] ?? 0 }))
+    return this.people.map((p, i) => ({ ...p, wins: wins[i] ?? 0, selected: this.isSelected(p) }))
   }
 
   view(): RollerView {
@@ -132,6 +179,8 @@ export class RollerController {
       activeText: active?.text ?? '',
       people: this.peopleView(),
       superLucky: this.saved.superLucky,
+      onlySelected: this.saved.onlySelected === true,
+      eligible: this.allowedMask().filter(Boolean).length,
       roll: this.current,
       showing: this.showing,
       groups: this.groupsMade
@@ -166,7 +215,7 @@ export class RollerController {
   private load(): Saved {
     try {
       const saved = JSON.parse(fs.readFileSync(file(), 'utf8')) as Saved
-      if (Array.isArray(saved.lists)) return { lists: saved.lists, activeListId: saved.activeListId ?? saved.lists[0]?.id ?? null, superLucky: saved.superLucky !== false }
+      if (Array.isArray(saved.lists)) return { lists: saved.lists, activeListId: saved.activeListId ?? saved.lists[0]?.id ?? null, superLucky: saved.superLucky !== false, onlySelected: saved.onlySelected === true, selected: saved.selected && typeof saved.selected === 'object' ? saved.selected : {} }
     } catch {
       // First start: fall through to the seed list.
     }

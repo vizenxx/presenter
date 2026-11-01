@@ -71,7 +71,9 @@ export interface SlideSteps {
 export interface SpeakerTimerView {
   /** up = count up, down = count down from minutes, clock = from a start clock time to an end clock time (it starts by itself). */
   mode: SpeakerMode
+  /** The length of the count down: these whole minutes plus `seconds` (up to 10 hours in all). */
   minutes: number
+  seconds: number
   startedAt: number | null
   heldMs: number
   /** Class periods for mode 'clock' (From–to). */
@@ -152,6 +154,8 @@ export interface RollerPersonView {
   name: string
   /** Times picked in this app session. */
   wins: number
+  /** Ticked in the list: with "only the ticked names" on, only these can be picked. */
+  selected: boolean
 }
 
 export interface RollerRoll {
@@ -169,6 +173,10 @@ export interface RollerView {
   activeText: string
   people: RollerPersonView[]
   superLucky: boolean
+  /** Only the ticked names can be picked (the list does not change). */
+  onlySelected: boolean
+  /** How many people can be picked now: the ticked ones, or everyone when the switch is off. */
+  eligible: number
   roll: RollerRoll | null
   /** The roll (or the groups) is on the participants' screens right now. */
   showing: boolean
@@ -283,7 +291,8 @@ export interface ConsoleApi {
   speakerMode(mode: SpeakerMode): void
   /** My timer's sessions (From–to). Remembered. */
   speakerPeriods(periods: ClockPeriod[]): void
-  speakerMinutes(minutes: number): void
+  /** Types the time of My timer before it starts: the length of a count down, or the time a count up starts from (seconds in all). */
+  speakerSetTime(totalSec: number): void
   speakerToggle(): void
   speakerReset(): void
   /** Adds seconds to My timer (negative: takes them away). */
@@ -364,6 +373,10 @@ export interface ConsoleApi {
   /** Takes the made groups away (picker and participants' screens). */
   rollerClearGroups(): void
   rollerSetSuperLucky(on: boolean): void
+  /** Only the ticked names can be picked. */
+  rollerSetOnlySelected(on: boolean): void
+  /** Tick or untick one name (its place in the list), or everyone (null). */
+  rollerSelect(index: number | null, on: boolean): void
   rollerSelectList(id: string): void
   /** id null = a new list. */
   rollerSaveList(id: string | null, name: string, text: string): void

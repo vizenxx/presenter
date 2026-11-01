@@ -401,6 +401,23 @@ try {
   s = await state()
   assert.ok(s.speaker.heldMs <= -59_000 && s.speaker.heldMs >= -60_000, `My timer counting down got one more minute (${s.speaker.heldMs})`)
   await call(() => globalThis.__presenter.speakerReset())
+  // The time typed before it starts: hours, minutes and seconds. A count down takes it as its length (remembered); a count up starts from it.
+  await call(() => globalThis.__presenter.speakerSetTime(3600 + 5 * 60 + 30))
+  s = await state()
+  assert.deepEqual([s.speaker.minutes, s.speaker.seconds], [65, 30], 'a count down of 1:05:30')
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(USER_DATA, 'mytimer.json'), 'utf8')).seconds, 30, 'the seconds are remembered')
+  await call(() => globalThis.__presenter.speakerSetTime(0))
+  s = await state()
+  assert.deepEqual([s.speaker.minutes, s.speaker.seconds], [0, 1], 'a count down is at least one second long')
+  await call(() => globalThis.__presenter.speakerSetTime(45 * 60))
+  await call(() => globalThis.__presenter.speakerMode('up'))
+  await call(() => globalThis.__presenter.speakerSetTime(10 * 60 + 15))
+  s = await state()
+  assert.equal(s.speaker.heldMs, 615_000, 'a count up starts from the typed time')
+  await call(() => globalThis.__presenter.speakerReset())
+  s = await state()
+  assert.equal(s.speaker.heldMs, 0, 'Reset takes the typed start away')
+  await call(() => globalThis.__presenter.speakerMode('down'))
   // My timer From–to: today's session runs by itself; the periods are remembered; ± changes only today's end.
   const today = await call(() => { const d = new Date(); return { day: d.getDay(), sec: d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds() } })
   if (today.sec > 120 && today.sec < 86000) {
@@ -409,7 +426,7 @@ try {
     await call(() => globalThis.__presenter.speakerMode('clock'))
     await call((_e, list) => globalThis.__presenter.speakerPeriods(list), periods)
     s = await waitFor('session set', (s) => s.speaker.mode === 'clock' && s.speaker.periods.length === 1 && s.speaker.periods[0].fromSec === from)
-    assert.deepEqual(JSON.parse(fs.readFileSync(path.join(USER_DATA, 'mytimer.json'), 'utf8')), { mode: 'clock', minutes: s.speaker.minutes, periods }, 'My timer settings are remembered')
+    assert.deepEqual(JSON.parse(fs.readFileSync(path.join(USER_DATA, 'mytimer.json'), 'utf8')), { mode: 'clock', minutes: s.speaker.minutes, seconds: s.speaker.seconds, periods }, 'My timer settings are remembered')
     await call(() => globalThis.__presenter.speakerToggle())
     s = await state()
     assert.equal(s.speaker.startedAt, null, 'Start does nothing with sessions (they run by themselves)')
@@ -580,6 +597,39 @@ try {
   s = await waitFor('groups cleared', (s) => s.roller.groups === null)
   assert.equal(s.roller.people.length > 0, true, 'the list is kept')
   console.log('ok 8e random groups, and Clear takes them away')
+
+  // 8e2. Only the ticked names are rolled; the list itself does not change.
+  const listBefore = (await state()).roller.activeText
+  const total = (await state()).roller.people.length
+  await call(() => globalThis.__presenter.rollerSetOnlySelected(true))
+  s = await waitFor('only the ticked names', (s) => s.roller.onlySelected === true && s.roller.eligible === 0)
+  assert.equal(s.roller.people.length, total, 'the list is not changed')
+  await call(() => globalThis.__presenter.rollerRoll())
+  assert.equal((await state()).roller.roll, null, 'nothing is rolled while no name is ticked')
+  await call(() => globalThis.__presenter.rollerSelect(2, true))
+  await call(() => globalThis.__presenter.rollerSelect(5, true))
+  s = await waitFor('two names ticked', (s) => s.roller.eligible === 2)
+  assert.deepEqual(s.roller.people.map((p, i) => (p.selected ? i : -1)).filter((i) => i >= 0), [2, 5], 'the ticked places')
+  for (let i = 0; i < 12; i++) {
+    await call(() => globalThis.__presenter.rollerReset())
+    await call(() => globalThis.__presenter.rollerRoll())
+    const winner = (await state()).roller.roll.winner
+    assert.ok(winner === 2 || winner === 5, `rolled a ticked name (place ${winner})`)
+  }
+  const play = await call(() => {
+    const roll = globalThis.__presenter.roller.roll()
+    return globalThis.__presenter.roller.playView(roll)
+  })
+  assert.equal(play.people.length, 2, 'the participants see only the names that can be picked')
+  assert.ok(play.winner === 0 || play.winner === 1, 'the winner is a place among them')
+  assert.ok(play.path.every((step) => step.index === 0 || step.index === 1), 'the highlight walks over them only')
+  await call(() => globalThis.__presenter.rollerSelect(null, true))
+  s = await waitFor('all ticked', (s) => s.roller.eligible === total)
+  await call(() => globalThis.__presenter.rollerSetOnlySelected(false))
+  s = await waitFor('switch off', (s) => s.roller.onlySelected === false)
+  assert.equal(s.roller.activeText, listBefore, 'the list text is the same as before')
+  await call(() => globalThis.__presenter.rollerReset())
+  console.log('ok 8e2 only the ticked names are rolled; the list is not changed')
 
   // 8f. PowerPoint click animations (the LibreOffice inside Presenter, vendor/): a page key first
   // shows the next click step, then turns the page; going back shows the slide with all its steps.

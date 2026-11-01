@@ -54,7 +54,7 @@ function Toolbar() {
   const clockMode = !!state && state.speaker.mode === 'clock'
   const running = !!state && (state.speaker.startedAt !== null || (clockMode && clockNow(state.speaker, Date.now()).phase === 'during'))
   const now = useNow(running || clockMode)
-  const face = useRollFace(state?.roller ?? { lists: [], activeListId: null, activeText: '', people: [], superLucky: false, roll: null, showing: false, groups: null })
+  const face = useRollFace(state?.roller ?? { lists: [], activeListId: null, activeText: '', people: [], superLucky: false, onlySelected: false, eligible: 0, roll: null, showing: false, groups: null })
 
   // Keys while the toolbar has the keyboard (it takes it while you draw on a window): Esc returns
   // to the pointer, Ctrl+Z (⌘Z) undoes, Delete clears, P H R A L E pick a tool. Any key stops a ringing alarm.
@@ -150,7 +150,7 @@ function Toolbar() {
                   {t.hidePickShort}
                 </button>
               ) : (
-                <button type="button" title={t.rollerButtonTitle} disabled={state.roller.people.length === 0} onClick={() => window.presenter.rollerRoll()} className={`${SMALL_BTN} disabled:opacity-40`}>
+                <button type="button" title={t.rollerButtonTitle} disabled={state.roller.eligible === 0} onClick={() => window.presenter.rollerRoll()} className={`${SMALL_BTN} disabled:opacity-40`}>
                   <IconLabel icon="dice" size={15}>
                     {t.pickShort}
                   </IconLabel>

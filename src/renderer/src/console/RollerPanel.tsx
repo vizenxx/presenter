@@ -178,7 +178,7 @@ export function RollerPanel({ state }: { state: AppState }) {
 
       <button
         type="button"
-        disabled={r.people.length === 0}
+        disabled={r.eligible === 0}
         onClick={() => window.presenter.rollerRoll()}
         className="rounded-full bg-accent py-3 text-base font-semibold text-white hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-40"
       >
@@ -201,15 +201,35 @@ export function RollerPanel({ state }: { state: AppState }) {
         <input type="checkbox" checked={r.superLucky} onChange={(e) => window.presenter.rollerSetSuperLucky(e.target.checked)} className="mt-0.5 h-4 w-4 accent-link" />
         <span>{t.superLucky}</span>
       </label>
+      <label className="flex cursor-pointer items-start gap-2 text-sm">
+        <input type="checkbox" checked={r.onlySelected} onChange={(e) => window.presenter.rollerSetOnlySelected(e.target.checked)} className="mt-0.5 h-4 w-4 accent-link" />
+        <span>{t.onlySelected}</span>
+      </label>
+      {r.onlySelected && r.eligible === 0 && <p className="text-sm text-gold">{t.tickSome}</p>}
         </>
       )}
 
-      <h3 className="text-sm font-semibold text-muted">{t.listCount(r.people.length)}</h3>
+      <div className="flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-muted">{r.onlySelected && mode === 'one' ? t.canBePicked(r.eligible, r.people.length) : t.listCount(r.people.length)}</h3>
+        {r.onlySelected && mode === 'one' && (
+          <span className="ml-auto flex gap-1">
+            <button type="button" onClick={() => window.presenter.rollerSelect(null, true)} className="rounded-full px-2 py-0.5 text-sm text-tint hover:bg-panel-2">
+              {t.selectAll}
+            </button>
+            <button type="button" onClick={() => window.presenter.rollerSelect(null, false)} className="rounded-full px-2 py-0.5 text-sm text-tint hover:bg-panel-2">
+              {t.selectNone}
+            </button>
+          </span>
+        )}
+      </div>
       <ul className="flex flex-col gap-0.5">
         {r.people.map((p, i) => {
           const wins = winsOf(i)
           return (
-            <li key={`${p.id}-${i}`} className="flex items-center gap-2 rounded-xl px-2 py-1 text-sm">
+            <li key={`${p.id}-${i}`} className={`flex items-center gap-2 rounded-xl px-2 py-1 text-sm ${r.onlySelected && mode === 'one' && !p.selected ? 'text-muted' : ''}`}>
+              {r.onlySelected && mode === 'one' && (
+                <input type="checkbox" checked={p.selected} title={t.tickName(p.name)} aria-label={t.tickName(p.name)} onChange={(e) => window.presenter.rollerSelect(i, e.target.checked)} className="h-4 w-4 shrink-0 accent-link" />
+              )}
               <span className="min-w-0 flex-1 truncate">{p.name}</span>
               <span className="text-muted tabular-nums">{p.id}</span>
               {wins > 0 && <span className={`rounded-full px-2 font-semibold ${wins > 1 ? 'bg-gold/15 text-gold' : 'bg-link/15 text-link'}`}>{wins > 1 ? t.timesShort(wins) : t.picked}</span>}

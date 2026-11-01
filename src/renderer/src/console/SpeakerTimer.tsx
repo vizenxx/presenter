@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { clock } from '../../../shared/format'
 import { clockNow, from12, MAX_PERIODS, range12, speakerSeconds, speakerStarted, time12, WEEK_ORDER } from '../../../shared/timer'
 import type { AppState, ClockPeriod, SpeakerMode, SpeakerTimerView } from '../../../shared/types'
 import { useT, type Strings } from './i18n'
@@ -128,11 +129,11 @@ export function SpeakerTimer({ state, menu, onMenu }: { state: AppState; menu: C
   const shownSec = speakerSeconds(speaker, now)
   const over = (speaker.mode === 'down' && shownSec < 0) || c?.phase === 'after'
   const live = running || c?.phase === 'during'
-  // Count down before it starts: the minutes it will count (whole minutes). Started: the time left (or counted) is moved by the difference.
-  // Clock times set themselves, and a count up that has not started has nothing to change.
-  const editable: Array<'h' | 'm' | 's'> | false = clockMode ? false : speaker.mode === 'down' && !started ? ['m'] : started ? ['h', 'm', 's'] : false
+  // Not started: the typed time is the length of a count down, or the time a count up starts from. Started: the time left
+  // (or counted) is moved by the difference. Hours, minutes and seconds can all be typed; clock times set themselves.
+  const editable: Array<'h' | 'm' | 's'> | false = clockMode ? false : ['h', 'm', 's']
   const commit = (next: number, current: number): void => {
-    if (speaker.mode === 'down' && !started) window.presenter.speakerMinutes(Math.max(1, Math.round(next / 60)))
+    if (!started) window.presenter.speakerSetTime(next)
     else window.presenter.speakerAdjust(next - current)
   }
   // The line under the modes: what the mode does, or where From–to stands.
@@ -146,7 +147,7 @@ export function SpeakerTimer({ state, menu, onMenu }: { state: AppState; menu: C
           : speaker.mode === 'up'
             ? t.modeHintUp
             : speaker.mode === 'down'
-              ? t.modeHintDown(speaker.minutes)
+              ? t.modeHintDown(clock(speaker.minutes * 60 + speaker.seconds))
               : ''
   return (
     <TimerCard
@@ -178,7 +179,8 @@ export function SpeakerTimer({ state, menu, onMenu }: { state: AppState; menu: C
           <EditableTime
             sec={shownSec}
             hours
-            maxMinutes={speaker.mode === 'down' && !started ? 240 : 599}
+            alwaysHours
+            maxMinutes={599}
             editable={editable}
             onCommit={commit}
             className={`text-[40px] leading-none font-semibold tracking-tight ${over ? 'text-alarm' : live ? 'text-ink' : 'text-muted'}`}

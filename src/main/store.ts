@@ -94,7 +94,7 @@ export class Store {
   private activeWindowId: OutputId | null = null
   private tools!: WindowTools
   private tracking = false
-  private speaker: SpeakerTimerView = { mode: 'up', minutes: 45, startedAt: null, heldMs: 0, periods: T.cleanPeriods(T.DEFAULT_PERIODS), clockExtra: null }
+  private speaker: SpeakerTimerView = { mode: 'up', minutes: 45, seconds: 0, startedAt: null, heldMs: 0, periods: T.cleanPeriods(T.DEFAULT_PERIODS), clockExtra: null }
   private theme: UiTheme | null = null
   private flipped = false
   private mediaScanTick = 0
@@ -700,7 +700,7 @@ export class Store {
   rollerRoll(): void {
     const roll = this.roller.roll()
     if (roll) {
-      const payload: RollerPlay = { people: this.roller.peopleView(), path: roll.path, winner: roll.winner, startAt: roll.startAt, sound: false }
+      const payload: RollerPlay = { ...this.roller.playView(roll), startAt: roll.startAt, sound: false }
       const targets = this.audienceRollers()
       targets.forEach((overlay, i) => overlay.play({ ...payload, sound: i === 0 }))
       this.roller.showing = targets.length > 0
@@ -741,6 +741,17 @@ export class Store {
   rollerReset(): void {
     if (this.roller.showing) this.rollerHide()
     this.roller.reset()
+    this.emit()
+  }
+
+  rollerSetOnlySelected(on: boolean): void {
+    if (this.roller.showing) this.rollerHide()
+    this.roller.setOnlySelected(on === true)
+    this.emit()
+  }
+
+  rollerSelect(index: number | null, on: boolean): void {
+    this.roller.select(index === null ? null : Number.isInteger(index) ? index : -1, on === true)
     this.emit()
   }
 
@@ -866,9 +877,20 @@ export class Store {
     this.emit()
   }
 
-  speakerMinutes(minutes: number): void {
-    this.speaker = { ...this.speaker, minutes: Math.min(240, Math.max(1, Math.round(Number(minutes)) || 1)) }
-    this.saveSpeaker()
+  /**
+   * The time typed before My timer has started: a count down takes it as its length (at least one
+   * second, remembered); a count up starts from it (held, so Start goes on from there).
+   */
+  speakerSetTime(totalSec: number): void {
+    const s = this.speaker
+    if (T.speakerStarted(s)) return
+    if (s.mode === 'down') {
+      const total = T.cleanSpeakerSec(totalSec, 1)
+      this.speaker = { ...s, minutes: Math.floor(total / 60), seconds: total % 60 }
+      this.saveSpeaker()
+    } else if (s.mode === 'up') {
+      this.speaker = { ...s, heldMs: T.cleanSpeakerSec(totalSec) * 1000 }
+    } else return
     this.emit()
   }
 
@@ -881,8 +903,8 @@ export class Store {
   }
 
   private saveSpeaker(): void {
-    const { mode, minutes, periods } = this.speaker
-    saveMyTimer({ mode, minutes, periods })
+    const { mode, minutes, seconds, periods } = this.speaker
+    saveMyTimer({ mode, minutes, seconds, periods })
   }
 
   speakerToggle(): void {

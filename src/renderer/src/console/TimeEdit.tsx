@@ -17,6 +17,8 @@ export function EditableTime(props: {
   sec: number
   /** Show 1 h or more as h:mm:ss; otherwise minutes run on. */
   hours?: boolean
+  /** Always show the hours box (a faint 0 under one hour) so the hours can be typed whenever they are editable. */
+  alwaysHours?: boolean
   maxMinutes: number
   /** Which parts can be typed; false = none (a clock time, or a timer that has not started). */
   editable: Part[] | false
@@ -25,7 +27,7 @@ export function EditableTime(props: {
   title?: string
 }) {
   const t = useT()
-  const { sec, hours = false, maxMinutes, editable, onCommit, className = '', title } = props
+  const { sec, hours = false, alwaysHours = false, maxMinutes, editable, onCommit, className = '', title } = props
   const latest = useRef(sec)
   latest.current = sec
   const [edit, setEdit] = useState<{ part: Part; draft: string } | null>(null)
@@ -89,7 +91,7 @@ export function EditableTime(props: {
         title={can ? t.editTimeTitle : undefined}
         onDoubleClick={can ? () => setEdit({ part: key, draft: text }) : undefined}
         onKeyDown={can ? (e) => e.key === 'Enter' && setEdit({ part: key, draft: text }) : undefined}
-        className={can ? 'cursor-text rounded-lg px-0.5 hover:bg-line/60 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none' : 'px-0.5'}
+        className={`${can ? 'cursor-text rounded-lg px-0.5 hover:bg-line/60 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none' : 'px-0.5'} ${key === 'h' && value === 0 ? 'opacity-40' : ''}`}
       >
         {text}
       </span>
@@ -100,7 +102,7 @@ export function EditableTime(props: {
     <span className="inline-flex flex-wrap items-center justify-center gap-x-1" title={title}>
       <span className={`inline-flex items-baseline tabular-nums ${className}`}>
         {over ? '−' : ''}
-        {p.hasHours && (
+        {(p.hasHours || (alwaysHours && !!editable && editable.includes('h') && !over)) && (
           <>
             {part('h', p.h)}
             <span>:</span>
