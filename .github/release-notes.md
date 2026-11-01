@@ -1,3 +1,8 @@
+## What's new in 0.4.4
+
+- **Pick only from some names.** In Participants → Pick one, switch on **Only pick from the names I tick**. Each name gets a tick box; only ticked names can be rolled, and the list itself does not change. **Tick all** and **Untick all** are above the list; the ticks are remembered for each list. The participants' screens show only the names that can be picked, and the highlight walks over them only. **Roll** waits until a name is ticked. **Teams** still use the whole list.
+- **My timer: type the hours, minutes and seconds.** All three can be double-clicked and typed, in a count down and in a count up (before, a count down that had not started allowed only minutes, a count up nothing, and no hours box showed under one hour). Before it starts, the time you type is the length of a count down (up to 10 hours, with seconds, remembered) or the time a count up starts from. The hours show as a faint 0 under one hour.
+
 ## What's new in 0.4.3
 
 - **Split screen: several screens on one projector.** In a card's **Projector ▾** menu choose **＋ Beside what Projector n shows**. The new screen takes half of the largest part, split along its longer side, so a third and a fourth screen tile the projector by themselves. The **▦ Projector n** chip in the bottom bar opens the layout: pull a divider to change the sizes (double-click for equal room), choose side by side, one above the other, grid, one large or equal room, swap places, show a screen alone, or take it off. Click a screen to give it the projector's marks, video buttons and timer. The same layout shows in the current pane before you project, and on a second projector.
