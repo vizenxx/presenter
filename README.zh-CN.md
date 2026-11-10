@@ -8,6 +8,8 @@ Presenter 是一个桌面放映工具。它把课件（HTML、PDF、PPT、PPTX�
 
 最新的压缩包在 **[Releases 页面](https://github.com/vizenxx/presenter/releases/latest)** 的 **Assets** 里：Windows 用 `…-win.zip`；Mac 用 `…-mac-arm64.zip`（Apple 芯片：M1、M2……；苹果菜单 → **关于本机** 显示 **芯片：Apple M…**）或 `…-mac-x64.zip`（Intel：显示 **处理器：… Intel**）。任何人都能打开这个页面，把链接发给其他人即可。
 
+Windows 压缩包目前还没有代码签名，详见 [Code signing policy（代码签名政策）](#code-signing-policy代码签名政策)。
+
 ## 打开（不需要安装）
 
 Presenter 是一个解压即用的文件夹。没有安装程序，也不需要管理员密码。
@@ -207,6 +209,16 @@ Presenter 是一个解压即用的文件夹。没有安装程序，也不需要�
 - **GitHub page**、**All versions**、**Report a problem**：在浏览器里打开项目在 GitHub 上的页面。
 - **Check when Presenter starts**（默认关闭）：启动几秒后自动查一次。
 - Presenter 不会自己安装任何东西：下载 zip，解压，用新的文件夹。
+
+## Code signing policy（代码签名政策）
+
+Presenter 的 Windows 版本将会做代码签名，让智能应用控制（Smart App Control）和 SmartScreen 信任它。Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org).（免费代码签名由 SignPath.io 提供，证书来自 SignPath Foundation。申请正在进行：0.4.4 及以前的版本还没有签名。）
+
+- 只签这个仓库自己构建出的 `Presenter.exe`。它由 GitHub Actions 工作流 `.github/workflows/build.yml` 在 GitHub 托管的机器上，从本仓库的源代码构建；不在个人电脑上构建或签名。程序里 Electron 和 LibreOffice 的文件来自各自的项目（LibreOffice 的文件已由 The Document Foundation 签名）。
+- 提交者与审核者：[vizenxx](https://github.com/vizenxx)
+- 批准者（每次签名发布都要人工批准）：[vizenxx](https://github.com/vizenxx)
+- 隐私：This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it.（除非使用、安装或操作它的人明确要求，本程序不会把任何信息传给其他联网系统。Presenter 自己唯一的联网是 **Check for updates**：你点它时，或你打开了"启动时检查"时，向 GitHub 询问最新版本号。你放映的课件或程序窗口本身可能会像浏览器一样自己联网。）
+- 卸载：Presenter 不安装任何东西，删掉它的文件夹即可。设置和名单在 `%APPDATA%\presenter`（Windows）或 `~/Library/Application Support/Presenter`（Mac），把那个文件夹也删掉就全部清除了。
 
 ## 许可和隐私
 

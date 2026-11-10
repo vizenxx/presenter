@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Presenter's artifact configuration for SignPath (paste it into the project's artifact configuration
+  on SignPath: Custom, XML). The artifact is the Windows app folder dist/win-unpacked, uploaded by
+  .github/workflows/build.yml as a ZIP. Only Presenter.exe is signed: the Electron and LibreOffice
+  files are other projects' binaries (SignPath Foundation: "sign your own binaries only").
+  SignPath Foundation asks that product name and product version are enforced; the workflow passes
+  the version as "<package.json version>.0" (the form Windows shows for Presenter.exe, e.g. 0.4.4.0).
+-->
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <parameters>
+    <parameter name="version" required="true" />
+  </parameters>
+  <zip-file>
+    <pe-file path="Presenter.exe" product-name="Presenter" product-version="${version}">
+      <authenticode-sign />
+    </pe-file>
+  </zip-file>
+</artifact-configuration>

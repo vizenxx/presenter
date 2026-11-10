@@ -8,6 +8,8 @@ Presenter shows decks (HTML, PDF, PPT, PPTX, Keynote) and program windows (a bro
 
 The newest zips are on the **[Releases page](https://github.com/vizenxx/presenter/releases/latest)**, under **Assets**: `…-win.zip` for Windows; for a Mac, `…-mac-arm64.zip` (Apple silicon: M1, M2 … — Apple menu → **About This Mac** shows **Chip: Apple M…**) or `…-mac-x64.zip` (Intel: it shows **Processor: … Intel**). Anyone can open that page: send the link to others.
 
+The Windows zip is not code-signed yet; see the [Code signing policy](#code-signing-policy).
+
 ## Open (nothing to install)
 
 Presenter is a folder you unzip; there is no installer and no administrator password.
@@ -208,6 +210,16 @@ The version number sits next to the name in the top bar. Click it to open a smal
 - **Check when Presenter starts** (off by default) looks once, a few seconds after the start.
 - Presenter never installs anything by itself: download the zip, unzip it and use the new folder.
 
+## Code signing policy
+
+Windows releases of Presenter are to be signed so that Smart App Control and SmartScreen trust them. Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org). (The application is in progress: releases up to 0.4.4 are not signed yet.)
+
+- Only `Presenter.exe` from this repository's own build is signed. It is built from the source in this repository by the GitHub Actions workflow `.github/workflows/build.yml`, on GitHub-hosted machines; nothing is built or signed on a personal computer. The Electron and LibreOffice files inside the app come from their own projects (LibreOffice's are signed by The Document Foundation).
+- Committers and reviewers: [vizenxx](https://github.com/vizenxx)
+- Approvers (every signed release is approved by hand): [vizenxx](https://github.com/vizenxx)
+- Privacy: This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it. (Presenter's only own connection is **Check for updates**, which asks GitHub for the newest version number when you click it, or at start if you turned that on. A deck or a program window you show may connect to the internet by itself, as in a browser.)
+- Uninstall: Presenter installs nothing. Delete its folder. Your settings and lists are in `%APPDATA%\presenter` (Windows) or `~/Library/Application Support/Presenter` (Mac); delete that folder too to remove everything.
+
 ## Licence and privacy
 
 - Presenter is free: use it, copy it and share it. Its own code is under the MIT Licence ([LICENSE](LICENSE)), with no warranty.
@@ -230,5 +242,6 @@ The version number sits next to the name in the top bar. Click it to open a smal
 - Real conversions: `PRESENTER_CONVERT_IT=libreoffice npm test` (or `powerpoint`, or `keynote` on a Mac).
 - The LibreOffice inside the app: `node scripts/libreoffice.mjs prepare` downloads the official release (checked against its SHA-256), keeps only what turning slides into pages needs, and puts it in `vendor/` (`--from "C:/Program Files/LibreOffice"` uses an installed copy instead); `node scripts/libreoffice.mjs check` converts a test deck with click animations with it. LibreOffice is under the Mozilla Public License 2.0; its licence files go along.
 - Zips: `npm run dist:win` (Windows) and `npm run dist:mac` (only on a Mac); run `prepare` first. Without a Mac, run the **Build app zips** workflow on GitHub (Actions tab, or `gh workflow run build.yml`; a push alone does not start it): it builds the three zips and replaces the Releases page of this version (text: `.github/release-notes.md`); untick **publish** for a test build. Raise `version` in `package.json` for a new version. Icon source: `build/icon.svg` (`npx electron tools/make-icon.cjs build`).
+- Windows signing (SignPath Foundation): once the application is approved, add the repository variables `SIGNPATH_ORGANIZATION_ID`, `SIGNPATH_PROJECT_SLUG` (and `SIGNPATH_SIGNING_POLICY_SLUG` if it is not `release-signing`) and the secret `SIGNPATH_API_TOKEN`, and paste `.signpath/artifact-configuration.xml` into the SignPath project. The **Build app zips** workflow then waits for the signing request to be approved on SignPath and publishes the signed Windows zip. Without them it publishes the unsigned zip, as before.
 - `PRESENTER_EXE=<unzipped folder>/Presenter.exe node e2e/smoke.mjs` runs the end-to-end test on a packaged app.
 - On the maintainer's computer the desktop icon starts the source copy (`Start Presenter.bat`): after any source change run `npm run build`.

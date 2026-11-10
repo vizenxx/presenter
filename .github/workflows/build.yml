@@ -15,6 +15,8 @@ on:
         default: true
 permissions:
   contents: write
+  # The SignPath action reads the unsigned app from this run's artifacts.
+  actions: read
 jobs:
   build:
     strategy:
@@ -64,6 +66,47 @@ jobs:
         run: |
           node scripts/libreoffice.mjs check --root dist/win-unpacked/resources/libreoffice
           ls -l dist/*.zip
+      # Windows code signing (SignPath Foundation, free for open source; see "Code signing policy" in
+      # README.md). It runs only once the repository has the variables SIGNPATH_ORGANIZATION_ID and
+      # SIGNPATH_PROJECT_SLUG and the secret SIGNPATH_API_TOKEN; until then the zip stays unsigned.
+      # Presenter.exe is signed as set in .signpath/artifact-configuration.xml; every signing request
+      # waits for a person to approve it on SignPath, then the signed app replaces the zip.
+      - name: Version for signing
+        if: runner.os == 'Windows' && vars.SIGNPATH_ORGANIZATION_ID != ''
+        shell: bash
+        run: echo "PRODUCT_VERSION=$(node -p "require('./package.json').version").0" >> "$GITHUB_ENV"
+      - name: Unsigned Windows app, for signing
+        id: upload-unsigned
+        if: runner.os == 'Windows' && vars.SIGNPATH_ORGANIZATION_ID != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: presenter-win-unsigned-${{ github.run_id }}-${{ github.run_attempt }}
+          path: dist/win-unpacked
+          if-no-files-found: error
+      - name: Sign Presenter.exe (SignPath, waits for approval)
+        if: steps.upload-unsigned.outcome == 'success'
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG || 'release-signing' }}
+          github-artifact-id: ${{ steps.upload-unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          # A person approves each release on SignPath: give them an hour.
+          wait-for-completion-timeout-in-seconds: 3600
+          output-artifact-directory: dist/signed
+          parameters: |
+            version: ${{ toJSON(env.PRODUCT_VERSION) }}
+      - name: Zip the signed Windows app
+        if: steps.upload-unsigned.outcome == 'success'
+        shell: pwsh
+        run: |
+          if ((Get-AuthenticodeSignature dist/signed/Presenter.exe).Status -ne 'Valid') { throw 'Presenter.exe came back without a valid signature' }
+          $v = node -p "require('./package.json').version"
+          Remove-Item "dist/Presenter-$v-win.zip"
+          7z a -tzip "dist/Presenter-$v-win.zip" ./dist/signed/* | Out-Null
+          Get-Item "dist/Presenter-$v-win.zip" | Format-List Name, Length
       - uses: actions/upload-artifact@v4
         with:
           name: presenter-${{ runner.os }}

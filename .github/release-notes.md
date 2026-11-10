@@ -109,6 +109,10 @@ Nothing to install.
 3. PPT and PPTX files open with the LibreOffice inside Presenter. The Mac version of this has not been tried on a real Mac yet: if a PPT does not open, save it as PDF and tell the maintainer.
 4. To show program windows (a browser, a video …), allow Presenter in **System Settings → Privacy & Security → Screen & System Audio Recording**, and, when asked, **Accessibility**.
 
+## Code signing policy
+
+Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org) (application in progress; see the [Code signing policy](https://github.com/vizenxx/presenter#code-signing-policy)). Until then the Windows zip is not signed.
+
 ## Full guide
 
 [README](https://github.com/vizenxx/presenter/blob/main/README.md) · 中文说明: [README.zh-CN](https://github.com/vizenxx/presenter/blob/main/README.zh-CN.md)
