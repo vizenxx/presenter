@@ -18,6 +18,7 @@ Presenter is a folder you unzip; there is no installer and no administrator pass
 2. In the folder, double-click **Presenter** (the file with the Presenter icon). It opens in about 2 seconds.
 3. For a desktop icon: right-click **Presenter** → **Show more options → Send to → Desktop (create shortcut)**.
 4. The app is not signed. When the zip came from the internet, Windows may show "Windows protected your PC": click **More info → Run anyway** once.
+5. **Smart App Control** (a Windows 11 protection that some computers have switched on) blocks every unsigned program, and it has no "Run anyway". If Windows says it blocked Presenter, you have two choices: use a computer that does not have Smart App Control on, or turn it off (**Windows Security → App & browser control → Smart App Control settings → Off**). Microsoft says that once it is off it cannot be turned on again without resetting Windows, so think before you do it on a computer that is not yours. Presenter needs a code-signing certificate to pass Smart App Control; it has none yet.
 
 **Mac** (macOS 13 Ventura or later, Intel or Apple silicon)
 
